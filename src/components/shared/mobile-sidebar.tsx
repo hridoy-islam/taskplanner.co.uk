@@ -16,10 +16,10 @@ export default function MobileSidebar({
   return (
     <>
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="bg-background !px-0">
+        <SheetContent side="left" className="bg-primary !px-0">
           <div className="space-y-4 py-4">
             <div className="space-y-4 px-3 py-2">
-              <Link to="/" className="px-2 py-2 text-2xl font-bold text-white ">
+              <Link to="/" className="px-2 py-2 text-2xl font-bold text-black ">
                 Logo
               </Link>
               <div className="space-y-1 px-2">

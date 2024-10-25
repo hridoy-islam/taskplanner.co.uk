@@ -3,21 +3,66 @@ import { NavItem } from '@/types';
 export const navItems: NavItem[] = [
   {
     title: 'Dashboard',
-    href: '/',
+    href: '/dashboard',
     icon: 'dashboard',
-    label: 'Dashboard'
+    label: 'Dashboard',
+    roles: ['admin', 'director', 'user', 'company', 'creator']
   },
   {
-    title: 'Students',
-    href: '/student',
+    title: 'Today',
+    href: '/dashboard/today',
+    icon: 'today',
+    label: 'Today',
+    roles: ['admin', 'director', 'user', 'company', 'creator']
+  },
+  {
+    title: 'Notes',
+    href: '/dashboard/notes',
+    icon: 'notes',
+    label: 'Notes',
+    roles: ['admin', 'director', 'user', 'company', 'creator']
+  },
+  {
+    title: 'Important',
+    href: '/dashboard/important',
+    icon: 'important',
+    label: 'Important',
+    roles: ['admin', 'director', 'user', 'company', 'creator']
+  },
+  {
+    title: 'Planner',
+    href: '/dashboard/planner',
+    icon: 'planner',
+    label: 'Planner',
+    roles: ['admin', 'director', 'user', 'company', 'creator']
+  },
+  {
+    title: 'Director',
+    href: '/dashboard/director',
+    icon: 'director',
+    label: 'director',
+    roles: ['admin']
+  },
+  {
+    title: 'Company',
+    href: '/dashboard/company',
+    icon: 'company',
+    label: 'Company',
+    roles: ['admin', 'director']
+  },
+  {
+    title: 'Creator',
+    href: '/dashboard/creator',
+    icon: 'creator',
+    label: 'Creator',
+    roles: ['admin', 'director', 'company']
+  },
+  {
+    title: 'Users',
+    href: '/dashboard/users',
     icon: 'user',
-    label: 'Student'
-  },
-  {
-    title: 'Login',
-    href: '/login',
-    icon: 'login',
-    label: 'Login'
+    label: 'Users',
+    roles: ['admin', 'director', 'company', 'creator']
   }
 ];
 

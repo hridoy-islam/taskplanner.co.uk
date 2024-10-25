@@ -1,5 +1,18 @@
-import FormPage from '@/pages/form';
+import ProtectedRoute from '@/components/shared/ProtectedRoute';
+import ForgotPassword from '@/pages/auth/forget-password';
+import SignUpPage from '@/pages/auth/sign-up';
+import CompanyPage from '@/pages/company';
+import CreatorPage from '@/pages/creator';
+import DirectorPage from '@/pages/director';
+import HomePage from '@/pages/home';
+import ImportantPage from '@/pages/important';
 import NotFound from '@/pages/not-found';
+import NotesPage from '@/pages/notes';
+import PlannerPage from '@/pages/planner';
+import ProfilePage from '@/pages/profile';
+import TaskPage from '@/pages/task';
+import TodayPage from '@/pages/today';
+import UserPage from '@/pages/users';
 import { Suspense, lazy } from 'react';
 import { Navigate, Outlet, useRoutes } from 'react-router-dom';
 
@@ -8,22 +21,20 @@ const DashboardLayout = lazy(
 );
 const SignInPage = lazy(() => import('@/pages/auth/signin'));
 const DashboardPage = lazy(() => import('@/pages/dashboard'));
-const StudentPage = lazy(() => import('@/pages/students'));
-const StudentDetailPage = lazy(
-  () => import('@/pages/students/StudentDetailPage')
-);
 
 // ----------------------------------------------------------------------
 
 export default function AppRouter() {
   const dashboardRoutes = [
     {
-      path: '/',
+      path: '/dashboard',
       element: (
         <DashboardLayout>
-          <Suspense>
-            <Outlet />
-          </Suspense>
+          <ProtectedRoute>
+            <Suspense>
+              <Outlet />
+            </Suspense>
+          </ProtectedRoute>
         </DashboardLayout>
       ),
       children: [
@@ -32,16 +43,44 @@ export default function AppRouter() {
           index: true
         },
         {
-          path: 'student',
-          element: <StudentPage />
+          path: 'users',
+          element: <UserPage />
         },
         {
-          path: 'student/details',
-          element: <StudentDetailPage />
+          path: 'important',
+          element: <ImportantPage />
         },
         {
-          path: 'form',
-          element: <FormPage />
+          path: 'director',
+          element: <DirectorPage />
+        },
+        {
+          path: 'company',
+          element: <CompanyPage />
+        },
+        {
+          path: 'creator',
+          element: <CreatorPage />
+        },
+        {
+          path: 'today',
+          element: <TodayPage />
+        },
+        {
+          path: 'notes',
+          element: <NotesPage />
+        },
+        {
+          path: 'planner',
+          element: <PlannerPage />
+        },
+        {
+          path: 'profile',
+          element: <ProfilePage />
+        },
+        {
+          path: 'task/:id',
+          element: <TaskPage />
         }
       ]
     }
@@ -49,8 +88,22 @@ export default function AppRouter() {
 
   const publicRoutes = [
     {
+      path: '/',
+      element: <HomePage />,
+      index: true
+    },
+    {
       path: '/login',
-      element: <SignInPage />,
+      element: <SignInPage />
+    },
+    {
+      path: '/signup',
+      element: <SignUpPage />,
+      index: true
+    },
+    {
+      path: '/forgot-password',
+      element: <ForgotPassword />,
       index: true
     },
     {

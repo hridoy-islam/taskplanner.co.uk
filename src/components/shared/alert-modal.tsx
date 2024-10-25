@@ -8,6 +8,7 @@ type TAlertModalProps = {
   loading: boolean;
   title?: string;
   description?: string;
+  children?: React.ReactNode; // Allow children as a prop
 };
 export const AlertModal = ({
   isOpen,
@@ -15,7 +16,8 @@ export const AlertModal = ({
   onConfirm,
   loading,
   title = 'Are you sure?',
-  description = 'Are you sure you want to continue?'
+  description = 'Are you sure you want to continue?',
+  children
 }: TAlertModalProps) => {
   return (
     <Modal
@@ -24,6 +26,7 @@ export const AlertModal = ({
       isOpen={isOpen}
       onClose={onClose}
     >
+      {children}
       <div className="flex w-full items-center justify-end space-x-2 pt-6">
         <Button disabled={loading} variant="outline" onClick={onClose}>
           Cancel

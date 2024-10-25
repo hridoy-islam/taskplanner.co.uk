@@ -1,5 +1,5 @@
 import { Icons } from '@/components/ui/icons';
-
+export type UserRole = 'admin' | 'director' | 'user' | 'creator' | 'company';
 export interface NavItem {
   title: string;
   href: string;
@@ -8,6 +8,7 @@ export interface NavItem {
   icon?: keyof typeof Icons;
   label?: string;
   description?: string;
+  roles: UserRole[];
 }
 
 export interface NavItemWithChildren extends NavItem {
