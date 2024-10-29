@@ -9,10 +9,10 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { X } from 'lucide-react';
+// import { Checkbox } from '@/components/ui/checkbox';
+// import { ScrollArea } from '@/components/ui/scroll-area';
+// import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+// import { X } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../../../lib/axios';
 import { useForm } from 'react-hook-form';
@@ -35,17 +35,17 @@ export default function UserProfileDetail() {
   const { id } = useParams();
   const [userData, setUserData] = useState<userDetails>();
   const { register, handleSubmit, reset } = useForm<userDetails>();
-  const [assignedMembers, setAssignedMembers] = useState<any>([]);
-  const [availableMembers, setAvailableMembers] = useState<any>([]);
+  //   const [assignedMembers, setAssignedMembers] = useState<any>([]);
+  //   const [availableMembers, setAvailableMembers] = useState<any>([]);
 
   const fetchUserDetails = async () => {
     const res = await axiosInstance.get(`/users/${id}`);
     setUserData(res.data.data);
     reset(res.data.data);
-    const response = await axiosInstance.get(
-      `/users?company=${res.data.data.company}`
-    );
-    setAvailableMembers(response.data.data.result);
+    // const response = await axiosInstance.get(
+    //   `/users?company=${res.data.data.company}`
+    // );
+    // setAvailableMembers(response.data.data.result);
   };
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function UserProfileDetail() {
             </form>
           </CardContent>
         </Card>
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Assigned Company Members</CardTitle>
             <CardDescription>
@@ -163,7 +163,7 @@ export default function UserProfileDetail() {
               </ScrollArea>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

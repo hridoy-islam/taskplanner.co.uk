@@ -117,14 +117,14 @@ export default function TaskDetails({
                     >
                       {comment.content}
                     </div>
-                    {index === comments.length - 1 ||
+                    {/* {index === comments.length - 1 ||
                     comments[index + 1].authorId !== comment.author ? (
                       <p
                         className={`mt-1 text-xs ${comment.authorId === user?._id ? 'text-right' : 'text-left'}`}
                       >
                         {comment.author}
                       </p>
-                    ) : null}
+                    ) : null} */}
                   </div>
                 </div>
               </div>
