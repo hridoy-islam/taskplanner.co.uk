@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -19,14 +18,13 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip';
 import moment from 'moment';
-import { useForm } from 'react-hook-form';
 import 'react-datepicker/dist/react-datepicker.css';
 import TaskDetails from './task-details';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import axiosInstance from '../../lib/axios';
-import { AlertModal } from './alert-modal';
 import { toast } from '../ui/use-toast';
+import UpdateTask from './update-task';
 
 const TaskList = ({
   tasks,
@@ -37,20 +35,14 @@ const TaskList = ({
   const { user } = useSelector((state: any) => state.auth);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isTaskDetailsOpen, setTaskDetailsOpen] = useState(false);
-  const { register, handleSubmit, reset } = useForm();
+  // const { register, handleSubmit, reset } = useForm();
 
   const [openUpdate, setOpenUpdate] = useState(false);
-  const [updatedData, setUpdatedData] = useState({ dueDate: '', taskName: '' });
   const [loading, setLoading] = useState(false);
 
   const sortedTasks = tasks?.sort((a, b) => {
     return a.status === 'completed' && b.status === 'pending' ? 1 : -1;
   });
-
-  // const onSubmit = async (data : any) => {
-  //   await onNewTaskSubmit(data);
-  //   reset();
-  // };
 
   const openTaskDetails = (task: any) => {
     setSelectedTask(task);
@@ -63,12 +55,13 @@ const TaskList = ({
   };
 
   const openUpdateModal = (task) => {
-    setUpdatedData({
-      dueDate: task.dueDate ? moment(task.dueDate).format('YYYY-MM-DD') : '',
-      taskName: task.taskName || ''
-    });
-    setOpenUpdate(true);
     setSelectedTask(task);
+    setOpenUpdate(true);
+  };
+
+  const closeUpdateModal = () => {
+    setOpenUpdate(false);
+    setSelectedTask(null);
   };
 
   const onUpdateConfirm = async (data) => {
@@ -81,14 +74,13 @@ const TaskList = ({
       });
       if (res.data.success) {
         fetchTasks(); // Refresh tasks
-        setOpenUpdate(false); // Close modal after update
+        //setOpenUpdate(false); // Close modal after update
         toast({
           title: 'Task Updated Successfully',
           description: 'Thank You'
         });
-        reset();
+        //reset();
       } else {
-        console.error('');
         toast({
           title: 'Failed to update due date',
           variant: 'destructive'
@@ -253,31 +245,15 @@ const TaskList = ({
           </div>
         </ScrollArea>
 
-        <AlertModal
+        <UpdateTask
+          task={selectedTask}
           isOpen={openUpdate}
-          onClose={() => setOpenUpdate(false)}
-          onConfirm={handleSubmit(onUpdateConfirm)}
+          onClose={closeUpdateModal}
+          onConfirm={onUpdateConfirm}
           loading={loading}
-          title={`Update Due Date`}
-          description={`Edit the due date of the task.`}
-        >
-          <form>
-            <Input
-              {...register('taskName', { required: true })} // Register the name field
-              type="text"
-              defaultValue={updatedData.taskName} // Use defaultValue for controlled input
-              className="mb-4"
-              placeholder="Task Name"
-            />
-
-            <Input
-              type="date"
-              defaultValue={updatedData.dueDate}
-              {...register('dueDate', { required: true })}
-              className="mb-4"
-            />
-          </form>
-        </AlertModal>
+          title="Update Task"
+          description="Edit the task."
+        />
       </main>
 
       {isTaskDetailsOpen && selectedTask !== null && (
