@@ -6,7 +6,6 @@ import {
   Star,
   UserRoundCheck,
   Calendar,
-  CornerDownLeft,
   ArrowRight,
   CircleUser,
   MessageSquareText
@@ -33,8 +32,6 @@ const TaskList = ({
   tasks,
   onMarkAsImportant,
   onToggleTaskCompletion,
-  onNewTaskSubmit,
-  showAddTaskForm,
   fetchTasks
 }) => {
   const { user } = useSelector((state: any) => state.auth);
@@ -50,12 +47,12 @@ const TaskList = ({
     return a.status === 'completed' && b.status === 'pending' ? 1 : -1;
   });
 
-  const onSubmit = async (data) => {
-    await onNewTaskSubmit(data);
-    reset();
-  };
+  // const onSubmit = async (data : any) => {
+  //   await onNewTaskSubmit(data);
+  //   reset();
+  // };
 
-  const openTaskDetails = (task) => {
+  const openTaskDetails = (task: any) => {
     setSelectedTask(task);
     setTaskDetailsOpen(true);
   };
@@ -255,6 +252,32 @@ const TaskList = ({
             ))}
           </div>
         </ScrollArea>
+
+        <AlertModal
+          isOpen={openUpdate}
+          onClose={() => setOpenUpdate(false)}
+          onConfirm={handleSubmit(onUpdateConfirm)}
+          loading={loading}
+          title={`Update Due Date`}
+          description={`Edit the due date of the task.`}
+        >
+          <form>
+            <Input
+              {...register('taskName', { required: true })} // Register the name field
+              type="text"
+              defaultValue={updatedData.taskName} // Use defaultValue for controlled input
+              className="mb-4"
+              placeholder="Task Name"
+            />
+
+            <Input
+              type="date"
+              defaultValue={updatedData.dueDate}
+              {...register('dueDate', { required: true })}
+              className="mb-4"
+            />
+          </form>
+        </AlertModal>
       </main>
 
       {isTaskDetailsOpen && selectedTask !== null && (
@@ -263,48 +286,6 @@ const TaskList = ({
           isOpen={isTaskDetailsOpen}
           onOpenChange={closeTaskDetails}
         />
-      )}
-
-      <AlertModal
-        isOpen={openUpdate}
-        onClose={() => setOpenUpdate(false)}
-        onConfirm={handleSubmit(onUpdateConfirm)}
-        loading={loading}
-        title={`Update Due Date`}
-        description={`Edit the due date of the task.`}
-      >
-        <form>
-          <Input
-            {...register('taskName', { required: true })} // Register the name field
-            type="text"
-            defaultValue={updatedData.taskName} // Use defaultValue for controlled input
-            className="mb-4"
-            placeholder="Task Name"
-          />
-
-          <Input
-            type="date"
-            defaultValue={updatedData.dueDate}
-            {...register('dueDate', { required: true })}
-            className="mb-4"
-          />
-        </form>
-      </AlertModal>
-
-      {showAddTaskForm && (
-        <footer className="bg-white p-4 shadow">
-          <form onSubmit={handleSubmit(onSubmit)} className="flex space-x-2">
-            <Input
-              {...register('taskName', { required: true })}
-              type="text"
-              placeholder="Add a task"
-              className="flex-1"
-            />
-            <Button type="submit" variant={'outline'}>
-              <CornerDownLeft className="mr-2 h-4 w-4" />
-            </Button>
-          </form>
-        </footer>
       )}
     </div>
   );

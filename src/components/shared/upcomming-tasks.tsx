@@ -59,22 +59,6 @@ export default function UpcomingTasks({ user }) {
     }
   };
 
-  const handleNewTaskSubmit = async (data) => {
-    const response = await axiosInstance.post(`/task`, data);
-    if (response.data.success) {
-      fetchUpcomingTasks();
-      toast({
-        title: 'Task Added',
-        description: 'Thank You'
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Something Went Wrong!'
-      });
-    }
-  };
-
   return (
     <Card className="h-[calc(65vh-8rem)] overflow-hidden">
       <CardHeader>
@@ -85,8 +69,6 @@ export default function UpcomingTasks({ user }) {
           tasks={tasks}
           onMarkAsImportant={handleMarkAsImportant}
           onToggleTaskCompletion={handleToggleTaskCompletion}
-          onNewTaskSubmit={handleNewTaskSubmit}
-          showAddTaskForm={false} // Set to true to show the add task form
           fetchTasks={fetchUpcomingTasks}
         />
       </CardContent>

@@ -94,37 +94,29 @@ export default function TaskDetails({
             {comments.map((comment: any, index) => (
               <div
                 key={comment._id}
-                className={`flex ${comment.authorId === user?._id ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${comment.authorId._id === user?._id ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`flex ${comment.authorId === user?._id ? 'flex-row-reverse' : 'flex-row'} items-start space-x-2`}
+                  className={`flex ${comment.authorId._id === user?._id ? 'flex-row-reverse' : 'flex-row'} items-start space-x-2`}
                 >
                   <Avatar
-                    className={`h-8 w-8 ${comment.authorId === user?._id && 'ml-1'}`}
+                    className={`h-8 w-8 ${comment.authorId._id === user?._id && 'ml-1'}`}
                   >
                     <AvatarFallback>
-                      {user?.name
+                      {comment?.authorId.name
                         ?.split(' ')
                         .map((n) => n[0])
                         .join('') || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div
-                    className={`max-w-[90%] ${comment.authorId === user?._id ? 'mr-2' : 'ml-2'}`}
+                    className={`max-w-[90%] ${comment.authorId._id === user?._id ? 'mr-2' : 'ml-2'}`}
                   >
                     <div
-                      className={`rounded-lg p-2 ${comment.authorId === user?._id ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                      className={`rounded-lg p-2 ${comment.authorId._id === user?._id ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
                     >
                       {comment.content}
                     </div>
-                    {/* {index === comments.length - 1 ||
-                    comments[index + 1].authorId !== comment.author ? (
-                      <p
-                        className={`mt-1 text-xs ${comment.authorId === user?._id ? 'text-right' : 'text-left'}`}
-                      >
-                        {comment.author}
-                      </p>
-                    ) : null} */}
                   </div>
                 </div>
               </div>

@@ -59,23 +59,6 @@ export default function DueTasks({ user }) {
     }
   };
 
-  const handleNewTaskSubmit = async (data) => {
-    data.author = user?._id;
-    const response = await axiosInstance.post(`/task`, data);
-    if (response.data.success) {
-      fetchDueTasks();
-      toast({
-        title: 'Task Added',
-        description: 'Thank You'
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Something Went Wrong!'
-      });
-    }
-  };
-
   return (
     <Card className="h-[calc(65vh-8rem)] overflow-hidden">
       <CardHeader>
@@ -86,8 +69,6 @@ export default function DueTasks({ user }) {
           tasks={tasks}
           onMarkAsImportant={handleMarkAsImportant}
           onToggleTaskCompletion={handleToggleTaskCompletion}
-          onNewTaskSubmit={handleNewTaskSubmit}
-          showAddTaskForm={false} // Set to true to show the add task form
           fetchTasks={fetchDueTasks}
         />
       </CardContent>

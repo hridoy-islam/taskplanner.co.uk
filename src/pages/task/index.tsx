@@ -6,6 +6,10 @@ import axiosInstance from '../../lib/axios';
 import { useSelector } from 'react-redux';
 import TaskList from '@/components/shared/task-list';
 import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { CornerDownLeft } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 
 export default function TaskPage() {
   const { id } = useParams();
@@ -13,6 +17,8 @@ export default function TaskPage() {
   const [tasks, setTasks] = useState([]);
   const { toast } = useToast();
   const [userDetail, setUserDetail] = useState<any>();
+
+  const { register, handleSubmit, reset } = useForm();
 
   const fetchTasks = async () => {
     const response = await axiosInstance.get(
@@ -73,13 +79,13 @@ export default function TaskPage() {
       });
     }
   };
-
-  const handleNewTaskSubmit = async (data) => {
-    alert('Works');
+  // New Task Form
+  const onSubmit = async (data) => {
     data.author = user?._id;
     data.assigned = id;
     const response = await axiosInstance.post(`/task`, data);
     if (response.data.success) {
+      reset();
       fetchTasks();
       toast({
         title: 'Task Added',
@@ -92,6 +98,7 @@ export default function TaskPage() {
       });
     }
   };
+
   return (
     <div className="p-4 md:p-8">
       <PageHead title="Task Page" />
@@ -105,10 +112,22 @@ export default function TaskPage() {
         tasks={tasks}
         onMarkAsImportant={handleMarkAsImportant}
         onToggleTaskCompletion={handleToggleTaskCompletion}
-        onNewTaskSubmit={handleNewTaskSubmit}
-        showAddTaskForm={true} // Set to true to show the add task form
         fetchTasks={fetchTasks}
       />
+
+      <footer className="bg-white p-4 shadow">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex space-x-2">
+          <Input
+            {...register('taskName', { required: true })}
+            type="text"
+            placeholder="Add a task"
+            className="flex-1"
+          />
+          <Button type="submit" variant={'outline'}>
+            <CornerDownLeft className="mr-2 h-4 w-4" />
+          </Button>
+        </form>
+      </footer>
     </div>
   );
 }

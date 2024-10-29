@@ -66,22 +66,6 @@ export default function ImportantPage() {
     }
   };
 
-  const handleNewTaskSubmit = async (data) => {
-    const response = await axiosInstance.post(`/task`, data);
-    if (response.data.success) {
-      fetchTasks();
-      toast({
-        title: 'Task Added',
-        description: 'Thank You'
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Something Went Wrong!'
-      });
-    }
-  };
-
   return (
     <div className="p-4 md:p-8">
       <PageHead title="Task Page" />
@@ -95,8 +79,6 @@ export default function ImportantPage() {
         tasks={tasks}
         onMarkAsImportant={handleMarkAsImportant}
         onToggleTaskCompletion={handleToggleTaskCompletion}
-        onNewTaskSubmit={handleNewTaskSubmit}
-        showAddTaskForm={false} // Set to true to show the add task form
         fetchTasks={fetchTasks}
       />
     </div>
