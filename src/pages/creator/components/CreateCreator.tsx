@@ -14,11 +14,13 @@ import { Loader2, PlusCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { registerUser } from '@/redux/features/authSlice';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '@/redux/store';
 import { useToast } from '@/components/ui/use-toast';
+import { convertToLowerCase } from '@/lib/utils';
 
 export default function CreateCreator({ onUserCreated }) {
+  const { user } = useSelector((state: any) => state.auth);
   const { toast } = useToast();
   const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
   const { register, handleSubmit, reset } = useForm();
@@ -28,7 +30,10 @@ export default function CreateCreator({ onUserCreated }) {
 
   const onCompanySubmit = async (data) => {
     data.role = 'creator'; // Set the role
-
+    data.email = convertToLowerCase(data.email);
+    if (user?.role === 'company') {
+      data.company = user?._id;
+    }
     setIsLoading(true); // Set loading state
     setError(null); // Reset any previous errors
 

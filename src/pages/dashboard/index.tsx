@@ -3,6 +3,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs.js';
 import { useSelector } from 'react-redux';
 import DueTasks from '@/components/shared/due-tasks.js';
 import UpcomingTasks from '@/components/shared/upcomming-tasks.js';
+import AssignedTasks from '@/components/shared/assigned-tasks';
 
 export default function DashboardPage() {
   const { user } = useSelector((state: any) => state.auth);
@@ -17,9 +18,10 @@ export default function DashboardPage() {
         </div>
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
+            <div className="space-y-4">
               <DueTasks user={user} />
               <UpcomingTasks user={user} />
+              <AssignedTasks user={user} />
             </div>
           </TabsContent>
         </Tabs>

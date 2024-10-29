@@ -17,6 +17,7 @@ import { registerUser } from '@/redux/features/authSlice';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/redux/store';
 import { useToast } from '@/components/ui/use-toast';
+import { convertToLowerCase } from '@/lib/utils';
 
 export default function CreateCompany({ onUserCreated }) {
   const { toast } = useToast();
@@ -28,7 +29,7 @@ export default function CreateCompany({ onUserCreated }) {
 
   const onCompanySubmit = async (data) => {
     data.role = 'company'; // Set the role
-
+    data.email = convertToLowerCase(data.email);
     setIsLoading(true); // Set loading state
     setError(null); // Reset any previous errors
 

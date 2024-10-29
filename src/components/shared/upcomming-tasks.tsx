@@ -76,7 +76,7 @@ export default function UpcomingTasks({ user }) {
   };
 
   return (
-    <Card className="col-span-4">
+    <Card className="h-[calc(65vh-8rem)] overflow-hidden">
       <CardHeader>
         <CardTitle>Upcomming Tasks</CardTitle>
       </CardHeader>

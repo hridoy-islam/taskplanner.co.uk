@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import DynamicPagination from '@/components/shared/DynamicPagination';
 import { Input } from '@/components/ui/input';
 import axiosInstance from '../../../lib/axios';
+import { Link } from 'react-router-dom';
 
 export default function CompanyTableList({ refreshKey }) {
   const [users, setUsers] = useState([]);
@@ -47,11 +48,6 @@ export default function CompanyTableList({ refreshKey }) {
   const handleEntriesPerPageChange = (event) => {
     setEntriesPerPage(Number(event.target.value));
     setCurrentPage(1); // Reset to first page when changing entries per page
-  };
-
-  const handleEditClick = (user) => {
-    // setSelectedUser(user);
-    // setIsDialogOpen(true);
   };
 
   return (
@@ -93,27 +89,18 @@ export default function CompanyTableList({ refreshKey }) {
 
               <TableCell>
                 <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditClick(user)}
-                  >
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
+                  <Link to={`/dashboard/company/${user._id}`}>
+                    <Button variant="outline" size="sm">
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                  </Link>
                 </div>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-
-      {/* <EditUserProfile
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        user={selectedUser}
-        onSubmit={handleUpdateUser}
-      /> */}
 
       <DynamicPagination
         currentPage={currentPage}

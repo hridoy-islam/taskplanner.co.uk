@@ -37,7 +37,7 @@ export const navItems: NavItem[] = [
     roles: ['admin', 'director', 'user', 'company', 'creator']
   },
   {
-    title: 'Director',
+    title: 'Director / BoD',
     href: '/dashboard/director',
     icon: 'director',
     label: 'director',
@@ -51,17 +51,17 @@ export const navItems: NavItem[] = [
     roles: ['admin', 'director']
   },
   {
-    title: 'Creator',
+    title: 'Creator / Manager',
     href: '/dashboard/creator',
     icon: 'creator',
-    label: 'Creator',
+    label: 'Creator / Manager',
     roles: ['admin', 'director', 'company']
   },
   {
-    title: 'Users',
+    title: 'Users / Stuff',
     href: '/dashboard/users',
     icon: 'user',
-    label: 'Users',
+    label: 'Users / Stuff',
     roles: ['admin', 'director', 'company', 'creator']
   }
 ];

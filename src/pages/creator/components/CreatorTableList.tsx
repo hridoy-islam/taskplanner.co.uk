@@ -14,8 +14,11 @@ import DynamicPagination from '@/components/shared/DynamicPagination';
 import { Input } from '@/components/ui/input';
 import axiosInstance from '../../../lib/axios';
 import { toast } from '@/components/ui/use-toast';
+import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 export default function CreatorTableList({ refreshKey }) {
+  const { user } = useSelector((state: any) => state.auth);
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -26,16 +29,22 @@ export default function CreatorTableList({ refreshKey }) {
   const fetchData = useCallback(
     async (page, entriesPerPage, searchTerm = '') => {
       try {
-        const res = await axiosInstance.get(
-          `/users?role=creator&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}`
-        );
+        let endpoint;
+
+        // Check if the user's role is 'company'
+        if (user.role === 'company') {
+          endpoint = `/users?role=creator&company=${user._id}&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}`;
+        } else {
+          endpoint = `/users?role=creator&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}`;
+        }
+        const res = await axiosInstance.get(endpoint);
         setUsers(res.data.data.result);
         setTotalPages(res.data.data.meta.totalPage);
       } catch (err) {
       } finally {
       }
     },
-    []
+    [user]
   );
 
   const fetchCompanies = useCallback(
@@ -70,11 +79,6 @@ export default function CreatorTableList({ refreshKey }) {
   const handleEntriesPerPageChange = (event) => {
     setEntriesPerPage(Number(event.target.value));
     setCurrentPage(1); // Reset to first page when changing entries per page
-  };
-
-  const handleEditClick = (user) => {
-    // setSelectedUser(user);
-    // setIsDialogOpen(true);
   };
 
   const handleCompanyChange = async (selectedOption, userId) => {
@@ -134,40 +138,43 @@ export default function CreatorTableList({ refreshKey }) {
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Company</TableHead>
-            <TableHead>Assigned Company</TableHead>
+            {(user.role === 'admin' || user.role === 'director') && (
+              <TableHead>Assigned Company</TableHead>
+            )}
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user: any) => (
-            <TableRow key={user._id}>
-              <TableCell>{user?.name}</TableCell>
-              <TableCell>{user?.email}</TableCell>
-              <TableCell>{user.company ? user.company.name : 'N/A'}</TableCell>
+          {users.map((creator: any) => (
+            <TableRow key={creator._id}>
+              <TableCell>{creator?.name}</TableCell>
+              <TableCell>{creator?.email}</TableCell>
               <TableCell>
-                <Select
-                  options={companies}
-                  value={null}
-                  onChange={(selectedOption) =>
-                    handleCompanyChange(selectedOption, user._id)
-                  }
-                  isClearable
-                  placeholder="Select a company"
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                />
+                {creator.company ? creator.company.name : 'N/A'}
               </TableCell>
-
+              {(user.role === 'admin' || user.role === 'director') && (
+                <TableCell>
+                  <Select
+                    options={companies}
+                    value={null}
+                    onChange={(selectedOption) =>
+                      handleCompanyChange(selectedOption, creator._id)
+                    }
+                    isClearable
+                    placeholder="Select a company"
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                  />
+                </TableCell>
+              )}
               <TableCell>
                 <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditClick(user)}
-                  >
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
+                  <Link to={`/dashboard/creator/${creator?._id}`}>
+                    <Button variant="outline" size="sm">
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                  </Link>
                 </div>
               </TableCell>
             </TableRow>

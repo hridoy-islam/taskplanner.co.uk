@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import TaskList from './task-list';
 import { useToast } from '../ui/use-toast';
 
-export default function DueTasks({ user }) {
+export default function AssignedTasks({ user }) {
   const { toast } = useToast();
   const [tasks, setTasks] = useState([]);
   const fetchDueTasks = async () => {
-    const response = await axiosInstance(`/task/duetasks/${user._id}`);
+    const response = await axiosInstance(`/task/assignedtasks/${user._id}`);
     setTasks(response.data.data);
   };
 
@@ -79,7 +79,7 @@ export default function DueTasks({ user }) {
   return (
     <Card className="h-[calc(65vh-8rem)] overflow-hidden">
       <CardHeader>
-        <CardTitle>Due Tasks</CardTitle>
+        <CardTitle>Assigned Tasks</CardTitle>
       </CardHeader>
       <CardContent className="pl-2">
         <TaskList

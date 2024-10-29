@@ -38,7 +38,6 @@ export default function TaskPage() {
       `/task/${taskId}`,
       { important: !task.important } // Toggle important status
     );
-    console.log(response.data);
 
     if (response.data.success) {
       fetchTasks();
@@ -76,6 +75,7 @@ export default function TaskPage() {
   };
 
   const handleNewTaskSubmit = async (data) => {
+    alert('Works');
     data.author = user?._id;
     data.assigned = id;
     const response = await axiosInstance.post(`/task`, data);

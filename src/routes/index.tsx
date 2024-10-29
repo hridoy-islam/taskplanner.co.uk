@@ -2,8 +2,11 @@ import ProtectedRoute from '@/components/shared/ProtectedRoute';
 import ForgotPassword from '@/pages/auth/forget-password';
 import SignUpPage from '@/pages/auth/sign-up';
 import CompanyPage from '@/pages/company';
+import CompanyProfileDetail from '@/pages/company/profile/company-profile-detail';
 import CreatorPage from '@/pages/creator';
+import CreatorProfileDetail from '@/pages/creator/profile/creator-profile-detail';
 import DirectorPage from '@/pages/director';
+import DirectorProfileDetail from '@/pages/director/profile/director-profile-detail';
 import HomePage from '@/pages/home';
 import ImportantPage from '@/pages/important';
 import NotFound from '@/pages/not-found';
@@ -13,6 +16,7 @@ import ProfilePage from '@/pages/profile';
 import TaskPage from '@/pages/task';
 import TodayPage from '@/pages/today';
 import UserPage from '@/pages/users';
+import UserProfileDetail from '@/pages/users/profile/user-profile-detail';
 import { Suspense, lazy } from 'react';
 import { Navigate, Outlet, useRoutes } from 'react-router-dom';
 
@@ -47,6 +51,10 @@ export default function AppRouter() {
           element: <UserPage />
         },
         {
+          path: 'users/:id',
+          element: <UserProfileDetail />
+        },
+        {
           path: 'important',
           element: <ImportantPage />
         },
@@ -55,12 +63,24 @@ export default function AppRouter() {
           element: <DirectorPage />
         },
         {
+          path: 'director/:id',
+          element: <DirectorProfileDetail />
+        },
+        {
           path: 'company',
           element: <CompanyPage />
         },
         {
+          path: 'company/:id',
+          element: <CompanyProfileDetail />
+        },
+        {
           path: 'creator',
           element: <CreatorPage />
+        },
+        {
+          path: 'creator/:id',
+          element: <CreatorProfileDetail />
         },
         {
           path: 'today',
