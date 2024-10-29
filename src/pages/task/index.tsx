@@ -17,6 +17,7 @@ export default function TaskPage() {
   const [tasks, setTasks] = useState([]);
   const { toast } = useToast();
   const [userDetail, setUserDetail] = useState<any>();
+  const [loading, setLoading] = useState(false);
 
   const { register, handleSubmit, reset } = useForm();
 
@@ -81,21 +82,33 @@ export default function TaskPage() {
   };
   // New Task Form
   const onSubmit = async (data) => {
+    if (loading) return;
+    setLoading(true);
     data.author = user?._id;
     data.assigned = id;
-    const response = await axiosInstance.post(`/task`, data);
-    if (response.data.success) {
-      reset();
-      fetchTasks();
-      toast({
-        title: 'Task Added',
-        description: 'Thank You'
-      });
-    } else {
+
+    try {
+      const response = await axiosInstance.post(`/task`, data);
+      if (response.data.success) {
+        reset();
+        fetchTasks();
+        toast({
+          title: 'Task Added',
+          description: 'Thank You'
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Something Went Wrong!'
+        });
+      }
+    } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Something Went Wrong!'
+        title: 'An error occurred while adding the task.'
       });
+    } finally {
+      setLoading(false); // Reset loading state
     }
   };
 
