@@ -16,6 +16,7 @@ import axiosInstance from '../../../lib/axios';
 import { toast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { Switch } from '@/components/ui/switch';
 
 export default function CreatorTableList({ refreshKey }) {
   const { user } = useSelector((state: any) => state.auth);
@@ -111,6 +112,27 @@ export default function CreatorTableList({ refreshKey }) {
     }
   };
 
+  const toggleIsDeleted = async (userId: string, currentStatus: boolean) => {
+    try {
+      const res = await axiosInstance.patch(`/users/${userId}`, {
+        isDeleted: !currentStatus
+      });
+      if (res.data.success) {
+        fetchData(currentPage, entriesPerPage, searchTerm);
+        toast({
+          title: 'Updated Successfully',
+          description: 'Thank You'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: 'Error updating user',
+        variant: 'destructive'
+      });
+    }
+  };
+
   return (
     <>
       <div className="mb-6 flex gap-10">
@@ -142,6 +164,9 @@ export default function CreatorTableList({ refreshKey }) {
               <TableHead>Assigned Company</TableHead>
             )}
             <TableHead>Actions</TableHead>
+            {(user.role === 'admin' ||
+              user.role === 'director' ||
+              user.role === 'company') && <TableHead>User Status</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -177,6 +202,24 @@ export default function CreatorTableList({ refreshKey }) {
                   </Link>
                 </div>
               </TableCell>
+
+              {(user.role === 'admin' ||
+                user.role === 'director' ||
+                user.role === 'company') && (
+                <TableCell className="flex items-center">
+                  <Switch
+                    checked={creator?.isDeleted}
+                    onCheckedChange={() =>
+                      toggleIsDeleted(creator?._id, creator?.isDeleted)
+                    }
+                  />
+                  <span
+                    className={`ml-1 font-semibold ${creator.isDeleted ? 'text-red-500' : 'text-green-500'}`}
+                  >
+                    {creator.isDeleted ? 'Inactive' : 'Active'}
+                  </span>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>

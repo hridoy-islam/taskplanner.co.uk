@@ -18,6 +18,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserProfile } from '@/redux/features/profileSlice';
 import { AppDispatch } from '@/redux/store';
+import { Switch } from '@/components/ui/switch';
 
 export default function UserTableList({ refreshKey }) {
   const { user } = useSelector((state: any) => state.auth);
@@ -116,6 +117,27 @@ export default function UserTableList({ refreshKey }) {
     }
   };
 
+  const toggleIsDeleted = async (userId: string, currentStatus: boolean) => {
+    try {
+      const res = await axiosInstance.patch(`/users/${userId}`, {
+        isDeleted: !currentStatus
+      });
+      if (res.data.success) {
+        fetchData(currentPage, entriesPerPage, searchTerm);
+        toast({
+          title: 'Updated Successfully',
+          description: 'Thank You'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: 'Error updating user',
+        variant: 'destructive'
+      });
+    }
+  };
+
   return (
     <>
       <div className="mb-6 flex gap-10">
@@ -147,6 +169,10 @@ export default function UserTableList({ refreshKey }) {
               <TableHead>Assigned Company</TableHead>
             )}
             <TableHead>Actions</TableHead>
+            {(user.role === 'admin' ||
+              user.role === 'director' ||
+              user.role === 'company' ||
+              user.role === 'creator') && <TableHead>User Status</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -183,6 +209,24 @@ export default function UserTableList({ refreshKey }) {
                   </Link>
                 </div>
               </TableCell>
+              {(user.role === 'admin' ||
+                user.role === 'director' ||
+                user.role === 'company' ||
+                user.role === 'creator') && (
+                <TableCell className="flex items-center">
+                  <Switch
+                    checked={stuff?.isDeleted}
+                    onCheckedChange={() =>
+                      toggleIsDeleted(stuff?._id, stuff?.isDeleted)
+                    }
+                  />
+                  <span
+                    className={`ml-1 font-semibold ${stuff.isDeleted ? 'text-red-500' : 'text-green-500'}`}
+                  >
+                    {stuff.isDeleted ? 'Inactive' : 'Active'}
+                  </span>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>

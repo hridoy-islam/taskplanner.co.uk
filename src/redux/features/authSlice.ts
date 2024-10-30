@@ -61,6 +61,7 @@ export const loginUser = createAsyncThunk<UserResponse, UserCredentials>(
       userCredentials
     );
     const response = await request.data;
+
     localStorage.setItem(
       'taskplanner',
       JSON.stringify(response.data.accessToken)
@@ -75,7 +76,11 @@ export const logout = createAsyncThunk<void>('user/logout', async () => {
 const authSlice = createSlice({
   name: 'auth',
   initialState,
-  reducers: {},
+  reducers: {
+    resetError(state) {
+      state.error = null; // Reset the error state
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(loginUser.pending, (state) => {
@@ -85,12 +90,9 @@ const authSlice = createSlice({
         state.token = null;
       })
       .addCase(loginUser.fulfilled, (state, action: any) => {
-        console.log(action.payload);
         state.loading = false;
         state.token = action.payload.data.accessToken;
-
         const decodedUser = jwtDecode(action.payload.data.accessToken);
-        console.log(decodedUser);
         state.user = decodedUser;
         state.error = null;
       })
@@ -109,4 +111,5 @@ const authSlice = createSlice({
   }
 });
 
+export const { resetError } = authSlice.actions;
 export default authSlice.reducer;

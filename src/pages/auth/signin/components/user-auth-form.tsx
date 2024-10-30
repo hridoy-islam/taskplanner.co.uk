@@ -9,10 +9,11 @@ import {
   FormMessage
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { loginUser } from '@/redux/features/authSlice';
+import { loginUser, resetError } from '@/redux/features/authSlice';
 import { AppDispatch } from '@/redux/store';
 import { useRouter } from '@/routes/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -44,6 +45,11 @@ export default function UserAuthForm() {
       router.push('/dashboard');
     }
   };
+
+  useEffect(() => {
+    // Reset the error when the component mounts
+    dispatch(resetError());
+  }, [dispatch]);
 
   return (
     <>

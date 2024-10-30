@@ -13,8 +13,12 @@ import DynamicPagination from '@/components/shared/DynamicPagination';
 import { Input } from '@/components/ui/input';
 import axiosInstance from '../../../lib/axios';
 import { Link } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
+import { useSelector } from 'react-redux';
+import { Switch } from '@/components/ui/switch';
 
 export default function CompanyTableList({ refreshKey }) {
+  const { user } = useSelector((state: any) => state.auth);
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -50,6 +54,27 @@ export default function CompanyTableList({ refreshKey }) {
     setCurrentPage(1); // Reset to first page when changing entries per page
   };
 
+  const toggleIsDeleted = async (userId: string, currentStatus: boolean) => {
+    try {
+      const res = await axiosInstance.patch(`/users/${userId}`, {
+        isDeleted: !currentStatus
+      });
+      if (res.data.success) {
+        fetchData(currentPage, entriesPerPage, searchTerm);
+        toast({
+          title: 'Updated Successfully',
+          description: 'Thank You'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: 'Error updating user',
+        variant: 'destructive'
+      });
+    }
+  };
+
   return (
     <>
       <div className="mb-6 flex gap-10">
@@ -76,20 +101,21 @@ export default function CompanyTableList({ refreshKey }) {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
-            {/* <TableHead>Company</TableHead>
-            <TableHead>Assigned Company</TableHead> */}
             <TableHead>Actions</TableHead>
+            {(user.role === 'admin' || user.role === 'director') && (
+              <TableHead>Company Status</TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user: any) => (
-            <TableRow key={user._id}>
-              <TableCell>{user?.name}</TableCell>
-              <TableCell>{user?.email}</TableCell>
+          {users.map((company: any) => (
+            <TableRow key={company._id}>
+              <TableCell>{company?.name}</TableCell>
+              <TableCell>{company?.email}</TableCell>
 
               <TableCell>
                 <div className="flex space-x-2">
-                  <Link to={`/dashboard/company/${user._id}`}>
+                  <Link to={`/dashboard/company/${company._id}`}>
                     <Button variant="outline" size="sm">
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit
@@ -97,6 +123,22 @@ export default function CompanyTableList({ refreshKey }) {
                   </Link>
                 </div>
               </TableCell>
+
+              {(user.role === 'admin' || user.role === 'director') && (
+                <TableCell className="flex items-center">
+                  <Switch
+                    checked={company?.isDeleted}
+                    onCheckedChange={() =>
+                      toggleIsDeleted(company?._id, company?.isDeleted)
+                    }
+                  />
+                  <span
+                    className={`ml-1 font-semibold ${company.isDeleted ? 'text-red-500' : 'text-green-500'}`}
+                  >
+                    {company.isDeleted ? 'Inactive' : 'Active'}
+                  </span>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
