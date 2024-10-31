@@ -35,7 +35,8 @@ import {
   Star,
   UserPlus,
   Building2,
-  PersonStanding
+  PersonStanding,
+  Users
 } from 'lucide-react';
 
 export type Icon = LucideIcon;
@@ -74,6 +75,7 @@ export const Icons = {
   creator: UserPlus,
   company: Building2,
   director: PersonStanding,
+  group: Users,
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"

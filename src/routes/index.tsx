@@ -7,6 +7,7 @@ import CreatorPage from '@/pages/creator';
 import CreatorProfileDetail from '@/pages/creator/profile/creator-profile-detail';
 import DirectorPage from '@/pages/director';
 import DirectorProfileDetail from '@/pages/director/profile/director-profile-detail';
+import GroupPage from '@/pages/group';
 import HomePage from '@/pages/home';
 import ImportantPage from '@/pages/important';
 import NotFound from '@/pages/not-found';
@@ -45,6 +46,10 @@ export default function AppRouter() {
         {
           element: <DashboardPage />,
           index: true
+        },
+        {
+          path: 'group',
+          element: <GroupPage />
         },
         {
           path: 'users',
