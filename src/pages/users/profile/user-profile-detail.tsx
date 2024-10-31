@@ -38,13 +38,15 @@ export default function UserProfileDetail() {
   const [assignedMembers, setAssignedMembers] = useState<any>([]);
   const [availableMembers, setAvailableMembers] = useState<any>([]);
   const [searchQuery, setSearchQuery] = useState<string>(''); // State for search query
-
+  const [loading, setLoading] = useState<boolean>(false); // New loading state
+  const [companyId, setCompanyId] = useState(''); // New loading state
   const fetchUserDetails = async () => {
     const res = await axiosInstance.get(`/users/${id}`);
     setUserData(res.data.data);
     reset(res.data.data);
     setAssignedMembers(res.data.data.colleagues); // Set assigned members
-    await fetchAvailableMembers(res.data.data.company);
+    setCompanyId(res.data.data.company._id);
+    await fetchAvailableMembers(res.data.data.company._id);
   };
 
   const fetchAvailableMembers = async (company: string) => {
@@ -66,6 +68,7 @@ export default function UserProfileDetail() {
   const onSubmit = async (data: userDetails) => {
     try {
       data.email = convertToLowerCase(data.email);
+      setLoading(true); // Set loading to true
       await axiosInstance.patch(`/users/${id}`, data);
       toast({
         title: 'Profile Updated Successfully',
@@ -77,6 +80,8 @@ export default function UserProfileDetail() {
         title: 'Error updating user',
         variant: 'destructive'
       });
+    } finally {
+      setLoading(false); // Set loading back to false
     }
   };
 
@@ -100,6 +105,7 @@ export default function UserProfileDetail() {
     }
     const data = { colleagueId: member._id, action: 'add' };
     try {
+      setLoading(true);
       const res = await axiosInstance.patch(`/users/addmember/${id}`, data);
       if (res.data.success) {
         toast({
@@ -110,24 +116,27 @@ export default function UserProfileDetail() {
         // Update assignedMembers state
         setAssignedMembers((prev) => [...prev, member]);
         // Refetch available members after assignment
-        await fetchAvailableMembers(userData?.company || '');
+        await fetchAvailableMembers(companyId || '');
       }
     } catch (error) {
       toast({
         title: 'Error assigning member',
         variant: 'destructive'
       });
+    } finally {
+      setLoading(false); // Set loading back to false
     }
   };
 
   const handleRemoveMember = async (memberId: string) => {
     try {
+      setLoading(true); // Set loading to true
       const data = { colleagueId: memberId, action: 'remove' };
       await axiosInstance.patch(`/users/addmember/${id}`, data);
       setAssignedMembers((prev) =>
         prev.filter((member) => member._id !== memberId)
       );
-      await fetchAvailableMembers(userData?.company || '');
+      await fetchAvailableMembers(companyId || '');
       toast({
         title: 'Member Removed Successfully',
         description: 'The member has been removed from the assigned members.'
@@ -137,6 +146,8 @@ export default function UserProfileDetail() {
         title: 'Error removing member',
         variant: 'destructive'
       });
+    } finally {
+      setLoading(false); // Set loading back to false
     }
   };
 
@@ -199,6 +210,7 @@ export default function UserProfileDetail() {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleRemoveMember(member._id)}
+                    disabled={loading}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -225,6 +237,7 @@ export default function UserProfileDetail() {
                         (assigned) => assigned._id === member._id
                       )}
                       onCheckedChange={() => handleAssignMember(member)}
+                      disabled={loading}
                     />
                     <Label
                       htmlFor={`member-${member._id}`}
