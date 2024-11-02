@@ -50,7 +50,9 @@ export default function UserProfileDetail() {
   };
 
   const fetchAvailableMembers = async (company: string) => {
-    const response = await axiosInstance.get(`/users?company=${company}`);
+    const response = await axiosInstance.get(
+      `/users?company=${company}&isDeleted=false`
+    );
     const allMembers = response.data.data.result;
 
     // Filter out current user and already assigned members
