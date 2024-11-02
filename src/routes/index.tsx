@@ -1,4 +1,5 @@
 import ProtectedRoute from '@/components/shared/ProtectedRoute';
+import AssignedTaskPage from '@/pages/assignedtask';
 import ForgotPassword from '@/pages/auth/forget-password';
 import SignUpPage from '@/pages/auth/sign-up';
 import CompanyPage from '@/pages/company';
@@ -7,6 +8,7 @@ import CreatorPage from '@/pages/creator';
 import CreatorProfileDetail from '@/pages/creator/profile/creator-profile-detail';
 import DirectorPage from '@/pages/director';
 import DirectorProfileDetail from '@/pages/director/profile/director-profile-detail';
+import DueTaskPage from '@/pages/duetask';
 import GroupPage from '@/pages/group';
 import HomePage from '@/pages/home';
 import ImportantPage from '@/pages/important';
@@ -16,6 +18,7 @@ import PlannerPage from '@/pages/planner';
 import ProfilePage from '@/pages/profile';
 import TaskPage from '@/pages/task';
 import TodayPage from '@/pages/today';
+import UpcomingTaskPage from '@/pages/upcomingtask';
 import UserPage from '@/pages/users';
 import UserProfileDetail from '@/pages/users/profile/user-profile-detail';
 import { Suspense, lazy } from 'react';
@@ -58,6 +61,18 @@ export default function AppRouter() {
         {
           path: 'users/:id',
           element: <UserProfileDetail />
+        },
+        {
+          path: 'assignedtask',
+          element: <AssignedTaskPage />
+        },
+        {
+          path: 'duetask',
+          element: <DueTaskPage />
+        },
+        {
+          path: 'upcomingtask',
+          element: <UpcomingTaskPage />
         },
         {
           path: 'important',

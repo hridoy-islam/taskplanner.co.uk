@@ -3,6 +3,7 @@ import axiosInstance from '../../lib/axios';
 import { useEffect, useState } from 'react';
 import TaskList from './task-list';
 import { useToast } from '../ui/use-toast';
+import { Link } from 'react-router-dom';
 
 export default function AssignedTasks({ user }) {
   const { toast } = useToast();
@@ -62,7 +63,10 @@ export default function AssignedTasks({ user }) {
   return (
     <Card className="h-[calc(65vh-8rem)] overflow-hidden">
       <CardHeader>
-        <CardTitle>Assigned Tasks</CardTitle>
+        <CardTitle className="flex justify-between gap-2">
+          <span>Assigned Tasks</span>
+          <Link to={'assignedtask'}>See All</Link>
+        </CardTitle>
       </CardHeader>
       <CardContent className="pl-2">
         <TaskList
