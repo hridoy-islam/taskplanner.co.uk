@@ -1,11 +1,11 @@
 {
-  "name": "react-shadcn-dashboard",
+  "name": "https://t.ly/tinVS?",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --host",
+    "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "format": "prettier . --write",
     "preview": "vite preview",
