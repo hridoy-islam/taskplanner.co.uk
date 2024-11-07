@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import DynamicPagination from '@/components/shared/DynamicPagination';
 
-export default function AssignedTaskPage() {
+export default function CompletedTaskPage() {
   const { user } = useSelector((state: any) => state.auth);
   const { toast } = useToast();
   const [tasks, setTasks] = useState([]);
@@ -19,12 +19,12 @@ export default function AssignedTaskPage() {
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchAssignedTasks = useCallback(
+  const fetchUpcomingTasks = useCallback(
     async (page, entriesPerPage, searchTerm = '', sortOrder = 'desc') => {
       try {
         const sortQuery = sortOrder === 'asc' ? 'dueDate' : '-dueDate';
         const res = await axiosInstance.get(
-          `/task/assignedtasks/${user._id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}`
+          `/task?author=${user._id}&status=completed&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}`
         );
         setTasks(res.data.data.result);
         setTotalPages(res.data.data.meta.totalPage);
@@ -36,7 +36,7 @@ export default function AssignedTaskPage() {
   );
 
   useEffect(() => {
-    fetchAssignedTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
+    fetchUpcomingTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
   }, [currentPage, entriesPerPage, searchTerm, sortOrder, user]);
 
   const handleSearch = (event) => {
@@ -52,7 +52,7 @@ export default function AssignedTaskPage() {
   const handleSortToggle = () => {
     const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
     setSortOrder(newSortOrder);
-    fetchAssignedTasks(currentPage, entriesPerPage, searchTerm, newSortOrder); // Fetch with the new sort order
+    fetchUpcomingTasks(currentPage, entriesPerPage, searchTerm, newSortOrder); // Fetch with the new sort order
   };
 
   const handleMarkAsImportant = async (taskId) => {
@@ -64,7 +64,7 @@ export default function AssignedTaskPage() {
     );
 
     if (response.data.success) {
-      fetchAssignedTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
+      fetchUpcomingTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
       toast({
         title: 'Task Updated',
         description: 'Thank You'
@@ -85,7 +85,7 @@ export default function AssignedTaskPage() {
     });
 
     if (response.data.success) {
-      fetchAssignedTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
+      fetchUpcomingTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
       toast({
         title: 'Task Updated',
         description: 'Thank You'
@@ -104,12 +104,12 @@ export default function AssignedTaskPage() {
       <Breadcrumbs
         items={[
           { title: 'Dashboard', link: '/dashboard' },
-          { title: 'Assigned Task', link: '/assignedtask' }
+          { title: 'Completed Task', link: '/completedtask' }
         ]}
       />
       <div className="my-2 flex justify-between gap-2">
         <Input
-          placeholder="Search notes..."
+          placeholder="Search Tasks"
           value={searchTerm}
           onChange={handleSearch}
         />
@@ -130,11 +130,12 @@ export default function AssignedTaskPage() {
           <option value={100}>100</option>
         </select>
       </div>
+
       <TaskList
         tasks={tasks}
         onMarkAsImportant={handleMarkAsImportant}
         onToggleTaskCompletion={handleToggleTaskCompletion}
-        fetchTasks={fetchAssignedTasks}
+        fetchTasks={fetchUpcomingTasks}
       />
       <div className="z-999 -mt-6">
         <DynamicPagination

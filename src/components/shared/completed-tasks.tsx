@@ -5,16 +5,18 @@ import TaskList from './task-list';
 import { useToast } from '../ui/use-toast';
 import { Link } from 'react-router-dom';
 
-export default function DueTasks({ user }) {
+export default function CompletedTasks({ user }) {
   const { toast } = useToast();
   const [tasks, setTasks] = useState([]);
-  const fetchDueTasks = async () => {
-    const response = await axiosInstance(`/task/duetasks/${user._id}`);
+  const fetchCompletedTasks = async () => {
+    const response = await axiosInstance(
+      `/task?author=${user._id}&status=completed`
+    );
     setTasks(response.data.data.result);
   };
 
   useEffect(() => {
-    fetchDueTasks();
+    fetchCompletedTasks();
   }, [user]);
 
   const handleMarkAsImportant = async (taskId) => {
@@ -26,7 +28,7 @@ export default function DueTasks({ user }) {
     );
 
     if (response.data.success) {
-      fetchDueTasks();
+      fetchCompletedTasks();
       toast({
         title: 'Task Updated',
         description: 'Thank You'
@@ -47,7 +49,7 @@ export default function DueTasks({ user }) {
     });
 
     if (response.data.success) {
-      fetchDueTasks();
+      fetchCompletedTasks();
       toast({
         title: 'Task Updated',
         description: 'Thank You'
@@ -62,10 +64,10 @@ export default function DueTasks({ user }) {
 
   return (
     <Card className="h-[calc(85vh-8rem)] overflow-hidden">
-      <CardHeader className="flex">
+      <CardHeader>
         <CardTitle className="flex justify-between gap-2">
-          <span>Due Tasks</span>
-          <Link to={'duetask'}>See All</Link>
+          <span>Completed Tasks</span>
+          <Link to={'completedtask'}>See All</Link>
         </CardTitle>
       </CardHeader>
       <CardContent className="pl-2">
@@ -73,7 +75,7 @@ export default function DueTasks({ user }) {
           tasks={tasks}
           onMarkAsImportant={handleMarkAsImportant}
           onToggleTaskCompletion={handleToggleTaskCompletion}
-          fetchTasks={fetchDueTasks}
+          fetchTasks={fetchCompletedTasks}
         />
       </CardContent>
     </Card>

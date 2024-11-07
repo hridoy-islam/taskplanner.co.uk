@@ -96,13 +96,13 @@ const TaskList = ({
   return (
     <div>
       <main className="flex-1 overflow-auto p-4">
-        <ScrollArea className="h-[calc(85vh-8rem)]">
+        <ScrollArea className="h-[calc(75vh-8rem)]">
           <div className="space-y-2">
             {sortedTasks?.map((task) => (
               <div
                 key={task._id}
                 className={`flex items-center space-x-2 rounded-lg bg-white p-3 shadow ${
-                  task.important ? 'bg-yellow-100' : ''
+                  task.important ? 'bg-orange-100' : ''
                 }`}
               >
                 <Checkbox
@@ -137,7 +137,7 @@ const TaskList = ({
                     <TooltipTrigger>
                       <Badge
                         variant="outline"
-                        className="flex items-center gap-1 bg-indigo-600"
+                        className="flex items-center gap-1 bg-green-100 text-black"
                       >
                         <UserRoundCheck className="h-3 w-3" />
                         {task.author.name}
@@ -149,7 +149,7 @@ const TaskList = ({
                   </Tooltip>
                 </TooltipProvider>
 
-                <Badge variant="outline" className={'bg-black'}>
+                <Badge>
                   <ArrowRight className="h-3 w-3 " />
                 </Badge>
 
@@ -158,7 +158,7 @@ const TaskList = ({
                     <TooltipTrigger>
                       <Badge
                         variant="outline"
-                        className="flex items-center gap-1 bg-sky-600"
+                        className="flex items-center gap-1 bg-purple-100 text-black"
                       >
                         <CircleUser className="h-3 w-3" />
                         {task?.assigned?.name}

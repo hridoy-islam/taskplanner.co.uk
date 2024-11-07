@@ -1,7 +1,6 @@
 // import { useState, useEffect } from 'react'
 // import { Button } from "@/components/ui/button"
 // import { Input } from "@/components/ui/input"
-// import { Textarea } from "@/components/ui/textarea"
 // import { Card, CardContent } from "@/components/ui/card"
 // import { Badge } from "@/components/ui/badge"
 // import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -146,7 +145,7 @@
 
 //   return (
 //     <div className="container mx-auto p-4">
-//       <h1 className="text-2xl font-bold mb-4">Group Management System</h1>
+//       <h1 className="text-2xl font-bold mb-4">Groups</h1>
 
 //       <div className="mb-4 flex gap-4">
 //         <div className="relative flex-grow">
@@ -158,15 +157,7 @@
 //             className="pl-8"
 //           />
 //         </div>
-//         <Select value={sortBy} onValueChange={(value: 'name' | 'members') => setSortBy(value)}>
-//           <SelectTrigger className="w-[180px]">
-//             <SelectValue placeholder="Sort by" />
-//           </SelectTrigger>
-//           <SelectContent>
-//             <SelectItem value="name">Name</SelectItem>
-//             <SelectItem value="members">Members</SelectItem>
-//           </SelectContent>
-//         </Select>
+
 //         <Button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
 //           {sortOrder === 'asc' ? '↑' : '↓'}
 //         </Button>
@@ -376,5 +367,5 @@
 // }
 
 export default function GroupPage() {
-  return <h1>Group Page Comming Soon</h1>;
+  return <>comming soon</>;
 }

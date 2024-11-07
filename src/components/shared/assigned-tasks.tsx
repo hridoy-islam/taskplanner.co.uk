@@ -10,7 +10,7 @@ export default function AssignedTasks({ user }) {
   const [tasks, setTasks] = useState([]);
   const fetchDueTasks = async () => {
     const response = await axiosInstance(`/task/assignedtasks/${user._id}`);
-    setTasks(response.data.data);
+    setTasks(response.data.data.result);
   };
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function AssignedTasks({ user }) {
   };
 
   return (
-    <Card className="h-[calc(65vh-8rem)] overflow-hidden">
+    <Card className="h-[calc(85vh-8rem)] overflow-hidden">
       <CardHeader>
         <CardTitle className="flex justify-between gap-2">
           <span>Assigned Tasks</span>

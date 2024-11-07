@@ -4,6 +4,7 @@ import ForgotPassword from '@/pages/auth/forget-password';
 import SignUpPage from '@/pages/auth/sign-up';
 import CompanyPage from '@/pages/company';
 import CompanyProfileDetail from '@/pages/company/profile/company-profile-detail';
+import CompletedTaskPage from '@/pages/completedtask';
 import CreatorPage from '@/pages/creator';
 import CreatorProfileDetail from '@/pages/creator/profile/creator-profile-detail';
 import DirectorPage from '@/pages/director';
@@ -77,6 +78,10 @@ export default function AppRouter() {
         {
           path: 'important',
           element: <ImportantPage />
+        },
+        {
+          path: 'completedtask',
+          element: <CompletedTaskPage />
         },
         {
           path: 'director',
