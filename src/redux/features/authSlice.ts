@@ -40,7 +40,7 @@ interface RegisterResponse {
 interface UserResponse {
   success: boolean;
   message?: string;
-  data?: {};
+  data?: object;
 }
 
 export const registerUser = createAsyncThunk<
