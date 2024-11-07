@@ -19,6 +19,7 @@ import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/redux/store';
 import { registerUser } from '@/redux/features/authSlice';
 import { useRouter } from '@/routes/hooks';
+import { useToast } from '@/components/ui/use-toast';
 
 interface SignUpFormProps extends HTMLAttributes<HTMLDivElement> {}
 const formSchema = z
@@ -46,6 +47,7 @@ const formSchema = z
 
 export function SignUpForm({ className, ...props }: SignUpFormProps) {
   const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -62,7 +64,20 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
   async function onSubmit(data: z.infer<typeof formSchema>) {
     const result: any = await dispatch(registerUser(data));
     if (result?.payload?.success) {
-      router.push('/dashboard');
+      toast({
+        title: 'Account Created',
+        description: 'You have successfully created an account'
+      });
+      alert('Account Created');
+      router.push('/login');
+    } else if (result?.error) {
+      // sonner alert
+      alert('something went wrong');
+      toast({
+        title: 'Error',
+        description: result.error.message || 'Something went wrong',
+        variant: 'destructive'
+      });
     }
   }
 

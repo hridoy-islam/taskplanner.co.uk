@@ -54,7 +54,7 @@ export default function TaskPage() {
         setTasks(res.data.data.result);
         setTotalPages(res.data.data.meta.totalPage);
       } catch (err) {
-      } finally {
+        console.log(err);
       }
     },
     []
