@@ -101,8 +101,8 @@ const TaskList = ({
             {sortedTasks?.map((task) => (
               <div
                 key={task._id}
-                className={`flex items-center space-x-2 rounded-lg bg-white p-3 shadow ${
-                  task.important ? 'bg-orange-100' : ''
+                className={`flex items-center space-x-2 rounded-lg p-3 shadow ${
+                  task.important ? 'bg-orange-100' : 'bg-white'
                 }`}
               >
                 <Checkbox
