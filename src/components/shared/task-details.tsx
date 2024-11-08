@@ -16,7 +16,7 @@ import { useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { io } from 'socket.io-client';
 
-const ENDPOINT = 'http://localhost:4000';
+const ENDPOINT = axiosInstance.defaults.baseURL;
 let socket, selectedChatCompare;
 
 interface TaskDetailsProps {
