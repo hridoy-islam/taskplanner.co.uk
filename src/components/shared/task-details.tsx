@@ -42,11 +42,26 @@ export default function TaskDetails({
   const [socketConnected, setSocketConnected] = useState(false);
   const commentsEndRef = useRef<HTMLDivElement>(null);
 
+  // logic to scroll to the bottom of the chat
+  useEffect(() => {
+    if (commentsEndRef.current) {
+      commentsEndRef.current.scrollTop = commentsEndRef.current.scrollHeight;
+    }
+  }, [comments]);
+
+  useEffect(() => {
+    socket = io(ENDPOINT);
+    socket.emit('setup', user);
+    socket.on('connected', () => setSocketConnected(true));
+    socket.on('typing', () => setTyping(true));
+    socket.on('stop typing', () => setTyping(false));
+  }, [user]);
+
   const fetchComments = useCallback(async () => {
-    setIsLoading(true);
+    // setIsLoading(true);
     try {
-      socket.emit('join chat', task._id);
       const response = await axiosInstance.get(`/comment/${task._id}`);
+      socket.emit('join chat', task._id);
       setComments(response.data.data);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -56,47 +71,29 @@ export default function TaskDetails({
   }, [task?._id]); // Include task._id as a dependency
 
   useEffect(() => {
-    socket = io(ENDPOINT);
-    socket.emit('setup', user);
-    socket.on('connected', () => setSocketConnected(true));
-    socket.on('typing', () => setTyping(true));
-    socket.on('stop typing', () => setTyping(false));
-  }, []);
+    // if (task?._id && isOpen) {
+    fetchComments();
+    selectedChatCompare = comments;
+    console.log('selectedChatCompare', selectedChatCompare);
+    // }
+    // Only fetch comments if task._id changes
+  }, [fetchComments, task._id]);
 
   useEffect(() => {
     socket.on('message received', (newMessageReceived) => {
-      if (
-        !selectedChatCompare ||
-        selectedChatCompare._id !== newMessageReceived.chat._id
-      ) {
-        // give notification
-      } else {
-        const modifiedMsg = {
-          message: newMessageReceived?.content,
-          sender: newMessageReceived?.sender?.name,
-          direction:
-            newMessageReceived?.sender?._id === user._id
-              ? 'outgoing'
-              : 'incoming'
-        };
-        setComments((prevComments) => [...prevComments, modifiedMsg]);
-      }
-    });
-  }, [comments]); // Include `comments` dependency
-
-  useEffect(() => {
-    if (task?._id && isOpen) {
+      //fix the logic below
+      // setComments(newMessageReceived?.data?.data);
       fetchComments();
-    }
-    // Only fetch comments if task._id changes
-  }, [task?._id, isOpen]);
-
-  // logic to scroll to the bottom of the chat
-  useEffect(() => {
-    if (commentsEndRef.current) {
-      commentsEndRef.current.scrollTop = commentsEndRef.current.scrollHeight;
-    }
-  }, [comments]);
+      // console.log('newMessageReceived', newMessageReceived);
+      // if (
+      //   !selectedChatCompare ||
+      //   selectedChatCompare._id !== newMessageReceived.chat._id
+      // ) {
+      //   // give notification
+      // } else {
+      // }
+    });
+  }, [comments, user._id]); // Include `comments` dependency
 
   const handleCommentSubmit = async (data) => {
     try {
@@ -120,7 +117,25 @@ export default function TaskDetails({
     }
   };
 
+  const typingHandler = () => {
+    if (!socketConnected) return;
+    if (!typing) {
+      setTyping(true);
+      socket.emit('typing', task._id);
+    }
+    const lastTypingTime = new Date().getTime();
+    const timerLength = 3000;
+    setTimeout(() => {
+      const timeNow = new Date().getTime();
+      const timeDiff = timeNow - lastTypingTime;
+      if (timeDiff >= timerLength && typing) {
+        socket.emit('stop typing', task._id);
+        setTyping(false);
+      }
+    }, timerLength);
+  };
   const handleKeyDown = (e) => {
+    typingHandler();
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(handleCommentSubmit)();
@@ -144,7 +159,7 @@ export default function TaskDetails({
         </div>
         <div ref={commentsEndRef} className="flex-grow overflow-y-auto p-6">
           <div className="space-y-4">
-            {comments.map((comment: any) => (
+            {comments?.map((comment: any) => (
               <div
                 key={comment._id}
                 className={`flex ${comment.authorId._id === user?._id ? 'justify-end' : 'justify-start'}`}
@@ -177,6 +192,15 @@ export default function TaskDetails({
           </div>
         </div>
         <div className="flex-shrink-0 border-t bg-gray-50 p-6">
+          {/* typing indicator */}
+          {typing && (
+            <div className="relative bottom-5 flex h-[5px] items-center space-x-2 p-2 text-xs">
+              <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
+              <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
+              <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
+              <span>Typing...</span>
+            </div>
+          )}
           <form
             onSubmit={handleSubmit(handleCommentSubmit)}
             className="grid gap-2"
