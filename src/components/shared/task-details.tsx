@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,12 @@ import { io } from 'socket.io-client';
 import Linkify from 'react-linkify';
 import { toast } from 'sonner';
 import { useRouter } from '@/routes/hooks';
+import { FileUploaderRegular } from '@uploadcare/react-uploader';
+import '@uploadcare/react-uploader/core.css';
+import * as UC from '@uploadcare/file-uploader';
+import { OutputFileEntry } from '@uploadcare/file-uploader';
 
+UC.defineComponents(UC);
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
 let socket, selectedChatCompare;
 
@@ -44,6 +50,8 @@ export default function TaskDetails({
   const { user } = useSelector((state: any) => state.auth);
   const [socketConnected, setSocketConnected] = useState(false);
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  const [files, setFiles] = useState<OutputFileEntry<'success'>[]>([]);
+  const ctxProviderRef = useRef<InstanceType<UC.UploadCtxProvider>>(null);
   const router = useRouter();
   // logic to scroll to the bottom of the chat
   useEffect(() => {
@@ -124,6 +132,31 @@ export default function TaskDetails({
       socket.off('message received', messageReceivedHandler);
     };
   }, [task?._id, isOpen]);
+
+  useEffect(() => {
+    const ctxProvider = ctxProviderRef.current;
+    if (!ctxProvider) return;
+
+    const handleChangeEvent = (e: UC.EventMap['change']) => {
+      console.log('change event payload:', e);
+
+      setFiles([
+        ...e.detail.allEntries.filter((f) => f.status === 'success')
+      ] as OutputFileEntry<'success'>[]);
+    };
+
+    /*
+      Note: Event binding is the main way to get data and other info from File Uploader.
+      There plenty of events you may use.
+
+      See more: https://uploadcare.com/docs/file-uploader/events/
+     */
+    ctxProvider.addEventListener('change', handleChangeEvent);
+    return () => {
+      ctxProvider.removeEventListener('change', handleChangeEvent);
+    };
+  }, [setFiles]);
+  console.log(files);
 
   const handleCommentSubmit = async (data) => {
     try {
@@ -268,17 +301,45 @@ export default function TaskDetails({
             <Label htmlFor="comment" className="sr-only">
               Add Comment
             </Label>
-            <Textarea
-              id="comment"
-              {...register('content', { required: true })}
-              placeholder="Type your comment here..."
-              className="resize-none"
-              rows={3}
-              onKeyDown={handleKeyDown}
-            />
-            <Button type="submit" variant={'outline'}>
-              Submit
-            </Button>
+            {files?.length === 0 && (
+              <Textarea
+                id="comment"
+                {...register('content', { required: true })}
+                placeholder="Type your comment here..."
+                className="resize-none"
+                rows={3}
+                onKeyDown={handleKeyDown}
+              />
+            )}
+            <div className="flex flex-row items-center justify-center gap-2">
+              {/* <FileUploaderRegular
+                sourceList="local, url, camera, gdrive"
+                classNameUploader="uc-light"
+                pubkey="48a797785d228ebb9033"
+              /> */}
+              <uc-config
+                ctx-name="my-uploader-3"
+                pubkey="48a797785d228ebb9033"
+                sourceList="local, url, camera, dropbox"
+              ></uc-config>
+              <uc-file-uploader-regular
+                class="uc-light"
+                ctx-name="my-uploader-3"
+              ></uc-file-uploader-regular>
+              <uc-upload-ctx-provider
+                ctx-name="my-uploader-3"
+                ref={ctxProviderRef}
+              ></uc-upload-ctx-provider>
+              {files?.length > 0 ? (
+                <Button type="submit" className="w-full" variant={'outline'}>
+                  {`Finish (${files?.length})`}
+                </Button>
+              ) : (
+                <Button type="submit" className="w-full" variant={'outline'}>
+                  Submit
+                </Button>
+              )}
+            </div>
           </form>
         </div>
       </SheetContent>

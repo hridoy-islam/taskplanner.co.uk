@@ -49,6 +49,8 @@
     "@reduxjs/toolkit": "^2.3.0",
     "@tanstack/react-query": "^5.28.0",
     "@tanstack/react-table": "^8.14.0",
+    "@uploadcare/react-uploader": "^1.2.0",
+    "@uploadcare/upload-client": "^6.14.2",
     "axios": "^1.6.8",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
