@@ -74,26 +74,43 @@ export default function TaskDetails({
     // if (task?._id && isOpen) {
     fetchComments();
     selectedChatCompare = comments;
-    console.log('selectedChatCompare', selectedChatCompare);
     // }
     // Only fetch comments if task._id changes
   }, [fetchComments, task._id]);
 
+  // Inside the messageReceivedHandler in the 'message received' event listener
   useEffect(() => {
-    socket.on('message received', (newMessageReceived) => {
-      //fix the logic below
-      // setComments(newMessageReceived?.data?.data);
-      fetchComments();
-      // console.log('newMessageReceived', newMessageReceived);
-      // if (
-      //   !selectedChatCompare ||
-      //   selectedChatCompare._id !== newMessageReceived.chat._id
-      // ) {
-      //   // give notification
-      // } else {
-      // }
-    });
-  }, [comments, user._id]); // Include `comments` dependency
+    const messageReceivedHandler = (newMessageReceived) => {
+      const response = newMessageReceived?.data?.data;
+      const newComment = {
+        authorId: {
+          _id: response?.authorId,
+          name: response?.authorName
+        },
+        content: response?.content,
+        taskId: response?.taskId,
+        _id: response?._id || Math.random().toString(36).substring(7)
+      };
+
+      if (task?._id !== newMessageReceived?.taskId && !isOpen) {
+        alert('New message received');
+      } else {
+        setComments((prevComments) => {
+          // Check if a comment with the same `_id` already exists
+          if (!prevComments.some((comment) => comment._id === newComment._id)) {
+            return [...prevComments, newComment];
+          }
+          return prevComments; // Return the current state if duplicate is found
+        });
+      }
+    };
+
+    socket.on('message received', messageReceivedHandler);
+
+    return () => {
+      socket.off('message received', messageReceivedHandler);
+    };
+  }, [task?._id, isOpen]);
 
   const handleCommentSubmit = async (data) => {
     try {
@@ -103,7 +120,17 @@ export default function TaskDetails({
       data.authorId = user?._id;
       const response = await axiosInstance.post('/comment', data);
       if (response.data.success) {
-        fetchComments();
+        const newComment = {
+          authorId: {
+            _id: user?._id,
+            name: user?.name
+          },
+          content: data.content,
+          taskId: task?._id,
+          _id:
+            response?.data?.data?._id || Math.random().toString(36).substring(7) // math random is temporary
+        };
+        setComments([...comments, newComment]);
         socket.emit('new message', response);
         reset();
       } else {
