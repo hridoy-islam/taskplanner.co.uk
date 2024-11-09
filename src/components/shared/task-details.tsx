@@ -15,6 +15,9 @@ import axiosInstance from '../../lib/axios';
 import { useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { io } from 'socket.io-client';
+import Linkify from 'react-linkify';
+import { toast } from 'sonner';
+import { useRouter } from '@/routes/hooks';
 
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
 let socket, selectedChatCompare;
@@ -41,7 +44,7 @@ export default function TaskDetails({
   const { user } = useSelector((state: any) => state.auth);
   const [socketConnected, setSocketConnected] = useState(false);
   const commentsEndRef = useRef<HTMLDivElement>(null);
-
+  const router = useRouter();
   // logic to scroll to the bottom of the chat
   useEffect(() => {
     if (commentsEndRef.current) {
@@ -92,8 +95,18 @@ export default function TaskDetails({
         _id: response?._id || Math.random().toString(36).substring(7)
       };
 
-      if (task?._id !== newMessageReceived?.taskId && !isOpen) {
-        alert('New message received');
+      if (task?._id !== newComment?.taskId) {
+        toast(`Task: ${response?.taskName || 'new message arrived'}`, {
+          description: `Message: ${response?.content}`,
+          action: {
+            label: 'View',
+            onClick: () => {
+              // push to the task details page
+              alert('push to the task details page');
+              router.push(`/dashboard/task/${newComment?.taskId}`);
+            }
+          }
+        });
       } else {
         setComments((prevComments) => {
           // Check if a comment with the same `_id` already exists
@@ -209,8 +222,28 @@ export default function TaskDetails({
                   >
                     <div
                       className={`rounded-lg p-2 ${comment.authorId._id === user?._id ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                      style={{ wordWrap: 'break-word', whiteSpace: 'pre-wrap' }} // ensures long text wraps and preserves new lines
                     >
-                      {comment.content}
+                      <Linkify
+                        componentDecorator={(
+                          decoratedHref,
+                          decoratedText,
+                          key
+                        ) => (
+                          <a
+                            href={decoratedHref}
+                            key={key}
+                            style={{
+                              textDecoration: 'underline',
+                              color: 'inherit'
+                            }}
+                          >
+                            {decoratedText}
+                          </a>
+                        )}
+                      >
+                        {comment.content}
+                      </Linkify>
                     </div>
                   </div>
                 </div>
