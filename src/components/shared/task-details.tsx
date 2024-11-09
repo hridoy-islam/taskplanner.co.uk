@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 //@ts-nocheck
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -99,6 +100,7 @@ export default function TaskDetails({
           name: response?.authorName
         },
         content: response?.content,
+        isFile: response?.isFile,
         taskId: response?.taskId,
         _id: response?._id || Math.random().toString(36).substring(7)
       };
@@ -132,33 +134,35 @@ export default function TaskDetails({
       socket.off('message received', messageReceivedHandler);
     };
   }, [task?._id, isOpen]);
-
   useEffect(() => {
     const ctxProvider = ctxProviderRef.current;
     if (!ctxProvider) return;
 
-    const handleChangeEvent = (e: UC.EventMap['change']) => {
+    const handleChangeEvent = async (e: UC.EventMap['change']) => {
       console.log('change event payload:', e);
-
-      setFiles([
-        ...e.detail.allEntries.filter((f) => f.status === 'success')
-      ] as OutputFileEntry<'success'>[]);
+      setFiles(
+        e.detail.allEntries
+          .filter((f) => f.status === 'success')
+          .map((f) => f as OutputFileEntry<'success'>)
+      );
     };
 
-    /*
-      Note: Event binding is the main way to get data and other info from File Uploader.
-      There plenty of events you may use.
-
-      See more: https://uploadcare.com/docs/file-uploader/events/
-     */
+    // Add the event listener
     ctxProvider.addEventListener('change', handleChangeEvent);
+
+    // Cleanup function to remove the event listener
     return () => {
       ctxProvider.removeEventListener('change', handleChangeEvent);
     };
-  }, [setFiles]);
+  }, [files, ctxProviderRef.current]);
+
   console.log(files);
 
   const handleCommentSubmit = async (data) => {
+    if (!data.content) {
+      console.log(data, 'Content is required to submit a comment.');
+      return;
+    }
     try {
       // setIsLoading(true);
       socket.emit('stop typing', task._id);
@@ -171,7 +175,8 @@ export default function TaskDetails({
             _id: user?._id,
             name: user?.name
           },
-          content: data.content,
+          content: data?.content,
+          isFile: data?.isFile,
           taskId: task?._id,
           _id:
             response?.data?.data?._id || Math.random().toString(36).substring(7) // math random is temporary
@@ -188,6 +193,24 @@ export default function TaskDetails({
     } finally {
       setIsLoading(false);
     }
+  };
+  const handleFileSubmit = async () => {
+    if (files.length === 0) return;
+
+    for (const file of files) {
+      const stringyFiedContent = JSON.stringify(file?.fileInfo);
+      const data = {
+        content: stringyFiedContent, // Assuming the file URL is the content
+        taskId: task?._id,
+        authorId: user?._id,
+        isFile: true
+      };
+      console.log(data, 'file info');
+      await handleCommentSubmit(data);
+    }
+
+    setFiles([]); // Clear files after looping
+    // event2 = !event2;
   };
 
   const typingHandler = () => {
@@ -232,56 +255,166 @@ export default function TaskDetails({
         </div>
         <div ref={commentsEndRef} className="flex-grow overflow-y-auto p-6">
           <div className="space-y-4">
-            {comments?.map((comment: any) => (
-              <div
-                key={comment._id}
-                className={`flex ${comment.authorId._id === user?._id ? 'justify-end' : 'justify-start'}`}
-              >
+            {comments?.map((comment: any) => {
+              // Check if the content is a file by checking isFile
+              const isFile = comment.isFile;
+              let parsedContent = comment.content;
+
+              // If it is a file, parse the stringified content to access file details
+              if (isFile) {
+                try {
+                  parsedContent = JSON.parse(comment.content);
+                } catch (error) {
+                  console.error('Failed to parse file content:', error);
+                }
+              }
+
+              return (
                 <div
-                  className={`flex ${comment.authorId._id === user?._id ? 'flex-row-reverse' : 'flex-row'} items-start space-x-2`}
+                  key={comment._id}
+                  className={`flex ${
+                    comment.authorId._id === user?._id
+                      ? 'justify-end'
+                      : 'justify-start'
+                  }`}
                 >
-                  <Avatar
-                    className={`h-8 w-8 ${comment.authorId._id === user?._id && 'ml-1'} ${socketConnected && 'border border-green-500'}`} // Add animate-ping class
-                  >
-                    <AvatarFallback>
-                      {comment?.authorId.name
-                        ?.split(' ')
-                        .map((n) => n[0])
-                        .join('') || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
                   <div
-                    className={`max-w-[90%] ${comment.authorId._id === user?._id ? 'mr-2' : 'ml-2'}`}
+                    className={`flex ${
+                      comment.authorId._id === user?._id
+                        ? 'flex-row-reverse'
+                        : 'flex-row'
+                    } items-start space-x-2`}
                   >
-                    <div
-                      className={`rounded-lg p-2 ${comment.authorId._id === user?._id ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-                      style={{ wordWrap: 'break-word', whiteSpace: 'pre-wrap' }} // ensures long text wraps and preserves new lines
+                    <Avatar
+                      className={`h-8 w-8 ${
+                        comment.authorId._id === user?._id && 'ml-1'
+                      } ${socketConnected && 'border border-green-500'}`}
                     >
-                      <Linkify
-                        componentDecorator={(
-                          decoratedHref,
-                          decoratedText,
-                          key
-                        ) => (
-                          <a
-                            href={decoratedHref}
-                            key={key}
-                            style={{
-                              textDecoration: 'underline',
-                              color: 'inherit'
-                            }}
-                          >
-                            {decoratedText}
-                          </a>
-                        )}
+                      <AvatarFallback>
+                        {comment?.authorId.name
+                          ?.split(' ')
+                          .map((n) => n[0])
+                          .join('') || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div
+                      className={`max-w-[90%] ${
+                        comment.authorId._id === user?._id ? 'mr-2' : 'ml-2'
+                      }`}
+                    >
+                      <div
+                        className={`rounded-lg  ${
+                          isFile
+                            ? 'border border-gray-300'
+                            : comment.authorId._id === user?._id
+                              ? 'bg-blue-500 p-2 text-white'
+                              : 'bg-gray-200 p-2'
+                        }`}
+                        style={{
+                          wordWrap: 'break-word',
+                          whiteSpace: 'pre-wrap'
+                        }}
                       >
-                        {comment.content}
-                      </Linkify>
+                        {isFile ? (
+                          <div
+                            className={`flex items-center space-x-2 rounded-lg  p-2 ${
+                              comment.authorId._id === user?._id
+                                ? 'bg-blue-500/15 p-2 '
+                                : 'bg-gray-200/15 p-2'
+                            }`}
+                          >
+                            {/* Check if the file is an image by checking the MIME type */}
+                            {parsedContent.mimeType?.startsWith('image/') ? (
+                              <div className="flex items-center space-x-2">
+                                <img
+                                  src={parsedContent.cdnUrl}
+                                  alt={
+                                    parsedContent.originalFilename || 'Preview'
+                                  }
+                                  className="max-h-32 max-w-full rounded shadow-sm"
+                                />
+                                <a
+                                  href={parsedContent.cdnUrl}
+                                  download={parsedContent.originalFilename}
+                                  className="text-blue-600 hover:underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="h-5 w-5"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M3 16.5v1.875A2.625 2.625 0 005.625 21h12.75A2.625 2.625 0 0021 18.375V16.5M7.5 10.5l4.5 4.5m0 0l4.5-4.5m-4.5 4.5V3"
+                                    />
+                                  </svg>
+                                </a>
+                              </div>
+                            ) : (
+                              // Display file name and download button for non-image files
+                              <div className="flex items-center space-x-2">
+                                <span>
+                                  {parsedContent.originalFilename || 'File'}
+                                </span>
+                                <a
+                                  href={parsedContent.cdnUrl}
+                                  download={parsedContent.originalFilename}
+                                  className="text-blue-600 hover:underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="h-5 w-5"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M3 16.5v1.875A2.625 2.625 0 005.625 21h12.75A2.625 2.625 0 0021 18.375V16.5M7.5 10.5l4.5 4.5m0 0l4.5-4.5m-4.5 4.5V3"
+                                    />
+                                  </svg>
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <Linkify
+                            componentDecorator={(
+                              decoratedHref,
+                              decoratedText,
+                              key
+                            ) => (
+                              <a
+                                href={decoratedHref}
+                                key={key}
+                                style={{
+                                  textDecoration: 'underline',
+                                  color: 'inherit'
+                                }}
+                              >
+                                {decoratedText}
+                              </a>
+                            )}
+                          >
+                            {comment.content}
+                          </Linkify>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         <div className="flex-shrink-0 border-t bg-gray-50 p-6">
@@ -325,13 +458,19 @@ export default function TaskDetails({
               <uc-file-uploader-regular
                 class="uc-light"
                 ctx-name="my-uploader-3"
+                data-multiple="false"
               ></uc-file-uploader-regular>
               <uc-upload-ctx-provider
                 ctx-name="my-uploader-3"
                 ref={ctxProviderRef}
               ></uc-upload-ctx-provider>
               {files?.length > 0 ? (
-                <Button type="submit" className="w-full" variant={'outline'}>
+                <Button
+                  onClick={handleFileSubmit}
+                  type="submit"
+                  className="w-full"
+                  variant={'outline'}
+                >
                   {`Finish (${files?.length})`}
                 </Button>
               ) : (
