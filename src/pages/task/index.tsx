@@ -63,7 +63,7 @@ export default function TaskPage() {
   useEffect(() => {
     fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
     fetchUserDetails();
-  }, [currentPage, entriesPerPage, searchTerm, sortOrder, user, id]);
+  }, [currentPage, entriesPerPage, searchTerm, sortOrder, id]);
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
