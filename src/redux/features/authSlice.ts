@@ -40,7 +40,7 @@ interface RegisterResponse {
 interface UserResponse {
   success: boolean;
   message?: string;
-  data?: {};
+  data?: object;
 }
 
 export const registerUser = createAsyncThunk<
@@ -58,7 +58,13 @@ export const loginUser = createAsyncThunk<UserResponse, UserCredentials>(
   async (userCredentials) => {
     const request = await axios.post(
       `${import.meta.env.VITE_API_URL}/auth/login`,
-      userCredentials
+      userCredentials,
+      {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json' //this line solved cors
+        }
+      }
     );
     const response = await request.data;
 
