@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,6 +15,14 @@ import {
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
 import { UserPlus, UserMinus, Send, Paperclip, X } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 // Mock data
 const groupName = 'Project Alpha Team';
@@ -45,16 +53,70 @@ const initialMessages = [
   }
 ];
 
+interface Member {
+  id: number;
+  name: string;
+  email: string;
+  avatar: string;
+}
+
+interface Comment {
+  id: number;
+  memberId: number;
+  content: string;
+  createdAt: Date;
+}
+
+interface Group {
+  id: number;
+  name: string;
+  members: Member[];
+  comments: Comment[];
+}
+
+interface Notification {
+  id: number;
+  content: string;
+  isRead: boolean;
+}
+
+const initialMembers: Member[] = [
+  {
+    id: 1,
+    name: 'Alice Johnson',
+    email: 'alice@example.com',
+    avatar: 'https://i.pravatar.cc/150?img=1'
+  },
+  {
+    id: 2,
+    name: 'Bob Smith',
+    email: 'bob@example.com',
+    avatar: 'https://i.pravatar.cc/150?img=2'
+  },
+  {
+    id: 3,
+    name: 'Charlie Brown',
+    email: 'charlie@example.com',
+    avatar: 'https://i.pravatar.cc/150?img=3'
+  },
+  {
+    id: 4,
+    name: 'Diana Ross',
+    email: 'diana@example.com',
+    avatar: 'https://i.pravatar.cc/150?img=4'
+  }
+];
+
 const getRandomColor = () => {
   const colors = [
-    'red',
-    'blue',
-    'green',
-    'yellow',
-    'purple',
-    'pink',
-    'orange',
-    'teal'
+    'red-500', // Medium red
+    'blue-500', // Medium blue
+    'green-500', // Medium green
+    'yellow-500', // Medium yellow
+    'purple-500', // Medium purple
+    'pink-500', // Medium pink
+    'orange-500', // Medium orange
+    'teal-500' // Medium teal
   ];
   return colors[Math.floor(Math.random() * colors.length)];
 };
@@ -71,7 +133,7 @@ export default function GroupChat() {
   const [newMemberName, setNewMemberName] = useState('');
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const handleSendMessage = () => {
     if (newMessage.trim() !== '' || attachedFile) {
       const message = {
@@ -120,11 +182,21 @@ export default function GroupChat() {
   };
 
   return (
-    <div className="mx-auto flex h-[600px] max-w-4xl overflow-hidden rounded-lg border">
+    <div className="mx-auto flex h-full overflow-hidden">
       {/* Sidebar with group members */}
-      <div className="w-64 border-r bg-muted p-4">
+      <div className="w-64 space-y-3 border-r border-gray-300 p-4">
         <h2 className="mb-4 text-lg font-bold">{groupName}</h2>
-        <h3 className="mb-2 font-semibold">Group Members</h3>
+        <div className="flex justify-between">
+          <h3 className="mb-2 font-semibold">Group Members </h3>
+          <Button
+            variant={'outline'}
+            size={'sm'}
+            onClick={() => setIsAddMemberOpen(true)}
+          >
+            Add
+          </Button>
+        </div>
+
         <ScrollArea className="h-[calc(100%-12rem)]">
           {groupMembers.map((member) => (
             <div
@@ -133,16 +205,14 @@ export default function GroupChat() {
             >
               <div className="flex items-center space-x-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback style={{ backgroundColor: member.color }}>
+                  <AvatarFallback>
                     {member.name
                       .split(' ')
                       .map((n) => n[0])
                       .join('')}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm" style={{ color: member.color }}>
-                  {member.name}
-                </span>
+                <span className="text-sm">{member.name}</span>
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -171,26 +241,6 @@ export default function GroupChat() {
             </div>
           ))}
         </ScrollArea>
-        <div className="mt-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleAddMember();
-            }}
-            className="flex space-x-2"
-          >
-            <Input
-              type="text"
-              placeholder="New member name"
-              value={newMemberName}
-              onChange={(e) => setNewMemberName(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" size="icon">
-              <UserPlus className="h-4 w-4" />
-            </Button>
-          </form>
-        </div>
       </div>
 
       {/* Main chat area */}
@@ -203,7 +253,7 @@ export default function GroupChat() {
               className={`mb-4 ${message.sender === 'You' ? 'text-right' : ''}`}
             >
               <div
-                className={`inline-block max-w-[70%] ${message.sender === 'You' ? 'bg-blue-500 text-white' : 'bg-gray-100'} rounded-lg p-3`}
+                className={`inline-block max-w-[70%] ${message.sender === 'You' ? 'bg-blue-500 text-white' : 'bg-red-100'} rounded-lg p-3`}
               >
                 <div className="mb-1 flex items-center space-x-2">
                   <Avatar className="h-6 w-6">
@@ -246,7 +296,7 @@ export default function GroupChat() {
         </ScrollArea>
 
         {/* Message input */}
-        <div className="border-t p-4">
+        <div className="border-t border-gray-300 p-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -297,6 +347,56 @@ export default function GroupChat() {
           </form>
         </div>
       </div>
+
+      <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Member</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Select Members</Label>
+              <Input placeholder="Search User" className="mb-2" />
+              <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                {initialMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="mb-2 flex items-center space-x-2"
+                  >
+                    <input
+                      type="checkbox"
+                      id={`member-${member.id}`}
+                      //checked={selectedMembers.includes(member.id)}
+                      // onChange={(e) => {
+                      //   if (e.target.checked) {
+                      //     setSelectedMembers([...selectedMembers, member.id]);
+                      //   } else {
+                      //     setSelectedMembers(
+                      //       selectedMembers.filter((id) => id !== member.id)
+                      //     );
+                      //   }
+                      // }}
+                    />
+                    <Label
+                      htmlFor={`member-${member.id}`}
+                      className="flex items-center space-x-2"
+                    >
+                      <Avatar>
+                        <AvatarImage src={member.avatar} alt={member.name} />
+                        <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span>{member.name}</span>
+                    </Label>
+                  </div>
+                ))}
+              </ScrollArea>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant={'outline'}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

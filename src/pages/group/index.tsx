@@ -317,6 +317,7 @@ export default function GroupPage() {
             />
             <div>
               <Label>Select Members</Label>
+              <Input placeholder="Search User" className="mb-2" />
               <ScrollArea className="h-[200px] w-full rounded-md border p-4">
                 {initialMembers.map((member) => (
                   <div
