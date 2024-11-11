@@ -36,6 +36,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
+import { Link } from 'react-router-dom';
 
 interface Member {
   id: number;
@@ -100,7 +101,6 @@ export default function GroupPage() {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [newComment, setNewComment] = useState('');
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -278,12 +278,9 @@ export default function GroupPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedGroup(group)}
-                    >
-                      View
-                    </Button>
+                    <Link to="abc">
+                      <Button variant="outline">View</Button>
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))}
@@ -356,75 +353,6 @@ export default function GroupPage() {
           <DialogFooter>
             <Button onClick={addGroup}>Create Group</Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={!!selectedGroup}
-        onOpenChange={() => setSelectedGroup(null)}
-      >
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{selectedGroup?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <h3 className="mb-2 text-lg font-semibold">Members</h3>
-              <div className="flex flex-wrap gap-2">
-                {selectedGroup?.members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center space-x-2 rounded-full bg-gray-100 py-1 pl-1 pr-2"
-                  >
-                    <Avatar>
-                      <AvatarImage src={member.avatar} alt={member.name} />
-                      <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <span>{member.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() =>
-                        selectedGroup &&
-                        removeMember(selectedGroup.id, member.id)
-                      }
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className="mb-2 text-lg font-semibold">Comments</h3>
-              <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                {selectedGroup?.comments.map((comment) => (
-                  <div key={comment.id} className="mb-2">
-                    <div className="font-semibold">
-                      {
-                        selectedGroup.members.find(
-                          (m) => m.id === comment.memberId
-                        )?.name
-                      }
-                    </div>
-                    <div>{comment.content}</div>
-                    <div className="text-sm text-gray-500">
-                      {comment.createdAt.toLocaleString()}
-                    </div>
-                  </div>
-                ))}
-              </ScrollArea>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Add a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-              />
-              <Button onClick={addComment}>Post</Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 
