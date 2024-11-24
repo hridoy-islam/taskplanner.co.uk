@@ -4,7 +4,7 @@ import Header from '../shared/header';
 import MobileSidebar from '../shared/mobile-sidebar';
 import { MenuIcon } from 'lucide-react';
 import UserNav from '../shared/user-nav';
-import { Toaster } from '../ui/toaster';
+import { Toaster } from '@/components/ui/sonner';
 
 export default function DashboardLayout({
   children

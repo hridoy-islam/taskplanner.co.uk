@@ -54,7 +54,7 @@ export default function TaskPage() {
         setTasks(res.data.data.result);
         setTotalPages(res.data.data.meta.totalPage);
       } catch (err) {
-      } finally {
+        console.log(err);
       }
     },
     []
@@ -63,7 +63,7 @@ export default function TaskPage() {
   useEffect(() => {
     fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
     fetchUserDetails();
-  }, [currentPage, entriesPerPage, searchTerm, sortOrder, user, id]);
+  }, [currentPage, entriesPerPage, searchTerm, sortOrder, id]);
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
@@ -129,6 +129,8 @@ export default function TaskPage() {
     setLoading(true);
     data.author = user?._id;
     data.assigned = id;
+
+    console.log(data, 'user id');
 
     try {
       const response = await axiosInstance.post(`/task`, data);
