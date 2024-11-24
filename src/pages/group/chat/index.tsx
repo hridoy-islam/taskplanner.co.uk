@@ -362,6 +362,11 @@ export default function GroupChat() {
     }
   };
 
+  // const remainingMessages = groupDetails?.messageCount;
+  // calculate the remaining messages based on the page number and limit
+
+  const remainingMessages = groupDetails?.messageCount - comments.length;
+
   useEffect(() => {
     fetchComments(pageNumber, limit);
   }, []);
@@ -499,7 +504,6 @@ export default function GroupChat() {
       });
     }
   };
-  console.log(groupDetails);
   const handleChangeRole = async (id: string, currentRole: string) => {
     const newRole = currentRole === 'admin' ? 'member' : 'admin';
     const data = {
@@ -738,14 +742,16 @@ export default function GroupChat() {
       <div className="flex w-full flex-1  flex-col ">
         <div ref={commentsEndRef} className="flex-grow overflow-y-auto">
           <div className="flex w-full justify-center ">
-            <Button
-              onClick={loadMoreComments}
-              variant={'link'}
-              className="flex flex-row justify-center gap-2 text-blue-600"
-            >
-              Load more
-              <ArrowUp className="h-4 w-4" />
-            </Button>
+            {remainingMessages >= limit && (
+              <Button
+                onClick={loadMoreComments}
+                variant={'link'}
+                className="flex flex-row justify-center gap-2 text-blue-600"
+              >
+                Load more
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           <div className="p-4">
             {comments.map((comment: any) => {
