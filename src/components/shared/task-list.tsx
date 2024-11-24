@@ -32,6 +32,7 @@ const TaskList = ({
   onToggleTaskCompletion,
   fetchTasks
 }) => {
+  console.log(tasks);
   const { user } = useSelector((state: any) => state.auth);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isTaskDetailsOpen, setTaskDetailsOpen] = useState(false);

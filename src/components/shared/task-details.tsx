@@ -76,11 +76,33 @@ export default function TaskDetails({
     socket.on('connected', () => setSocketConnected(true));
   }, [user]);
 
+  const updateLastReadMessage = async (taskId, userId, messageId) => {
+    try {
+      const body = {
+        taskId,
+        userId,
+        messageId
+      };
+      const response = await axiosInstance.post(`/task/readcomment`, body);
+      if (!response.data.success) {
+        console.error(
+          'Failed to update last read message:',
+          response.data.message
+        );
+      }
+    } catch (error) {
+      console.error('Error updating last read message:', error);
+    }
+  };
+
   const fetchComments = useCallback(async () => {
     try {
       const response = await axiosInstance.get(`/comment/${task._id}`);
       socket.emit('join chat', task._id);
       setComments(response.data.data);
+      const fetchedComments = response.data.data;
+      const lastComment = fetchedComments[fetchedComments.length - 1];
+      await updateLastReadMessage(task._id, user?._id, lastComment._id);
       setDisplayedComments(response.data.data.slice(-maxComments));
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -95,7 +117,7 @@ export default function TaskDetails({
   }, [fetchComments, task._id]);
 
   useEffect(() => {
-    const messageReceivedHandler = (newMessageReceived) => {
+    const messageReceivedHandler = async (newMessageReceived) => {
       const response = newMessageReceived?.data?.data;
       const newComment = {
         authorId: {
@@ -110,14 +132,7 @@ export default function TaskDetails({
 
       if (task?._id !== newComment?.taskId) {
         toast(`Task: ${response?.taskName || 'new message arrived'}`, {
-          description: `Message: ${response?.content}`,
-          action: {
-            label: 'View',
-            onClick: () => {
-              alert('push to the task details page');
-              router.push(`/dashboard/task/${newComment?.taskId}`);
-            }
-          }
+          description: `Message: ${response?.content}`
         });
       } else {
         setComments((prevComments) => {
@@ -132,6 +147,11 @@ export default function TaskDetails({
           }
           return prevComments;
         });
+        await updateLastReadMessage(
+          newComment?.taskId,
+          user?._id,
+          newComment._id
+        );
       }
     };
 
@@ -163,7 +183,7 @@ export default function TaskDetails({
 
   const handleCommentSubmit = async (data) => {
     if (!data.content) {
-      console.log(data, 'Content is required to submit a comment.');
+      console.error(data, 'Content is required to submit a comment.');
       return;
     }
     try {
@@ -185,6 +205,11 @@ export default function TaskDetails({
         };
         setComments([...comments, newComment]);
         setDisplayedComments((prevComments) => [...prevComments, newComment]);
+        await updateLastReadMessage(
+          newComment?.taskId,
+          user?._id,
+          newComment._id
+        );
         socket.emit('new message', response);
         reset();
       } else {

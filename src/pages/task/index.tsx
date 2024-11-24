@@ -130,10 +130,9 @@ export default function TaskPage() {
     data.author = user?._id;
     data.assigned = id;
 
-    console.log(data, 'user id');
-
     try {
       const response = await axiosInstance.post(`/task`, data);
+      console.log(response);
       if (response.data.success) {
         reset();
         fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
