@@ -32,7 +32,6 @@ const TaskList = ({
   onToggleTaskCompletion,
   fetchTasks
 }) => {
-  console.log(tasks);
   const { user } = useSelector((state: any) => state.auth);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isTaskDetailsOpen, setTaskDetailsOpen] = useState(false);
@@ -231,9 +230,12 @@ const TaskList = ({
                         size="icon"
                         onClick={() => openTaskDetails(task)}
                       >
-                        <MessageSquareText
-                          className={`h-4 w-4 text-cyan-900`}
-                        />
+                        <span
+                          className={`${task?.unreadMessageCount > 0 ? 'animate-bounce text-balance text-red-600' : 'text-cyan-900'} flex flex-row items-center`}
+                        >
+                          <MessageSquareText className={`h-4 w-4`} />
+                          <sup>{task?.unreadMessageCount}</sup>
+                        </span>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>

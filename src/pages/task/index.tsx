@@ -52,6 +52,7 @@ export default function TaskPage() {
           `/task/getbothuser/${user?._id}/${id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}`
         );
         setTasks(res.data.data.result);
+        console.log(res.data.data);
         setTotalPages(res.data.data.meta.totalPage);
       } catch (err) {
         console.log(err);
