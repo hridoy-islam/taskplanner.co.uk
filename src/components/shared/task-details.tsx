@@ -102,7 +102,7 @@ export default function TaskDetails({
       setComments(response.data.data);
       const fetchedComments = response.data.data;
       const lastComment = fetchedComments[fetchedComments.length - 1];
-      await updateLastReadMessage(task._id, user?._id, lastComment._id);
+      // await updateLastReadMessage(task._id, user?._id, lastComment._id);
       setDisplayedComments(response.data.data.slice(-maxComments));
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -205,11 +205,11 @@ export default function TaskDetails({
         };
         setComments([...comments, newComment]);
         setDisplayedComments((prevComments) => [...prevComments, newComment]);
-        await updateLastReadMessage(
-          newComment?.taskId,
-          user?._id,
-          newComment._id
-        );
+        // await updateLastReadMessage(
+        //   newComment?.taskId,
+        //   user?._id,
+        //   newComment._id
+        // );
         socket.emit('new message', response);
         reset();
       } else {
