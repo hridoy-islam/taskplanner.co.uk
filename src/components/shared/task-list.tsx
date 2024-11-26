@@ -20,7 +20,7 @@ import {
 import moment from 'moment';
 import 'react-datepicker/dist/react-datepicker.css';
 import TaskDetails from './task-details';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axiosInstance from '../../lib/axios';
 import { toast } from '../ui/use-toast';
@@ -63,6 +63,10 @@ const TaskList = ({
     setOpenUpdate(false);
     setSelectedTask(null);
   };
+
+  useEffect(() => {
+    fetchTasks();
+  }, [isTaskDetailsOpen]);
 
   const onUpdateConfirm = async (data) => {
     setLoading(true);
