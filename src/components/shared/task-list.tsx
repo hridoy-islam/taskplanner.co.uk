@@ -238,7 +238,11 @@ const TaskList = ({
                           className={`${task?.unreadMessageCount > 0 ? 'animate-bounce text-balance text-red-600' : 'text-cyan-900'} flex flex-row items-center`}
                         >
                           <MessageSquareText className={`h-4 w-4`} />
-                          <sup>{task?.unreadMessageCount}</sup>
+                          {task?.unreadMessageCount === 0 ? (
+                            <></>
+                          ) : (
+                            <sup>{task?.unreadMessageCount}</sup>
+                          )}
                         </span>
                       </Button>
                     </TooltipTrigger>
