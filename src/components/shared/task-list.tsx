@@ -235,7 +235,7 @@ const TaskList = ({
                         onClick={() => openTaskDetails(task)}
                       >
                         <span
-                          className={`${task?.unreadMessageCount > 0 ? 'animate-bounce text-balance text-red-600' : 'text-cyan-900'} flex flex-row items-center`}
+                          className={`${task?.unreadMessageCount > 0 ? 'animate-bounce text-balance text-red-700' : 'text-cyan-900'} flex flex-row items-center`}
                         >
                           <MessageSquareText className={`h-4 w-4`} />
                           {task?.unreadMessageCount === 0 ? (
