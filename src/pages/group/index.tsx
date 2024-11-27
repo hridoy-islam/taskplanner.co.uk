@@ -24,7 +24,14 @@ import axiosInstance from '../../lib/axios';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bell, Plus, Search, X } from 'lucide-react';
+import {
+  Bell,
+  MessageSquareIcon,
+  MessageSquareText,
+  Plus,
+  Search,
+  X
+} from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -62,6 +69,7 @@ interface Group {
   members: Member[];
   comments: Comment[];
   unreadMessageCount?: number; // Add this line
+  status: string; // Add this line
 }
 
 interface Notification {
@@ -122,6 +130,7 @@ export default function GroupPage() {
         const fetchedGroups = response?.data?.data?.map((group: any) => ({
           id: group._id,
           name: group.groupName,
+          status: group.status,
           members: group.members.map((member: any) => ({
             id: member._id,
             name:
@@ -183,6 +192,7 @@ export default function GroupPage() {
           const newGroup: Group = {
             id: response.data._id, // Assuming the API returns the created group's ID
             name: groupData.groupName,
+            status: groupData.status,
             members: [
               {
                 id: user?._id,
@@ -373,7 +383,7 @@ export default function GroupPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Members</TableHead>
-                  <TableHead>Unread Messages</TableHead>
+                  <TableHead>G Type</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -416,21 +426,28 @@ export default function GroupPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {(group.unreadMessageCount ?? 0) > 0 ? (
-                        <Badge variant="destructive">
-                          {group?.unreadMessageCount}
+                      {group.status === 'active' ? (
+                        <Badge variant="outline" className="text-black">
+                          General
                         </Badge>
                       ) : (
-                        '0'
+                        <Badge variant="destructive">Admin</Badge>
                       )}
                     </TableCell>
                     <TableCell>
                       <Link to={`${group?.id}`}>
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           onClick={() => setSelectedGroup(group)}
                         >
-                          View
+                          <MessageSquareText className={`h-4 w-4`} />
+                          <sup className="text-[10px]">
+                            {(group.unreadMessageCount ?? 0) > 0 ? (
+                              <span>{group?.unreadMessageCount}</span>
+                            ) : (
+                              '0'
+                            )}
+                          </sup>
                         </Button>
                       </Link>
                     </TableCell>

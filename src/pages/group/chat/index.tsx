@@ -457,7 +457,7 @@ export default function GroupChat() {
     const data = {
       groupName: name,
       description: groupDescription,
-      status: isActive ? 'active' : 'archived'
+      status: isActive ? 'archived' : 'active'
     };
 
     try {
@@ -1139,7 +1139,7 @@ export default function GroupChat() {
                   className="h-5 w-5"
                   name="isActive"
                   type="checkbox"
-                  defaultChecked={groupDetails?.status === 'active'}
+                  defaultChecked={groupDetails?.status !== 'active'}
                 />
               </div>
             </div>
