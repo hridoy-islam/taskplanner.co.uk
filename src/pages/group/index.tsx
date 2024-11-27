@@ -325,7 +325,7 @@ export default function GroupPage() {
   }, [searchTerm, sortBy, sortOrder]);
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto h-full overflow-auto p-4">
       <h1 className="mb-4 text-2xl font-bold">Groups</h1>
 
       <div className="mb-4 flex gap-4">
@@ -446,21 +446,30 @@ export default function GroupPage() {
                     </TableCell>
                     <TableCell>
                       {group.status === 'active' ? (
-                        <Badge variant="outline" className="text-black">
+                        <Badge
+                          variant="outline"
+                          className="bg-green-200 text-black"
+                        >
                           General
                         </Badge>
                       ) : (
-                        <Badge variant="destructive">Admin</Badge>
+                        <Badge
+                          variant="outline"
+                          className="bg-red-200 text-black"
+                        >
+                          Admin
+                        </Badge>
                       )}
                     </TableCell>
                     <TableCell>
                       <Link to={`${group?.id}`}>
                         <Button
                           variant={`${group.unreadMessageCount === 0 ? 'ghost' : 'destructive'}`}
+                          size={'sm'}
                           onClick={() => setSelectedGroup(group)}
                         >
                           <MessageSquareText className={`h-4 w-4`} />
-                          <sup className="text-[10px]">
+                          <sup className="ml-1 text-[10px]">
                             {(group.unreadMessageCount ?? 0) > 0 ? (
                               <span>{group?.unreadMessageCount}</span>
                             ) : (
