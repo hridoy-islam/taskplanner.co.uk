@@ -445,7 +445,7 @@ export default function GroupPage() {
                             {(group.unreadMessageCount ?? 0) > 0 ? (
                               <span>{group?.unreadMessageCount}</span>
                             ) : (
-                              '0'
+                              ''
                             )}
                           </sup>
                         </Button>
