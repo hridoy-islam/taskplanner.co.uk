@@ -106,7 +106,7 @@ export default function GroupPage() {
           id: member._id,
           name: member.name,
           email: member.email,
-          avatar: member.avatarUrl || 'https://i.pravatar.cc/150?img=1'
+          avatar: member.avatarUrl
         }))
       );
     };
@@ -127,9 +127,7 @@ export default function GroupPage() {
             name:
               initialMembers.find((m) => m.id === member._id)?.name ||
               'Unknown',
-            avatar:
-              initialMembers.find((m) => m.id === member._id)?.avatar ||
-              'https://i.pravatar.cc/150?img=1'
+            avatar: initialMembers.find((m) => m.id === member._id)?.avatar
           })),
           comments: [], // Populate if your API includes comments
           unreadMessageCount: group.unreadMessageCount // Add this line
@@ -190,7 +188,7 @@ export default function GroupPage() {
                 id: user?._id,
                 name: user?.name || 'You',
                 email: '',
-                avatar: user?.avatarUrl || 'https://i.pravatar.cc/150?img=1'
+                avatar: user?.avatarUrl
               },
               ...initialMembers.filter((member) =>
                 selectedMembers.includes(member.id)
@@ -370,76 +368,81 @@ export default function GroupPage() {
       <Card>
         <CardContent>
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Members</TableHead>
-                <TableHead>Unread Messages</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedGroups.map((group) => (
-                <TableRow key={group.id}>
-                  <TableCell>{group.name}</TableCell>
-                  <TableCell>
-                    <div className="flex -space-x-2 overflow-hidden">
-                      {group.members.slice(0, 3).map((member) => (
-                        <TooltipProvider key={member.id}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Avatar className="inline-block border-2 border-background">
-                                <AvatarImage
-                                  src={member.avatar}
-                                  alt={member.name}
-                                />
-                                <AvatarFallback>
-                                  {member.name.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{member.name}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ))}
-                      {group.members.length > 3 && (
-                        <Avatar className="inline-block border-2 border-background">
-                          <AvatarFallback>
-                            +{group.members.length - 3}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {(group.unreadMessageCount ?? 0) > 0 ? (
-                      <Badge variant="destructive">
-                        {group?.unreadMessageCount}
-                      </Badge>
-                    ) : (
-                      '0'
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Link to={`${group?.id}`}>
-                      <Button
-                        variant="outline"
-                        onClick={() => setSelectedGroup(group)}
-                      >
-                        View
-                      </Button>
-                    </Link>
-                  </TableCell>
+            <ScrollArea className="h-[30rem] max-h-fit pr-2 ">
+              <TableHeader className="sticky top-0 z-10 bg-white">
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Members</TableHead>
+                  <TableHead>Unread Messages</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
+              </TableHeader>
+              <TableBody>
+                {filteredGroups.map((group) => (
+                  <TableRow key={group.id}>
+                    <TableCell>{group.name}</TableCell>
+                    <TableCell>
+                      <div className="flex -space-x-2 overflow-hidden">
+                        {group.members.slice(0, 3).map((member) => (
+                          <TooltipProvider key={member.id}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Avatar className="inline-block border-2 border-background">
+                                  <AvatarImage
+                                    src={member.avatar}
+                                    alt={member.name}
+                                  />
+                                  <AvatarFallback>
+                                    {member?.name
+                                      ?.split(' ')
+                                      ?.map((n) => n[0])
+                                      ?.join('') || 'User'}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{member.name}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ))}
+                        {group.members.length > 3 && (
+                          <Avatar className="inline-block border-2 border-background">
+                            <AvatarFallback>
+                              +{group.members.length - 3}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {(group.unreadMessageCount ?? 0) > 0 ? (
+                        <Badge variant="destructive">
+                          {group?.unreadMessageCount}
+                        </Badge>
+                      ) : (
+                        '0'
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Link to={`${group?.id}`}>
+                        <Button
+                          variant="outline"
+                          onClick={() => setSelectedGroup(group)}
+                        >
+                          View
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </ScrollArea>
           </Table>
         </CardContent>
       </Card>
 
-      <div className="mt-4 flex justify-center gap-2">
+      {/* <div className="mt-4 flex justify-center gap-2">
         {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
           <Button
             key={page}
@@ -449,7 +452,7 @@ export default function GroupPage() {
             {page}
           </Button>
         ))}
-      </div>
+      </div> */}
 
       <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
         <DialogContent>
