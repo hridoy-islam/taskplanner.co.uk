@@ -314,7 +314,7 @@ export default function GroupChat() {
         }
 
         // Update the last read message if there are any comments
-        if (fetchedComments.length > 0) {
+        if (fetchedComments.length > 0 && pageNumber === 1) {
           const lastComment = fetchedComments[fetchedComments.length - 1];
           updateLastReadMessage(currentPath, user?._id, lastComment._id);
         }

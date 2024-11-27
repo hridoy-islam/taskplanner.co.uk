@@ -20,7 +20,7 @@ import {
 import moment from 'moment';
 import 'react-datepicker/dist/react-datepicker.css';
 import TaskDetails from './task-details';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axiosInstance from '../../lib/axios';
 import { toast } from '../ui/use-toast';
@@ -63,6 +63,10 @@ const TaskList = ({
     setOpenUpdate(false);
     setSelectedTask(null);
   };
+
+  useEffect(() => {
+    fetchTasks();
+  }, [isTaskDetailsOpen]);
 
   const onUpdateConfirm = async (data) => {
     setLoading(true);
@@ -230,9 +234,16 @@ const TaskList = ({
                         size="icon"
                         onClick={() => openTaskDetails(task)}
                       >
-                        <MessageSquareText
-                          className={`h-4 w-4 text-cyan-900`}
-                        />
+                        <span
+                          className={`${task?.unreadMessageCount > 0 ? 'animate-bounce text-balance text-red-700' : 'text-cyan-900'} flex flex-row items-center`}
+                        >
+                          <MessageSquareText className={`h-4 w-4`} />
+                          {task?.unreadMessageCount === 0 ? (
+                            <></>
+                          ) : (
+                            <sup>{task?.unreadMessageCount}</sup>
+                          )}
+                        </span>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>

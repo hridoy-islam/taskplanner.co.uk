@@ -27,22 +27,10 @@ export default function TaskPage() {
 
   const { register, handleSubmit, reset } = useForm();
 
-  // const fetchTasks = async () => {
-  //   const response = await axiosInstance.get(
-  //     `/task/getbothuser/${user?._id}/${id}`
-  //   );
-  //   setTasks(response.data.data);
-  // };
-
   const fetchUserDetails = async () => {
     const response = await axiosInstance.get(`/users/${id}`);
     setUserDetail(response.data.data);
   };
-
-  // useEffect(() => {
-  //   fetchTasks();
-  //   fetchUserDetails();
-  // }, [id]);
 
   const fetchTasks = useCallback(
     async (page, entriesPerPage, searchTerm = '', sortOrder = 'desc') => {
@@ -52,6 +40,7 @@ export default function TaskPage() {
           `/task/getbothuser/${user?._id}/${id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}`
         );
         setTasks(res.data.data.result);
+        console.log(res.data.data);
         setTotalPages(res.data.data.meta.totalPage);
       } catch (err) {
         console.log(err);
@@ -63,6 +52,20 @@ export default function TaskPage() {
   useEffect(() => {
     fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
     fetchUserDetails();
+
+    const intervalId = setInterval(() => {
+      fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
+    }, 30000); // 30 seconds
+
+    const timeoutId = setTimeout(() => {
+      clearInterval(intervalId);
+    }, 3600000); // 1 hour
+
+    // Cleanup on component unmount
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
   }, [currentPage, entriesPerPage, searchTerm, sortOrder, id]);
 
   const handleSearch = (event) => {
@@ -123,17 +126,16 @@ export default function TaskPage() {
       });
     }
   };
-  // New Task Form
+
   const onSubmit = async (data) => {
     if (loading) return;
     setLoading(true);
     data.author = user?._id;
     data.assigned = id;
 
-    console.log(data, 'user id');
-
     try {
       const response = await axiosInstance.post(`/task`, data);
+      console.log(response);
       if (response.data.success) {
         reset();
         fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
