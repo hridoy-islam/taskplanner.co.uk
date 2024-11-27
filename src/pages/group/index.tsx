@@ -70,6 +70,7 @@ interface Group {
   comments: Comment[];
   unreadMessageCount?: number; // Add this line
   status: string; // Add this line
+  createdAt: Date; // Add this line
 }
 
 interface Notification {
@@ -82,7 +83,9 @@ export default function GroupPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'members' | 'unread'>('unread');
+  const [sortBy, setSortBy] = useState<
+    'name' | 'members' | 'unread' | 'recent'
+  >('unread');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -131,6 +134,7 @@ export default function GroupPage() {
           id: group._id,
           name: group.groupName,
           status: group.status,
+          createdAt: group.createdAt,
           members: group.members.map((member: any) => ({
             id: member._id,
             name:
@@ -193,6 +197,7 @@ export default function GroupPage() {
             id: response.data._id, // Assuming the API returns the created group's ID
             name: groupData.groupName,
             status: groupData.status,
+            createdAt: new Date(),
             members: [
               {
                 id: user?._id,
@@ -212,6 +217,8 @@ export default function GroupPage() {
           setSelectedMembers([]);
           setIsGroupModalOpen(false);
           fetchGroups();
+          setSortOrder('desc');
+          setSortBy('recent');
         }
       } catch (error) {
         console.error('Error creating group:', error);
@@ -298,6 +305,10 @@ export default function GroupPage() {
         return sortOrder === 'asc'
           ? (b.unreadMessageCount || 0) - (a.unreadMessageCount || 0)
           : (a.unreadMessageCount || 0) - (b.unreadMessageCount || 0);
+      } else if (sortBy === 'recent') {
+        return sortOrder === 'asc'
+          ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
       return 0;
     });
@@ -366,6 +377,14 @@ export default function GroupPage() {
               }}
             >
               New Message
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSortBy('recent');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}
+            >
+              Date Created
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -437,7 +456,7 @@ export default function GroupPage() {
                     <TableCell>
                       <Link to={`${group?.id}`}>
                         <Button
-                          variant="ghost"
+                          variant={`${group.unreadMessageCount === 0 ? 'ghost' : 'destructive'}`}
                           onClick={() => setSelectedGroup(group)}
                         >
                           <MessageSquareText className={`h-4 w-4`} />

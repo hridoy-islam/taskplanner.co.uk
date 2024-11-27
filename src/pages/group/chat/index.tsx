@@ -652,6 +652,7 @@ export default function GroupChat() {
     }
   };
   const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
+  const [isAccessible, isIsAccessible] = useState(true);
   useEffect(() => {
     if (groupDetails?.members) {
       const currentUser = groupDetails?.members.find(
@@ -662,6 +663,16 @@ export default function GroupChat() {
       }
     }
   }, [groupDetails?.members, user?._id]);
+  useEffect(() => {
+    if (groupDetails?.members) {
+      const currentUser = groupDetails?.members.find(
+        (member) => member._id === user?._id
+      );
+      if (currentUser?.role !== 'admin' && groupDetails?.status !== 'active') {
+        isIsAccessible(false);
+      }
+    }
+  }, [groupDetails?.members, groupDetails?.status, user?._id]);
 
   return (
     <div className="mx-auto flex h-full max-w-full">
@@ -969,68 +980,70 @@ export default function GroupChat() {
           </div>
         )}
         <div className="border-t border-gray-300 p-4">
-          <form
-            onSubmit={handleSubmit(handleCommentSubmit)}
-            className="flex flex-col space-y-2"
-          >
-            {attachedFile && (
-              <div className="flex items-center space-x-2 rounded bg-gray-100 p-2">
-                <Paperclip className="h-4 w-4" />
-                <span className="text-sm">{attachedFile.name}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setAttachedFile(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-            <div className="flex space-x-2">
-              <Textarea
-                id="comment"
-                {...register('content', { required: true })}
-                placeholder="Type your comment here..."
-                rows={1}
-                className="flex-1"
-                onKeyDown={handleKeyDown}
-              />
-              <div className="flex max-w-fit flex-col-reverse items-center gap-1">
-                <uc-config
-                  ctx-name="my-uploader-3"
-                  pubkey="48a797785d228ebb9033"
-                  sourceList="local, url, camera, dropbox"
-                  multiple="false"
-                ></uc-config>
-
-                <uc-file-uploader-regular
-                  class="uc-light"
-                  ctx-name="my-uploader-3"
-                ></uc-file-uploader-regular>
-
-                <uc-upload-ctx-provider
-                  ctx-name="my-uploader-3"
-                  ref={ctxProviderRef}
-                ></uc-upload-ctx-provider>
-                {files.length > 0 ? (
+          {isAccessible && (
+            <form
+              onSubmit={handleSubmit(handleCommentSubmit)}
+              className="flex flex-col space-y-2"
+            >
+              {attachedFile && (
+                <div className="flex items-center space-x-2 rounded bg-gray-100 p-2">
+                  <Paperclip className="h-4 w-4" />
+                  <span className="text-sm">{attachedFile.name}</span>
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="default"
-                    // onClick={() => fileInputRef.current?.click()}
-                    onClick={handleFileSubmit}
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setAttachedFile(null)}
                   >
-                    <Paperclip className="mr-2 h-4 w-4" /> Upload
+                    <X className="h-4 w-4" />
                   </Button>
-                ) : (
-                  <Button type="submit">
-                    <Send className="mr-2 h-4 w-4" />
-                    Send
-                  </Button>
-                )}
+                </div>
+              )}
+              <div className="flex space-x-2">
+                <Textarea
+                  id="comment"
+                  {...register('content', { required: true })}
+                  placeholder="Type your comment here..."
+                  rows={1}
+                  className="flex-1"
+                  onKeyDown={handleKeyDown}
+                />
+                <div className="flex max-w-fit flex-col-reverse items-center gap-1">
+                  <uc-config
+                    ctx-name="my-uploader-3"
+                    pubkey="48a797785d228ebb9033"
+                    sourceList="local, url, camera, dropbox"
+                    multiple="false"
+                  ></uc-config>
+
+                  <uc-file-uploader-regular
+                    class="uc-light"
+                    ctx-name="my-uploader-3"
+                  ></uc-file-uploader-regular>
+
+                  <uc-upload-ctx-provider
+                    ctx-name="my-uploader-3"
+                    ref={ctxProviderRef}
+                  ></uc-upload-ctx-provider>
+                  {files.length > 0 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="default"
+                      // onClick={() => fileInputRef.current?.click()}
+                      onClick={handleFileSubmit}
+                    >
+                      <Paperclip className="mr-2 h-4 w-4" /> Upload
+                    </Button>
+                  ) : (
+                    <Button type="submit">
+                      <Send className="mr-2 h-4 w-4" />
+                      Send
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          </form>
+            </form>
+          )}
         </div>
       </div>
       <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
