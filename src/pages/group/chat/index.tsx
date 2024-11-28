@@ -8,17 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import axiosInstance from '../../../lib/axios';
 import { io } from 'socket.io-client';
 import Linkify from 'react-linkify';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger
-} from '@/components/ui/alert-dialog';
+
 import {
   UserMinus,
   Send,
@@ -29,7 +19,8 @@ import {
   ArrowUpRightFromSquare,
   Settings,
   Settings2,
-  ArrowUp
+  ArrowUp,
+  UserPlus
 } from 'lucide-react';
 import {
   Dialog,
@@ -110,6 +101,7 @@ export default function GroupChat() {
   const [files, setFiles] = useState<OutputFileEntry<'success'>[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [pageNumber, setPageNumber] = useState(1);
   const limit = 50;
@@ -139,7 +131,7 @@ export default function GroupChat() {
   const filteredMembers = initialMembers.filter((member) =>
     member.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const groupName = groupDetails?.groupName || 'Awesome Group';
+  const groupName = groupDetails?.groupName || 'Group Name';
 
   const { user } = useSelector((state: any) => state.auth);
 
@@ -457,6 +449,38 @@ export default function GroupChat() {
       setIsLoading(false);
     }
   };
+  const handleGroupDescriptionUpdate = async (e) => {
+    e.preventDefault();
+    const name = e.target.groupName.value;
+    const groupDescription = e.target.groupDescription.value;
+    const isActive = e.target.isActive.checked;
+
+    const data = {
+      groupName: name,
+      description: groupDescription,
+      status: isActive ? 'archived' : 'active'
+    };
+
+    try {
+      const response = await axiosInstance.patch(
+        `/group/single/${currentPath}`,
+        data
+      );
+      if (response.data.success) {
+        toast(`Success!`, {
+          description: `Message: ${response?.data?.message}`
+        });
+      }
+      fetchGroupDetails();
+    } catch (error) {
+      console.error(error);
+      toast(`err: something went wrong`, {
+        description: `Message: ${error?.response?.data?.message || error?.message}`
+      });
+    } finally {
+      setIsSettingsOpen(false);
+    }
+  };
 
   const handleAddMember = async () => {
     const member = initialMembers.find((m) => m.id === selectedMember2);
@@ -629,6 +653,7 @@ export default function GroupChat() {
     }
   };
   const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
+  const [isAccessible, isIsAccessible] = useState(true);
   useEffect(() => {
     if (groupDetails?.members) {
       const currentUser = groupDetails?.members.find(
@@ -639,19 +664,56 @@ export default function GroupChat() {
       }
     }
   }, [groupDetails?.members, user?._id]);
+  useEffect(() => {
+    if (groupDetails?.members) {
+      const currentUser = groupDetails?.members.find(
+        (member) => member._id === user?._id
+      );
+      if (currentUser?.role !== 'admin' && groupDetails?.status !== 'active') {
+        isIsAccessible(false);
+      }
+    }
+  }, [groupDetails?.members, groupDetails?.status, user?._id]);
 
   return (
     <div className="mx-auto flex h-full max-w-full">
       {/* Sidebar with group members */}
       <div className="w-64 space-y-3 border-r border-gray-300 p-4">
-        <h2 className="mb-4 text-lg font-bold">{groupName}</h2>
-        <div className="flex justify-between">
-          <h3 className="mb-2 font-semibold">Group Members</h3>
-          <Button variant={'outline'} size={'sm'} onClick={handleMemberDialog}>
-            Add
-          </Button>
-        </div>
+        <div className="flex w-full items-start justify-between gap-2">
+          <h2 className=" text-lg font-bold">
+            {groupName.substring(0, 15)}
+            {groupName.length > 15 && '...'}
+          </h2>
 
+          <div>
+            {groupDetails?.members?.map((member) => {
+              if (member._id === user?._id && isCurrentUserAdmin) {
+                return (
+                  <Button
+                    onClick={() => setIsSettingsOpen(true)}
+                    variant={'secondary'}
+                    size={'sm'}
+                  >
+                    <Settings2 className="h-4 w-4" />
+                  </Button>
+                );
+              }
+            })}
+          </div>
+        </div>
+        <div className="flex flex-row items-end justify-between">
+          <h3 className=" font-semibold">Group Members</h3>
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              variant={'outline'}
+              size={'sm'}
+              className=""
+              onClick={handleMemberDialog}
+            >
+              <UserPlus className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
         <ScrollArea className="xs:h-[calc(100%-10rem)] h-[calc(100%-11rem)] sm:h-[calc(100%-8rem)]">
           {loading ? (
             // Display the loading animation while loading is true
@@ -696,7 +758,11 @@ export default function GroupChat() {
                 <DropdownMenu>
                   {isCurrentUserAdmin && (
                     <DropdownMenuTrigger>
-                      <Button variant={'ghost'} size={'icon'}>
+                      <Button
+                        className={`${groupDetails?.creator === member?._id ? 'hidden' : ''}`}
+                        variant={'ghost'}
+                        size={'icon'}
+                      >
                         <Settings className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -713,13 +779,15 @@ export default function GroupChat() {
                         >
                           Make {member.role === 'admin' ? 'member' : 'admin'}
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleRemoveMember(member._id)}
-                          className="flex justify-between"
-                        >
-                          <span>Remove</span>
-                          <UserMinus className="h-4 w-4" />
-                        </DropdownMenuItem>
+                        {member?.role !== 'admin' && (
+                          <DropdownMenuItem
+                            onClick={() => handleRemoveMember(member._id)}
+                            className="flex justify-between"
+                          >
+                            <span>Remove</span>
+                            <UserMinus className="h-4 w-4" />
+                          </DropdownMenuItem>
+                        )}
                       </>
                     }
                   </DropdownMenuContent>
@@ -728,14 +796,32 @@ export default function GroupChat() {
             ))
           )}
         </ScrollArea>
-        <Button
-          variant="default"
-          className="w-full text-gray-700"
-          size="sm"
-          onClick={() => router.push('/dashboard/group')}
-        >
-          Return
-        </Button>
+        <div className="flex flex-row gap-2">
+          <Button
+            variant="default"
+            className="w-full text-gray-700"
+            size="sm"
+            onClick={() => router.push('/dashboard/group')}
+          >
+            Return
+          </Button>
+
+          {/* <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Button variant={'secondary'} size={'sm'}>
+                <Settings2 className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Settings</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem>Change Group Info</DropdownMenuItem>
+              <DropdownMenuItem disabled>Mute Notifications</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu> */}
+        </div>
       </div>
       {/* Main chat area */}
       {/* Chat messages */}
@@ -911,68 +997,70 @@ export default function GroupChat() {
           </div>
         )}
         <div className="border-t border-gray-300 p-4">
-          <form
-            onSubmit={handleSubmit(handleCommentSubmit)}
-            className="flex flex-col space-y-2"
-          >
-            {attachedFile && (
-              <div className="flex items-center space-x-2 rounded bg-gray-100 p-2">
-                <Paperclip className="h-4 w-4" />
-                <span className="text-sm">{attachedFile.name}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setAttachedFile(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-            <div className="flex space-x-2">
-              <Textarea
-                id="comment"
-                {...register('content', { required: true })}
-                placeholder="Type your comment here..."
-                rows={1}
-                className="flex-1"
-                onKeyDown={handleKeyDown}
-              />
-              <div className="flex max-w-fit flex-col-reverse items-center gap-1">
-                <uc-config
-                  ctx-name="my-uploader-3"
-                  pubkey="48a797785d228ebb9033"
-                  sourceList="local, url, camera, dropbox"
-                  multiple="false"
-                ></uc-config>
-
-                <uc-file-uploader-regular
-                  class="uc-light"
-                  ctx-name="my-uploader-3"
-                ></uc-file-uploader-regular>
-
-                <uc-upload-ctx-provider
-                  ctx-name="my-uploader-3"
-                  ref={ctxProviderRef}
-                ></uc-upload-ctx-provider>
-                {files.length > 0 ? (
+          {isAccessible && (
+            <form
+              onSubmit={handleSubmit(handleCommentSubmit)}
+              className="flex flex-col space-y-2"
+            >
+              {attachedFile && (
+                <div className="flex items-center space-x-2 rounded bg-gray-100 p-2">
+                  <Paperclip className="h-4 w-4" />
+                  <span className="text-sm">{attachedFile.name}</span>
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="default"
-                    // onClick={() => fileInputRef.current?.click()}
-                    onClick={handleFileSubmit}
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setAttachedFile(null)}
                   >
-                    <Paperclip className="mr-2 h-4 w-4" /> Upload
+                    <X className="h-4 w-4" />
                   </Button>
-                ) : (
-                  <Button type="submit">
-                    <Send className="mr-2 h-4 w-4" />
-                    Send
-                  </Button>
-                )}
+                </div>
+              )}
+              <div className="flex space-x-2">
+                <Textarea
+                  id="comment"
+                  {...register('content', { required: true })}
+                  placeholder="Type your comment here..."
+                  rows={1}
+                  className="flex-1"
+                  onKeyDown={handleKeyDown}
+                />
+                <div className="flex max-w-fit flex-col-reverse items-center gap-1">
+                  <uc-config
+                    ctx-name="my-uploader-3"
+                    pubkey="48a797785d228ebb9033"
+                    sourceList="local, url, camera, dropbox"
+                    multiple="false"
+                  ></uc-config>
+
+                  <uc-file-uploader-regular
+                    class="uc-light"
+                    ctx-name="my-uploader-3"
+                  ></uc-file-uploader-regular>
+
+                  <uc-upload-ctx-provider
+                    ctx-name="my-uploader-3"
+                    ref={ctxProviderRef}
+                  ></uc-upload-ctx-provider>
+                  {files.length > 0 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="default"
+                      // onClick={() => fileInputRef.current?.click()}
+                      onClick={handleFileSubmit}
+                    >
+                      <Paperclip className="mr-2 h-4 w-4" /> Upload
+                    </Button>
+                  ) : (
+                    <Button type="submit">
+                      <Send className="mr-2 h-4 w-4" />
+                      Send
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          </form>
+            </form>
+          )}
         </div>
       </div>
       <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
@@ -1047,6 +1135,57 @@ export default function GroupChat() {
               </Button>
             </DialogFooter>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Group Info</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleGroupDescriptionUpdate}>
+            <div className="space-t-4">
+              <div>
+                <Label>Select Member</Label>
+                <Input
+                  placeholder="Group Name"
+                  className="mb-2"
+                  name="groupName"
+                  required
+                  defaultValue={groupDetails?.groupName}
+                />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea
+                  placeholder="Group Description"
+                  className="mb-2"
+                  name="groupDescription"
+                  defaultValue={groupDetails?.description}
+                />
+              </div>
+              <div className="mt-3 flex flex-row items-center justify-center gap-3">
+                <Label>Admin Only Message</Label>
+                <Input
+                  className="h-5 w-5"
+                  name="isActive"
+                  type="checkbox"
+                  defaultChecked={groupDetails?.status !== 'active'}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              {/* clear selected member */}
+              <Button
+                variant="outline"
+                type="submit"
+                onClick={() => {
+                  setIsAddMemberOpen(false);
+                }}
+              >
+                Update
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
