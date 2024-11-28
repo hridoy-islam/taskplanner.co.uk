@@ -19,7 +19,8 @@ import {
   ArrowUpRightFromSquare,
   Settings,
   Settings2,
-  ArrowUp
+  ArrowUp,
+  UserPlus
 } from 'lucide-react';
 import {
   Dialog,
@@ -130,7 +131,7 @@ export default function GroupChat() {
   const filteredMembers = initialMembers.filter((member) =>
     member.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const groupName = groupDetails?.groupName || 'Awesome Group';
+  const groupName = groupDetails?.groupName || 'Group Name';
 
   const { user } = useSelector((state: any) => state.auth);
 
@@ -678,12 +679,40 @@ export default function GroupChat() {
     <div className="mx-auto flex h-full max-w-full">
       {/* Sidebar with group members */}
       <div className="w-64 space-y-3 border-r border-gray-300 p-4">
-        <h2 className="mb-4 text-lg font-bold">{groupName.substring(0, 30)}</h2>
-        <div className="flex justify-between">
-          <h3 className="mb-2 font-semibold">Group Members</h3>
-          <Button variant={'outline'} size={'sm'} onClick={handleMemberDialog}>
-            Add
-          </Button>
+        <div className="flex w-full items-start justify-between gap-2">
+          <h2 className=" text-lg font-bold">
+            {groupName.substring(0, 15)}
+            {groupName.length > 15 && '...'}
+          </h2>
+
+          <div>
+            {groupDetails?.members?.map((member) => {
+              if (member._id === user?._id && isCurrentUserAdmin) {
+                return (
+                  <Button
+                    onClick={() => setIsSettingsOpen(true)}
+                    variant={'secondary'}
+                    size={'sm'}
+                  >
+                    <Settings2 className="h-4 w-4" />
+                  </Button>
+                );
+              }
+            })}
+          </div>
+        </div>
+        <div className="flex flex-row items-end justify-between">
+          <h3 className=" font-semibold">Group Members</h3>
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              variant={'outline'}
+              size={'sm'}
+              className=""
+              onClick={handleMemberDialog}
+            >
+              <UserPlus className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <ScrollArea className="xs:h-[calc(100%-10rem)] h-[calc(100%-11rem)] sm:h-[calc(100%-8rem)]">
           {loading ? (
@@ -776,19 +805,7 @@ export default function GroupChat() {
           >
             Return
           </Button>
-          {groupDetails?.members?.map((member) => {
-            if (member._id === user?._id && isCurrentUserAdmin) {
-              return (
-                <Button
-                  onClick={() => setIsSettingsOpen(true)}
-                  variant={'secondary'}
-                  size={'sm'}
-                >
-                  <Settings2 className="h-4 w-4" />
-                </Button>
-              );
-            }
-          })}
+
           {/* <DropdownMenu>
             <DropdownMenuTrigger>
               <Button variant={'secondary'} size={'sm'}>
