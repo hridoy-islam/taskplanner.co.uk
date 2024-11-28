@@ -35,10 +35,10 @@ export default function DashboardPage() {
         <Tabs defaultValue="dueTasks" className="space-y-4">
           {/* Tabs list for navigation */}
           <TabsList>
-            <TabsTrigger value="dueTasks">Due Tasks</TabsTrigger>
-            <TabsTrigger value="upcomingTasks">Upcoming Tasks</TabsTrigger>
-            <TabsTrigger value="assignedTasks">Assigned Tasks</TabsTrigger>
-            <TabsTrigger value="completedTasks">Completed Tasks</TabsTrigger>
+            <TabsTrigger value="dueTasks">Overdue</TabsTrigger>
+            <TabsTrigger value="upcomingTasks">Due In 7 Days</TabsTrigger>
+            <TabsTrigger value="assignedTasks">Assigned To others</TabsTrigger>
+            <TabsTrigger value="completedTasks">Completed</TabsTrigger>
           </TabsList>
 
           {/* Tab content */}

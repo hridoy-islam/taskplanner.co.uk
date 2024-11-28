@@ -1095,13 +1095,12 @@ export default function GroupChat() {
                         htmlFor={`member-${member.id}`}
                         className="flex items-center space-x-2"
                       >
-                        <Avatar>
-                          <AvatarImage
-                            src={member.avatar || ''}
-                            alt={member.name}
-                          />
+                        <Avatar className="inline-block">
                           <AvatarFallback>
-                            {member.name.charAt(0)}
+                            {member?.name
+                              ?.split(' ')
+                              ?.map((n) => n[0])
+                              ?.join('') || 'User'}
                           </AvatarFallback>
                         </Avatar>
                         <span>{member.name}</span>

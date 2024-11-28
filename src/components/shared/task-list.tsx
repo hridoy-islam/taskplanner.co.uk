@@ -40,9 +40,9 @@ const TaskList = ({
   const [openUpdate, setOpenUpdate] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const sortedTasks = tasks?.sort((a, b) => {
-    return a.status === 'completed' && b.status === 'pending' ? 1 : -1;
-  });
+  // const sortedTasks = tasks?.sort((a, b) => {
+  //   return a.status === 'completed' && b.status === 'pending' ? 1 : -1;
+  // });
 
   const openTaskDetails = (task: any) => {
     setSelectedTask(task);
@@ -100,9 +100,9 @@ const TaskList = ({
   return (
     <div>
       <main className="flex-1 overflow-auto p-4">
-        <ScrollArea className="h-[calc(75vh-8rem)]">
+        <ScrollArea className="h-[calc(85vh-8rem)]">
           <div className="space-y-2">
-            {sortedTasks?.map((task) => (
+            {tasks?.map((task) => (
               <div
                 key={task._id}
                 className={`flex items-center space-x-2 rounded-lg p-3 shadow ${

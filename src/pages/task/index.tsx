@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CornerDownLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import DynamicPagination from '@/components/shared/DynamicPagination';
+// import DynamicPagination from '@/components/shared/DynamicPagination';
 
 export default function TaskPage() {
   const { id } = useParams();
@@ -19,11 +19,11 @@ export default function TaskPage() {
   const [userDetail, setUserDetail] = useState<any>();
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState([]);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
+  // const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  // const [currentPage, setCurrentPage] = useState(1);
+  // const [totalPages, setTotalPages] = useState(1);
+  // const [entriesPerPage, setEntriesPerPage] = useState(10);
+  // const [searchTerm, setSearchTerm] = useState('');
 
   const { register, handleSubmit, reset } = useForm();
 
@@ -32,29 +32,23 @@ export default function TaskPage() {
     setUserDetail(response.data.data);
   };
 
-  const fetchTasks = useCallback(
-    async (page, entriesPerPage, searchTerm = '', sortOrder = 'desc') => {
-      try {
-        const sortQuery = sortOrder === 'asc' ? 'dueDate' : '-dueDate';
-        const res = await axiosInstance.get(
-          `/task/getbothuser/${user?._id}/${id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}`
-        );
-        setTasks(res.data.data.result);
-        console.log(res.data.data);
-        setTotalPages(res.data.data.meta.totalPage);
-      } catch (err) {
-        console.log(err);
-      }
-    },
-    []
-  );
+  const fetchTasks = async () => {
+    try {
+      const res = await axiosInstance.get(
+        `/task/getbothuser/${user?._id}/${id}?limit=100&status=pending`
+      );
+      setTasks(res.data.data.result);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   useEffect(() => {
-    fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
+    fetchTasks();
     fetchUserDetails();
 
     const intervalId = setInterval(() => {
-      fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
+      fetchTasks();
     }, 30000); // 30 seconds
 
     const timeoutId = setTimeout(() => {
@@ -66,23 +60,23 @@ export default function TaskPage() {
       clearInterval(intervalId);
       clearTimeout(timeoutId);
     };
-  }, [currentPage, entriesPerPage, searchTerm, sortOrder, id]);
+  }, [id]);
 
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-    setCurrentPage(1); // Reset to first page when searching
-  };
+  // const handleSearch = (event) => {
+  //   setSearchTerm(event.target.value);
 
-  const handleEntriesPerPageChange = (event) => {
-    setEntriesPerPage(Number(event.target.value));
-    setCurrentPage(1); // Reset to first page when changing entries per page
-  };
+  // };
 
-  const handleSortToggle = () => {
-    const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-    setSortOrder(newSortOrder);
-    fetchTasks(currentPage, entriesPerPage, searchTerm, newSortOrder); // Fetch with the new sort order
-  };
+  // const handleEntriesPerPageChange = (event) => {
+  //   setEntriesPerPage(Number(event.target.value));
+  //   setCurrentPage(1); // Reset to first page when changing entries per page
+  // };
+
+  // const handleSortToggle = () => {
+  //   const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+  //   setSortOrder(newSortOrder);
+  //   fetchTasks(currentPage, entriesPerPage, searchTerm, newSortOrder); // Fetch with the new sort order
+  // };
 
   const handleMarkAsImportant = async (taskId) => {
     const task: any = tasks.find((t: any) => t._id === taskId);
@@ -93,7 +87,7 @@ export default function TaskPage() {
     );
 
     if (response.data.success) {
-      fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
+      fetchTasks();
       toast({
         title: 'Task Updated',
         description: 'Thank You'
@@ -114,7 +108,7 @@ export default function TaskPage() {
     });
 
     if (response.data.success) {
-      fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
+      fetchTasks();
       toast({
         title: 'Task Updated',
         description: 'Thank You'
@@ -138,7 +132,7 @@ export default function TaskPage() {
       console.log(response);
       if (response.data.success) {
         reset();
-        fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
+        fetchTasks();
         toast({
           title: 'Task Added',
           description: 'Thank You'
@@ -169,17 +163,17 @@ export default function TaskPage() {
         ]}
       />
       <div className="my-2 flex justify-between gap-2">
-        <Input
+        {/* <Input
           placeholder="Search notes..."
           value={searchTerm}
           onChange={handleSearch}
-        />
+        /> */}
 
-        <Button variant={'outline'} onClick={handleSortToggle}>
+        {/* <Button variant={'outline'} onClick={handleSortToggle}>
           {sortOrder === 'asc' ? '↑' : '↓'}
-        </Button>
+        </Button> */}
 
-        <select
+        {/* <select
           value={entriesPerPage}
           onChange={handleEntriesPerPageChange}
           className="block w-[180px] rounded-md border border-gray-300 bg-white p-2 shadow-sm transition  duration-150 ease-in-out focus:border-black focus:outline-none focus:ring-black"
@@ -189,7 +183,7 @@ export default function TaskPage() {
           <option value={20}>20</option>
           <option value={50}>50</option>
           <option value={100}>100</option>
-        </select>
+        </select> */}
       </div>
       <TaskList
         tasks={tasks}
@@ -198,13 +192,13 @@ export default function TaskPage() {
         fetchTasks={fetchTasks}
       />
 
-      <div className="z-999 -mt-4 mb-2">
+      {/* <div className="z-999 -mt-4 mb-2">
         <DynamicPagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
         />
-      </div>
+      </div> */}
 
       <footer className="bg-white p-4 shadow">
         <form onSubmit={handleSubmit(onSubmit)} className="flex space-x-2">

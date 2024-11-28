@@ -397,7 +397,7 @@ export default function GroupPage() {
       <Card>
         <CardContent>
           <Table>
-            <ScrollArea className="h-[30rem] max-h-fit pr-2 ">
+            <ScrollArea className="h-[40rem] max-h-fit pr-2 ">
               <TableHeader className="sticky top-0 z-10 bg-white">
                 <TableRow>
                   <TableHead>Name</TableHead>

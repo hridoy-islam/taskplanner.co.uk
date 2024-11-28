@@ -13,7 +13,7 @@ export default function ImportantPage() {
 
   const fetchTasks = async () => {
     const response = await axiosInstance.get(
-      `/task?author=${user?._id}&important=true`
+      `/task?author=${user?._id}&important=true&status=pending`
     );
     setTasks(response.data.data.result);
   };
@@ -49,7 +49,8 @@ export default function ImportantPage() {
     const task: any = tasks.find((t: any) => t._id === taskId);
 
     const response = await axiosInstance.patch(`/task/${taskId}`, {
-      status: task?.status === 'completed' ? 'pending' : 'completed'
+      status: task?.status === 'completed' ? 'pending' : 'completed',
+      important: task?.status === 'completed' ? true : false
     });
 
     if (response.data.success) {

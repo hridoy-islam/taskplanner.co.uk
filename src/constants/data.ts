@@ -44,14 +44,14 @@ export const navItems: NavItem[] = [
     roles: ['admin', 'director', 'user', 'company', 'creator']
   },
   {
-    title: 'Director / BoD',
+    title: 'TP Admin',
     href: '/dashboard/director',
     icon: 'director',
     label: 'director',
     roles: ['admin']
   },
   {
-    title: 'Company',
+    title: 'Company Admin',
     href: '/dashboard/company',
     icon: 'company',
     label: 'Company',
