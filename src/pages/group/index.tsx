@@ -402,7 +402,7 @@ export default function GroupPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Members</TableHead>
-                  <TableHead>G Type</TableHead>
+                  {/* <TableHead>G Type</TableHead> */}
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -444,7 +444,7 @@ export default function GroupPage() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       {group.status === 'active' ? (
                         <Badge
                           variant="outline"
@@ -460,7 +460,7 @@ export default function GroupPage() {
                           Admin
                         </Badge>
                       )}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
                       <Link to={`${group?.id}`}>
                         <Button
