@@ -11,6 +11,14 @@ import { Button } from '@/components/ui/button';
 import { CornerDownLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import DynamicPagination from '@/components/shared/DynamicPagination';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 
 export default function TaskPage() {
   const { id } = useParams();
@@ -18,7 +26,8 @@ export default function TaskPage() {
   const { toast } = useToast();
   const [userDetail, setUserDetail] = useState<any>();
   const [loading, setLoading] = useState(false);
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [sortBy, setSortBy] = useState<'name' | 'unread' | 'recent'>('unread');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -57,14 +66,14 @@ export default function TaskPage() {
       fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
     }, 30000); // 30 seconds
 
-    const timeoutId = setTimeout(() => {
-      clearInterval(intervalId);
-    }, 3600000); // 1 hour
+    // const timeoutId = setTimeout(() => {
+    //   clearInterval(intervalId);
+    // }, 3600000); // 1 hour
 
     // Cleanup on component unmount
     return () => {
-      clearInterval(intervalId);
-      clearTimeout(timeoutId);
+      // clearInterval(intervalId);
+      clearTimeout(intervalId);
     };
   }, [currentPage, entriesPerPage, searchTerm, sortOrder, id]);
 
@@ -83,6 +92,27 @@ export default function TaskPage() {
     setSortOrder(newSortOrder);
     fetchTasks(currentPage, entriesPerPage, searchTerm, newSortOrder); // Fetch with the new sort order
   };
+
+  const filteredGroups = tasks
+    .filter((task) =>
+      task?.taskName?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === 'name') {
+        return sortOrder === 'asc'
+          ? a.taskName.localeCompare(b.taskName)
+          : b.taskName.localeCompare(a.taskName);
+      } else if (sortBy === 'unread') {
+        return sortOrder === 'asc'
+          ? (b.unreadMessageCount || 0) - (a.unreadMessageCount || 0)
+          : (a.unreadMessageCount || 0) - (b.unreadMessageCount || 0);
+      } else if (sortBy === 'recent') {
+        return sortOrder === 'asc'
+          ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return 0;
+    });
 
   const handleMarkAsImportant = async (taskId) => {
     const task: any = tasks.find((t: any) => t._id === taskId);
@@ -175,9 +205,39 @@ export default function TaskPage() {
           onChange={handleSearch}
         />
 
-        <Button variant={'outline'} onClick={handleSortToggle}>
-          {sortOrder === 'asc' ? '↑' : '↓'}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex min-w-fit flex-row">
+            {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                setSortBy('name');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}
+            >
+              Name
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSortBy('unread');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}
+            >
+              New Message
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSortBy('recent');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}
+            >
+              Date Created
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <select
           value={entriesPerPage}
@@ -192,7 +252,7 @@ export default function TaskPage() {
         </select>
       </div>
       <TaskList
-        tasks={tasks}
+        tasks={filteredGroups}
         onMarkAsImportant={handleMarkAsImportant}
         onToggleTaskCompletion={handleToggleTaskCompletion}
         fetchTasks={fetchTasks}

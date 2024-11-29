@@ -17,6 +17,19 @@ export default function CompletedTasks({ user }) {
 
   useEffect(() => {
     fetchCompletedTasks();
+    const intervalId = setInterval(() => {
+      fetchCompletedTasks();
+    }, 30000); // 30 seconds
+
+    // const timeoutId = setTimeout(() => {
+    //   clearInterval(intervalId);
+    // }, 3600000); // 1 hour
+
+    // Cleanup on component unmount
+    return () => {
+      // clearInterval(intervalId);
+      clearTimeout(intervalId);
+    };
   }, [user]);
 
   const handleMarkAsImportant = async (taskId) => {
