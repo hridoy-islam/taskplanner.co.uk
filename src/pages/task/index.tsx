@@ -10,7 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CornerDownLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-// import DynamicPagination from '@/components/shared/DynamicPagination';
+import DynamicPagination from '@/components/shared/DynamicPagination';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 
 export default function TaskPage() {
   const { id } = useParams();
@@ -18,12 +26,13 @@ export default function TaskPage() {
   const { toast } = useToast();
   const [userDetail, setUserDetail] = useState<any>();
   const [loading, setLoading] = useState(false);
-  const [tasks, setTasks] = useState([]);
-  // const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  // const [currentPage, setCurrentPage] = useState(1);
-  // const [totalPages, setTotalPages] = useState(1);
-  // const [entriesPerPage, setEntriesPerPage] = useState(10);
-  // const [searchTerm, setSearchTerm] = useState('');
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [sortBy, setSortBy] = useState<'name' | 'unread' | 'recent'>('unread');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { register, handleSubmit, reset } = useForm();
 
@@ -32,51 +41,78 @@ export default function TaskPage() {
     setUserDetail(response.data.data);
   };
 
-  const fetchTasks = async () => {
-    try {
-      const res = await axiosInstance.get(
-        `/task/getbothuser/${user?._id}/${id}?limit=100&status=pending`
-      );
-      setTasks(res.data.data.result);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  const fetchTasks = useCallback(
+    async (page, entriesPerPage, searchTerm = '', sortOrder = 'desc') => {
+      try {
+        const sortQuery = sortOrder === 'asc' ? 'dueDate' : '-dueDate';
+        const res = await axiosInstance.get(
+          `/task/getbothuser/${user?._id}/${id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}`
+        );
+        setTasks(res.data.data.result);
+        console.log(res.data.data);
+        setTotalPages(res.data.data.meta.totalPage);
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    fetchTasks();
+    fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
     fetchUserDetails();
 
     const intervalId = setInterval(() => {
-      fetchTasks();
+      fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
     }, 30000); // 30 seconds
 
-    const timeoutId = setTimeout(() => {
-      clearInterval(intervalId);
-    }, 3600000); // 1 hour
+    // const timeoutId = setTimeout(() => {
+    //   clearInterval(intervalId);
+    // }, 3600000); // 1 hour
 
     // Cleanup on component unmount
     return () => {
-      clearInterval(intervalId);
-      clearTimeout(timeoutId);
+      // clearInterval(intervalId);
+      clearTimeout(intervalId);
     };
-  }, [id]);
+  }, [currentPage, entriesPerPage, searchTerm, sortOrder, id]);
 
-  // const handleSearch = (event) => {
-  //   setSearchTerm(event.target.value);
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
 
-  // };
+  const handleEntriesPerPageChange = (event) => {
+    setEntriesPerPage(Number(event.target.value));
+    setCurrentPage(1); // Reset to first page when changing entries per page
+  };
 
-  // const handleEntriesPerPageChange = (event) => {
-  //   setEntriesPerPage(Number(event.target.value));
-  //   setCurrentPage(1); // Reset to first page when changing entries per page
-  // };
+  const handleSortToggle = () => {
+    const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortOrder(newSortOrder);
+    fetchTasks(currentPage, entriesPerPage, searchTerm, newSortOrder); // Fetch with the new sort order
+  };
 
-  // const handleSortToggle = () => {
-  //   const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-  //   setSortOrder(newSortOrder);
-  //   fetchTasks(currentPage, entriesPerPage, searchTerm, newSortOrder); // Fetch with the new sort order
-  // };
+  const filteredGroups = tasks
+    .filter((task) =>
+      task?.taskName?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === 'name') {
+        return sortOrder === 'asc'
+          ? a.taskName.localeCompare(b.taskName)
+          : b.taskName.localeCompare(a.taskName);
+      } else if (sortBy === 'unread') {
+        return sortOrder === 'asc'
+          ? (b.unreadMessageCount || 0) - (a.unreadMessageCount || 0)
+          : (a.unreadMessageCount || 0) - (b.unreadMessageCount || 0);
+      } else if (sortBy === 'recent') {
+        return sortOrder === 'asc'
+          ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return 0;
+    });
 
   const handleMarkAsImportant = async (taskId) => {
     const task: any = tasks.find((t: any) => t._id === taskId);
@@ -87,7 +123,7 @@ export default function TaskPage() {
     );
 
     if (response.data.success) {
-      fetchTasks();
+      fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
       toast({
         title: 'Task Updated',
         description: 'Thank You'
@@ -108,7 +144,7 @@ export default function TaskPage() {
     });
 
     if (response.data.success) {
-      fetchTasks();
+      fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
       toast({
         title: 'Task Updated',
         description: 'Thank You'
@@ -132,7 +168,7 @@ export default function TaskPage() {
       console.log(response);
       if (response.data.success) {
         reset();
-        fetchTasks();
+        fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
         toast({
           title: 'Task Added',
           description: 'Thank You'
@@ -163,17 +199,47 @@ export default function TaskPage() {
         ]}
       />
       <div className="my-2 flex justify-between gap-2">
-        {/* <Input
+        <Input
           placeholder="Search notes..."
           value={searchTerm}
           onChange={handleSearch}
-        /> */}
+        />
 
-        {/* <Button variant={'outline'} onClick={handleSortToggle}>
-          {sortOrder === 'asc' ? '↑' : '↓'}
-        </Button> */}
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex min-w-fit flex-row">
+            {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                setSortBy('name');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}
+            >
+              Name
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSortBy('unread');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}
+            >
+              New Message
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSortBy('recent');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}
+            >
+              Date Created
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        {/* <select
+        <select
           value={entriesPerPage}
           onChange={handleEntriesPerPageChange}
           className="block w-[180px] rounded-md border border-gray-300 bg-white p-2 shadow-sm transition  duration-150 ease-in-out focus:border-black focus:outline-none focus:ring-black"
@@ -183,22 +249,22 @@ export default function TaskPage() {
           <option value={20}>20</option>
           <option value={50}>50</option>
           <option value={100}>100</option>
-        </select> */}
+        </select>
       </div>
       <TaskList
-        tasks={tasks}
+        tasks={filteredGroups}
         onMarkAsImportant={handleMarkAsImportant}
         onToggleTaskCompletion={handleToggleTaskCompletion}
         fetchTasks={fetchTasks}
       />
 
-      {/* <div className="z-999 -mt-4 mb-2">
+      <div className="z-999 -mt-4 mb-2">
         <DynamicPagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
         />
-      </div> */}
+      </div>
 
       <footer className="bg-white p-4 shadow">
         <form onSubmit={handleSubmit(onSubmit)} className="flex space-x-2">
