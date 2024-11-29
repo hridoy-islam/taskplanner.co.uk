@@ -112,14 +112,22 @@ export default function GroupPage() {
   useEffect(() => {
     const loadMembers = async () => {
       const fetchedMembers = await fetchMembers();
-      setInitialMembers(
-        fetchedMembers.map((member: any) => ({
+
+      setInitialMembers([
+        {
+          id: user?._id,
+          name: user?.name,
+          email: user?.email,
+          avatar: user?.avatarUrl,
+          isCurrentUser: true // Add this line
+        },
+        ...fetchedMembers.map((member: any) => ({
           id: member._id,
           name: member.name,
           email: member.email,
           avatar: member.avatarUrl
         }))
-      );
+      ]);
     };
 
     loadMembers();
@@ -137,9 +145,7 @@ export default function GroupPage() {
           createdAt: group.createdAt,
           members: group.members.map((member: any) => ({
             id: member._id,
-            name:
-              initialMembers.find((m) => m.id === member._id)?.name ||
-              'Unknown',
+            name: initialMembers.find((m) => m.id === member._id)?.name,
             avatar: initialMembers.find((m) => m.id === member._id)?.avatar
           })),
           comments: [], // Populate if your API includes comments
