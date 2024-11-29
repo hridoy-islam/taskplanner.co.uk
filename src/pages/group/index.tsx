@@ -179,7 +179,8 @@ export default function GroupPage() {
           {
             _id: user?._id, // Add the current user as an admin
             role: 'admin', // Assign the role as admin
-            acceptInvitation: true
+            acceptInvitation: true,
+            name: user?.name
           },
           ...selectedMembers.map((memberId) => ({
             _id: memberId,
