@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -16,8 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogTrigger
+  DialogFooter
 } from '@/components/ui/dialog';
 
 import axiosInstance from '../../lib/axios';
@@ -73,11 +71,11 @@ interface Group {
   createdAt: Date; // Add this line
 }
 
-interface Notification {
-  id: number;
-  content: string;
-  isRead: boolean;
-}
+// interface Notification {
+//   id: number;
+//   content: string;
+//   isRead: boolean;
+// }
 
 export default function GroupPage() {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -87,13 +85,13 @@ export default function GroupPage() {
     'name' | 'members' | 'unread' | 'recent'
   >('unread');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [currentPage, setCurrentPage] = useState(1);
+  // const [currentPage, setCurrentPage] = useState(1);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
-  const [newComment, setNewComment] = useState('');
+  // const [newComment, setNewComment] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  // const [notifications, setNotifications] = useState<Notification[]>([]);
   const [initialMembers, setInitialMembers] = useState<Member[]>([]);
 
   const { user } = useSelector((state: any) => state.auth);
@@ -137,7 +135,6 @@ export default function GroupPage() {
     try {
       const response = await axiosInstance.get('/group/single');
       if (response.status === 200) {
-        // Assuming the response contains an array of groups
         const fetchedGroups = response?.data?.data?.map((group: any) => ({
           id: group._id,
           name: group.groupName,
@@ -148,14 +145,14 @@ export default function GroupPage() {
             name: initialMembers.find((m) => m.id === member._id)?.name,
             avatar: initialMembers.find((m) => m.id === member._id)?.avatar
           })),
-          comments: [], // Populate if your API includes comments
-          unreadMessageCount: group.unreadMessageCount // Add this line
+          comments: [],
+          unreadMessageCount: group.unreadMessageCount
         }));
         setGroups(fetchedGroups);
       }
     } catch (error) {
       console.error('Error fetching groups:', error);
-      // Optionally display an error message
+    } finally {
     }
   };
 
@@ -172,7 +169,7 @@ export default function GroupPage() {
     return () => clearInterval(interval);
   }, [initialMembers]); // Re-run if `initialMembers` changes
 
-  const pageSize = 5;
+  // const pageSize = 5;
 
   const addGroup = async () => {
     if (newGroupName) {
@@ -234,66 +231,66 @@ export default function GroupPage() {
     }
   };
 
-  const addComment = () => {
-    if (selectedGroup && newComment) {
-      const comment: Comment = {
-        id: Date.now(),
-        memberId: 1, // Assuming the current user is the first member
-        content: newComment,
-        createdAt: new Date()
-      };
-      const updatedGroup = {
-        ...selectedGroup,
-        comments: [...selectedGroup.comments, comment]
-      };
-      setGroups(
-        groups.map((group) =>
-          group.id === selectedGroup.id ? updatedGroup : group
-        )
-      );
-      setNewComment('');
-      addNotification(
-        `New comment in ${selectedGroup.name}: ${newComment.substring(0, 50)}${newComment.length > 50 ? '...' : ''}`
-      );
-    }
-  };
+  // const addComment = () => {
+  //   if (selectedGroup && newComment) {
+  //     const comment: Comment = {
+  //       id: Date.now(),
+  //       memberId: 1, // Assuming the current user is the first member
+  //       content: newComment,
+  //       createdAt: new Date()
+  //     };
+  //     const updatedGroup = {
+  //       ...selectedGroup,
+  //       comments: [...selectedGroup.comments, comment]
+  //     };
+  //     setGroups(
+  //       groups.map((group) =>
+  //         group.id === selectedGroup.id ? updatedGroup : group
+  //       )
+  //     );
+  //     setNewComment('');
+  //     // addNotification(
+  //     //   `New comment in ${selectedGroup.name}: ${newComment.substring(0, 50)}${newComment.length > 50 ? '...' : ''}`
+  //     // );
+  //   }
+  // };
 
-  const removeMember = (groupId: number, memberId: number) => {
-    setGroups(
-      groups.map((group) => {
-        if (group.id === groupId) {
-          return {
-            ...group,
-            members: group.members.filter((member) => member.id !== memberId)
-          };
-        }
-        return group;
-      })
-    );
-  };
+  // const removeMember = (groupId: number, memberId: number) => {
+  //   setGroups(
+  //     groups.map((group) => {
+  //       if (group.id === groupId) {
+  //         return {
+  //           ...group,
+  //           members: group.members.filter((member) => member.id !== memberId)
+  //         };
+  //       }
+  //       return group;
+  //     })
+  //   );
+  // };
 
   const filteredMembers = initialMembers.filter((member) =>
     member.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const addNotification = (content: string) => {
-    const newNotification: Notification = {
-      id: Date.now(),
-      content,
-      isRead: false
-    };
-    setNotifications([newNotification, ...notifications]);
-  };
+  // const addNotification = (content: string) => {
+  //   const newNotification: Notification = {
+  //     id: Date.now(),
+  //     content,
+  //     isRead: false
+  //   };
+  //   setNotifications([newNotification, ...notifications]);
+  // };
 
-  const markNotificationAsRead = (id: number) => {
-    setNotifications(
-      notifications.map((notification) =>
-        notification.id === id
-          ? { ...notification, isRead: true }
-          : notification
-      )
-    );
-  };
+  // const markNotificationAsRead = (id: number) => {
+  //   setNotifications(
+  //     notifications.map((notification) =>
+  //       notification.id === id
+  //         ? { ...notification, isRead: true }
+  //         : notification
+  //     )
+  //   );
+  // };
 
   const filteredGroups = groups
     .filter((group) =>
@@ -320,21 +317,20 @@ export default function GroupPage() {
       return 0;
     });
 
-  const paginatedGroups = filteredGroups.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  // const paginatedGroups = filteredGroups.slice(
+  //   (currentPage - 1) * pageSize,
+  //   currentPage * pageSize
+  // );
 
-  const pageCount = Math.ceil(filteredGroups.length / pageSize);
+  // const pageCount = Math.ceil(filteredGroups.length / pageSize);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, sortBy, sortOrder]);
+  // useEffect(() => {
+  //   // setCurrentPage(1);
+  // }, [searchTerm, sortBy, sortOrder]);
 
   return (
     <div className="container mx-auto h-full overflow-auto p-4">
       <h1 className="mb-4 text-2xl font-bold">Groups</h1>
-
       <div className="mb-4 flex gap-4">
         <div className="relative flex-grow">
           <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
@@ -354,47 +350,49 @@ export default function GroupPage() {
         >
           {sortOrder === 'asc' ? '↑' : '↓'}
         </Button> */}
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                setSortBy('name');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}
-            >
-              Name
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSortBy('members');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}
-            >
-              Member Count
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSortBy('unread');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}
-            >
-              New Message
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSortBy('recent');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}
-            >
-              Date Created
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  setSortBy('unread');
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                }}
+              >
+                New Message
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSortBy('name');
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                }}
+              >
+                Name
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSortBy('members');
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                }}
+              >
+                Member Count
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSortBy('recent');
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                }}
+              >
+                Date Created
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </Button>
 
         <Button onClick={() => setIsGroupModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> Add Group
@@ -494,18 +492,6 @@ export default function GroupPage() {
         </CardContent>
       </Card>
 
-      {/* <div className="mt-4 flex justify-center gap-2">
-        {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
-          <Button
-            key={page}
-            variant={currentPage === page ? 'default' : 'outline'}
-            onClick={() => setCurrentPage(page)}
-          >
-            {page}
-          </Button>
-        ))}
-      </div> */}
-
       <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -566,7 +552,7 @@ export default function GroupPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="fixed bottom-4 right-4">
+      {/* <div className="fixed bottom-4 right-4">
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline" className="rounded-full p-2">
@@ -603,11 +589,7 @@ export default function GroupPage() {
             </ScrollArea>
           </DialogContent>
         </Dialog>
-      </div>
+      </div> */}
     </div>
   );
 }
-
-// export default function GroupPage() {
-//   return <>comming soon</>;
-// }

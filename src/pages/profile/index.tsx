@@ -27,7 +27,8 @@ import { useToast } from '@/components/ui/use-toast';
 const profileFormSchema = z.object({
   name: z.string().nonempty('Name is required'),
   email: z.string().email({ message: 'Enter a valid email address' }),
-  address: z.string().optional()
+  address: z.string().optional(),
+  phone: z.string().optional()
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -40,7 +41,8 @@ export default function ProfilePage() {
   const defaultValues: Partial<ProfileFormValues> = {
     name: profileData?.name || '',
     email: profileData?.email || '',
-    address: profileData?.address || ''
+    address: profileData?.address || '',
+    phone: profileData?.phone || ''
   };
 
   const form = useForm<ProfileFormValues>({
@@ -130,6 +132,19 @@ export default function ProfilePage() {
                     disabled
                     {...field}
                   />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone</FormLabel>
+                <FormControl>
+                  <Input placeholder="Phone" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
