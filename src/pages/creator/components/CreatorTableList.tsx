@@ -52,7 +52,7 @@ export default function CreatorTableList({ refreshKey }) {
     async (page, entriesPerPage, searchTerm = '') => {
       try {
         const res = await axiosInstance.get(
-          `/users?role=company&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}`
+          `/users?role=company&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&isDeleted=false`
         );
 
         const companyOptions = res.data.data.result.map((company) => ({

@@ -24,7 +24,7 @@ export default function UpcomingTaskPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [entriesPerPage, setEntriesPerPage] = useState(100);
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchUpcomingTasks = useCallback(
@@ -84,10 +84,10 @@ export default function UpcomingTaskPage() {
     setCurrentPage(1); // Reset to first page when searching
   };
 
-  const handleEntriesPerPageChange = (event) => {
-    setEntriesPerPage(Number(event.target.value));
-    setCurrentPage(1); // Reset to first page when changing entries per page
-  };
+  // const handleEntriesPerPageChange = (event) => {
+  //   setEntriesPerPage(Number(event.target.value));
+  //   setCurrentPage(1); // Reset to first page when changing entries per page
+  // };
 
   const handleSortToggle = () => {
     const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
@@ -153,52 +153,48 @@ export default function UpcomingTaskPage() {
           value={searchTerm}
           onChange={handleSearch}
         />
-
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex min-w-fit flex-row">
-            {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                setSortBy('name');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}
-            >
-              Name
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSortBy('unread');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}
-            >
-              New Message
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSortBy('recent');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}
-            >
-              Date Created
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <select
-          value={entriesPerPage}
-          onChange={handleEntriesPerPageChange}
-          className="block w-[180px] rounded-md border border-gray-300 bg-white p-2 shadow-sm transition  duration-150 ease-in-out focus:border-black focus:outline-none focus:ring-black"
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-        </select>
+        <Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex min-w-fit flex-row">
+              {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  setSortBy('name');
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                }}
+              >
+                Name
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSortBy('unread');
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                }}
+              >
+                New Message
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSortBy('recent');
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                }}
+              >
+                Date Created
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </Button>
+        <div>
+          <DynamicPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       </div>
       <TaskList
         tasks={tasks}
@@ -206,13 +202,6 @@ export default function UpcomingTaskPage() {
         onToggleTaskCompletion={handleToggleTaskCompletion}
         fetchTasks={fetchUpcomingTasks}
       />
-      <div className="z-999 -mt-6">
-        <DynamicPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
-      </div>
     </div>
   );
 }

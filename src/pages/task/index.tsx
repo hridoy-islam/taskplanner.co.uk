@@ -31,7 +31,7 @@ export default function TaskPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [entriesPerPage, setEntriesPerPage] = useState(100);
   const [searchTerm, setSearchTerm] = useState('');
 
   const { register, handleSubmit, reset } = useForm();
@@ -46,16 +46,15 @@ export default function TaskPage() {
       try {
         const sortQuery = sortOrder === 'asc' ? 'dueDate' : '-dueDate';
         const res = await axiosInstance.get(
-          `/task/getbothuser/${user?._id}/${id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}`
+          `/task/getbothuser/${user?._id}/${id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}&status=pending`
         );
         setTasks(res.data.data.result);
-        console.log(res.data.data);
         setTotalPages(res.data.data.meta.totalPage);
       } catch (err) {
         console.log(err);
       }
     },
-    []
+    [id]
   );
 
   useEffect(() => {
@@ -82,16 +81,16 @@ export default function TaskPage() {
     setCurrentPage(1); // Reset to first page when searching
   };
 
-  const handleEntriesPerPageChange = (event) => {
-    setEntriesPerPage(Number(event.target.value));
-    setCurrentPage(1); // Reset to first page when changing entries per page
-  };
+  // const handleEntriesPerPageChange = (event) => {
+  //   setEntriesPerPage(Number(event.target.value));
+  //   setCurrentPage(1); // Reset to first page when changing entries per page
+  // };
 
-  const handleSortToggle = () => {
-    const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-    setSortOrder(newSortOrder);
-    fetchTasks(currentPage, entriesPerPage, searchTerm, newSortOrder); // Fetch with the new sort order
-  };
+  // const handleSortToggle = () => {
+  //   const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+  //   setSortOrder(newSortOrder);
+  //   fetchTasks(currentPage, entriesPerPage, searchTerm, newSortOrder); // Fetch with the new sort order
+  // };
 
   const filteredGroups = tasks
     .filter((task) =>
@@ -198,58 +197,55 @@ export default function TaskPage() {
           { title: userDetail?.name, link: `/task/${id}` }
         ]}
       />
-      <div className="my-2 flex justify-between gap-2">
+      <div className="my-2 flex items-center justify-between gap-2">
         <Input
-          placeholder="Search notes..."
+          placeholder="Search task..."
           value={searchTerm}
           onChange={handleSearch}
         />
+        <Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex min-w-fit flex-row">
+              {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  setSortBy('name');
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                }}
+              >
+                Name
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSortBy('unread');
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                }}
+              >
+                New Message
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSortBy('recent');
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                }}
+              >
+                Date Created
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </Button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex min-w-fit flex-row">
-            {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                setSortBy('name');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}
-            >
-              Name
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSortBy('unread');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}
-            >
-              New Message
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSortBy('recent');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}
-            >
-              Date Created
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <select
-          value={entriesPerPage}
-          onChange={handleEntriesPerPageChange}
-          className="block w-[180px] rounded-md border border-gray-300 bg-white p-2 shadow-sm transition  duration-150 ease-in-out focus:border-black focus:outline-none focus:ring-black"
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-        </select>
+        <div>
+          <DynamicPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       </div>
       <TaskList
         tasks={filteredGroups}
@@ -257,14 +253,6 @@ export default function TaskPage() {
         onToggleTaskCompletion={handleToggleTaskCompletion}
         fetchTasks={fetchTasks}
       />
-
-      <div className="z-999 -mt-4 mb-2">
-        <DynamicPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
-      </div>
 
       <footer className="bg-white p-4 shadow">
         <form onSubmit={handleSubmit(onSubmit)} className="flex space-x-2">

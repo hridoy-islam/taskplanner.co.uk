@@ -15,13 +15,10 @@ import PageHead from '@/components/shared/page-head';
 import { Breadcrumbs } from '@/components/shared/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
-import { useDispatch, useSelector } from 'react-redux';
-import { useEffect } from 'react';
-import {
-  fetchUserProfile,
-  updateUserProfile
-} from '@/redux/features/profileSlice';
-import { AppDispatch } from '@/redux/store';
+import { useSelector } from 'react-redux';
+import { useEffect, useState } from 'react';
+import axiosInstance from '../../lib/axios';
+
 import { useToast } from '@/components/ui/use-toast';
 
 const profileFormSchema = z.object({
@@ -34,9 +31,12 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfilePage() {
-  const dispatch = useDispatch<AppDispatch>();
+  // const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: any) => state.auth);
-  const { profileData } = useSelector((state: any) => state.profile);
+  const [profileData, setProfileData] = useState<ProfileFormValues | null>(
+    null
+  );
+  const { toast } = useToast();
 
   const defaultValues: Partial<ProfileFormValues> = {
     name: profileData?.name || '',
@@ -54,22 +54,38 @@ export default function ProfilePage() {
   const userId = user?._id;
 
   useEffect(() => {
-    if (userId) {
-      dispatch(fetchUserProfile(userId));
-    }
-  }, [userId, dispatch]);
+    const fetchProfileData = async () => {
+      try {
+        const response = await axiosInstance.get(`/users/${userId}`);
+        const data = response.data.data;
+        setProfileData(data);
+        form.reset(data); // Populate form with fetched data
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+        toast({
+          title: 'Error',
+          description: 'Unable to fetch profile data',
+          variant: 'destructive'
+        });
+      }
+    };
 
-  const { toast } = useToast();
+    fetchProfileData();
+  }, [userId]);
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
-      await dispatch(updateUserProfile({ userId, profileData: data })).unwrap();
+      await axiosInstance.patch(`/users/${userId}`, data);
       toast({
         title: 'Profile Updated',
         description: 'Thank You'
       });
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update profile',
+        variant: 'destructive'
+      });
     }
   };
 

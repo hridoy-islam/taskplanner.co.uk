@@ -40,6 +40,7 @@ export default function UserProfileDetail() {
   const [searchQuery, setSearchQuery] = useState<string>(''); // State for search query
   const [loading, setLoading] = useState<boolean>(false); // New loading state
   const [companyId, setCompanyId] = useState(''); // New loading state
+  const [email, setEmail] = useState<string>(''); // Email input state
   const fetchUserDetails = async () => {
     const res = await axiosInstance.get(`/users/${id}`);
     setUserData(res.data.data);
@@ -153,6 +154,47 @@ export default function UserProfileDetail() {
     }
   };
 
+  const handleAddUserByEmail = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent default form submission
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get(`/users?email=${email}`);
+      const user = response.data.data.result[0];
+      console.log(user);
+      if (user._id) {
+        // Patch user to assign to the company
+        // await axiosInstance.patch(`/users/addmember/${id}`, {
+        //   colleagueId: user._id,
+        //   action: 'add'
+        // });
+
+        toast({
+          title: 'User Assigned Successfully',
+          description: `${user.name} has been assigned to the company.`
+        });
+
+        // Update assigned members
+        setAssignedMembers((prev) => [...prev, user]);
+        // Refetch available members
+        await fetchAvailableMembers(companyId || '');
+      } else {
+        toast({
+          title: 'User not found',
+          variant: 'destructive'
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error Adding User',
+        description: error.response?.data?.message || 'User not found',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+      setEmail(''); // Reset email input
+    }
+  };
+
   return (
     <div className="container mx-auto py-10">
       <h1 className="mb-8 text-3xl font-bold">Edit {userData?.name} Profile</h1>
@@ -179,6 +221,21 @@ export default function UserProfileDetail() {
                 Save Changes
               </Button>
             </form>
+
+            <div className="mt-20 space-y-2">
+              <form onSubmit={handleAddUserByEmail} className="space-y-2">
+                <Label>Add User By Email</Label>
+                <Input
+                  id="email"
+                  placeholder="Enter user email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <Button type="submit" variant={'outline'} disabled={loading}>
+                  Add
+                </Button>
+              </form>
+            </div>
           </CardContent>
         </Card>
         <Card>

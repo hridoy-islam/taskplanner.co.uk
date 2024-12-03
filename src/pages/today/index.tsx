@@ -18,6 +18,15 @@ export default function TodayPage() {
 
   useEffect(() => {
     fetchTasks();
+
+    const intervalId = setInterval(() => {
+      fetchTasks();
+    }, 30000); // 30 seconds
+
+    return () => {
+      // clearInterval(intervalId);
+      clearTimeout(intervalId);
+    };
   }, [user]);
 
   const handleMarkAsImportant = async (taskId) => {
