@@ -160,13 +160,12 @@ export default function UserProfileDetail() {
       setLoading(true);
       const response = await axiosInstance.get(`/users?email=${email}`);
       const user = response.data.data.result[0];
-      console.log(user);
       if (user._id) {
         // Patch user to assign to the company
-        // await axiosInstance.patch(`/users/addmember/${id}`, {
-        //   colleagueId: user._id,
-        //   action: 'add'
-        // });
+        await axiosInstance.patch(`/users/addmember/${id}`, {
+          colleagueId: user._id,
+          action: 'add'
+        });
 
         toast({
           title: 'User Assigned Successfully',
