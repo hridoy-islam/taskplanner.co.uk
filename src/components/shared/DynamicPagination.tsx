@@ -26,9 +26,9 @@ const DynamicPagination = ({ currentPage, totalPages, onPageChange }) => {
   return (
     <Pagination className="mt-6">
       <PaginationContent>
-        <PaginationItem>
+        {/* <PaginationItem>
           <PaginationPrevious href="#" onClick={handlePrevious} />
-        </PaginationItem>
+        </PaginationItem> */}
         {Array.from({ length: totalPages }, (_, index) => (
           <PaginationItem key={index + 1}>
             <PaginationLink
@@ -43,9 +43,9 @@ const DynamicPagination = ({ currentPage, totalPages, onPageChange }) => {
             </PaginationLink>
           </PaginationItem>
         ))}
-        <PaginationItem>
+        {/* <PaginationItem>
           <PaginationNext href="#" onClick={handleNext} />
-        </PaginationItem>
+        </PaginationItem> */}
       </PaginationContent>
     </Pagination>
   );
