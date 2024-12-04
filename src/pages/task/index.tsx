@@ -8,7 +8,7 @@ import TaskList from '@/components/shared/task-list';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CornerDownLeft } from 'lucide-react';
+import { CornerDownLeft, FilterIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import DynamicPagination from '@/components/shared/DynamicPagination';
 import {
@@ -16,6 +16,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
@@ -27,8 +29,11 @@ export default function TaskPage() {
   const [userDetail, setUserDetail] = useState<any>();
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState<any[]>([]);
-  const [sortBy, setSortBy] = useState<'name' | 'unread' | 'recent'>('unread');
+  const [sortBy, setSortBy] = useState<'taskName' | 'unread' | 'updatedAt'>(
+    'updatedAt'
+  );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [isGetAll, setIsGetAll] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
@@ -44,18 +49,17 @@ export default function TaskPage() {
   const fetchTasks = useCallback(
     async (page, entriesPerPage, searchTerm = '', sortOrder = 'desc') => {
       try {
-        const sortQuery = sortOrder === 'asc' ? 'dueDate' : '-dueDate';
+        const sortQuery = sortOrder === 'asc' ? `${sortBy}` : `-${sortBy}`;
         const res = await axiosInstance.get(
-          `/task/getbothuser/${user?._id}/${id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}`
+          `/task/getbothuser/${user?._id}/${id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}&getAll=${isGetAll}`
         );
         setTasks(res.data.data.result);
-        console.log(res.data.data);
         setTotalPages(res.data.data.meta.totalPage);
       } catch (err) {
         console.log(err);
       }
     },
-    []
+    [isGetAll]
   );
 
   useEffect(() => {
@@ -75,7 +79,7 @@ export default function TaskPage() {
       // clearInterval(intervalId);
       clearTimeout(intervalId);
     };
-  }, [currentPage, entriesPerPage, searchTerm, sortOrder, id]);
+  }, [currentPage, entriesPerPage, searchTerm, sortOrder, id, isGetAll]);
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
@@ -94,22 +98,14 @@ export default function TaskPage() {
   };
 
   const filteredGroups = tasks
-    .filter((task) =>
+    ?.filter((task) =>
       task?.taskName?.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
-      if (sortBy === 'name') {
-        return sortOrder === 'asc'
-          ? a.taskName.localeCompare(b.taskName)
-          : b.taskName.localeCompare(a.taskName);
-      } else if (sortBy === 'unread') {
+      if (sortBy === 'unread') {
         return sortOrder === 'asc'
           ? (b.unreadMessageCount || 0) - (a.unreadMessageCount || 0)
           : (a.unreadMessageCount || 0) - (b.unreadMessageCount || 0);
-      } else if (sortBy === 'recent') {
-        return sortOrder === 'asc'
-          ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
       return 0;
     });
@@ -204,7 +200,7 @@ export default function TaskPage() {
           value={searchTerm}
           onChange={handleSearch}
         />
-
+        <div></div>
         <DropdownMenu>
           <DropdownMenuTrigger className="flex min-w-fit flex-row">
             {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
@@ -214,7 +210,15 @@ export default function TaskPage() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
-                setSortBy('name');
+                setSortBy('updatedAt');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}
+            >
+              Latest
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSortBy('taskName');
                 setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
               }}
             >
@@ -228,14 +232,29 @@ export default function TaskPage() {
             >
               New Message
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSortBy('recent');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size={'icon'} variant="outline">
+              <FilterIcon className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuLabel>Filter With</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup
+              value={isGetAll ? 'true' : 'false'}
+              onValueChange={(value) => setIsGetAll(value === 'true')} // Explicit boolean conversion
             >
-              Date Created
-            </DropdownMenuItem>
+              <DropdownMenuRadioItem value="true">
+                Get All
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="false">
+                Get Unread
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 

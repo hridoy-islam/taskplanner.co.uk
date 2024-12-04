@@ -1144,7 +1144,7 @@ export default function GroupChat() {
           <form onSubmit={handleGroupDescriptionUpdate}>
             <div className="space-t-4">
               <div>
-                <Label>Select Member</Label>
+                <Label>Group Name</Label>
                 <Input
                   placeholder="Group Name"
                   className="mb-2"
