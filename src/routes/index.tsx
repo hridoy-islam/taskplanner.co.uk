@@ -26,6 +26,7 @@ import { Suspense, lazy } from 'react';
 import { Navigate, Outlet, useRoutes } from 'react-router-dom';
 import GroupChat from '../pages/group/chat';
 import Reminder from '@/pages/reminder';
+import NotificationsPage from '@/pages/notification';
 
 const DashboardLayout = lazy(
   () => import('@/components/layout/dashboard-layout')
@@ -136,6 +137,10 @@ export default function AppRouter() {
         {
           path: 'reminder',
           element: <Reminder />
+        },
+        {
+          path: 'notifications',
+          element: <NotificationsPage />
         }
       ]
     }

@@ -6,6 +6,7 @@ import { MenuIcon } from 'lucide-react';
 import UserNav from '../shared/user-nav';
 import { Toaster } from '@/components/ui/sonner';
 import AutoLogout from '../shared/auto-logout';
+import { NotificationDropdown } from '../shared/notification-dropdown';
 
 export default function DashboardLayout({
   children
@@ -35,6 +36,7 @@ export default function DashboardLayout({
         </div>
 
         <div className="ml-auto flex items-center space-x-4">
+          <NotificationDropdown />
           <UserNav />
         </div>
 

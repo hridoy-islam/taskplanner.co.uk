@@ -1,8 +1,6 @@
 import { HTMLAttributes } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-
-import { z } from 'zod';
+import axiosInstance from '../../../lib/axios';
 import {
   Form,
   FormControl,
@@ -15,67 +13,46 @@ import { Input } from '@/components/ui/input';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/redux/store';
-import { registerUser } from '@/redux/features/authSlice';
 import { useRouter } from '@/routes/hooks';
 import { useToast } from '@/components/ui/use-toast';
 
 interface SignUpFormProps extends HTMLAttributes<HTMLDivElement> {}
-const formSchema = z
-  .object({
-    name: z.string(),
-    email: z
-      .string()
-      .min(1, { message: 'Please enter your email' })
-      .email({ message: 'Invalid email address' }),
-    password: z
-      .string()
-      .min(1, {
-        message: 'Please enter your password'
-      })
-      .min(7, {
-        message: 'Password must be at least 7 characters long'
-      }),
-    confirmPassword: z.string(),
-    role: z.string()
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match.",
-    path: ['confirmPassword']
-  });
 
 export function SignUpForm({ className, ...props }: SignUpFormProps) {
-  const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm({
     defaultValues: {
       name: '',
       email: '',
       password: '',
-      confirmPassword: '',
+      phone: '',
       role: 'user'
     }
   });
 
-  async function onSubmit(data: z.infer<typeof formSchema>) {
-    const result: any = await dispatch(registerUser(data));
-    if (result?.payload?.success) {
-      toast({
-        title: 'Account Created',
-        description: 'You have successfully created an account'
-      });
-      alert('Account Created');
-      router.push('/login');
-    } else if (result?.error) {
-      // sonner alert
-      alert('something went wrong');
+  async function onSubmit(data) {
+    try {
+      const result = await axiosInstance.post(`/auth/signup`, data);
+      if (result?.data?.success) {
+        toast({
+          title: 'Account Created',
+          description: 'You have successfully created an account'
+        });
+        router.push('/login');
+      } else {
+        toast({
+          title: 'Error',
+          description: result.data.message || 'Something went wrong',
+          variant: 'destructive'
+        });
+      }
+    } catch (error: any) {
+      console.error('API Error:', error);
       toast({
         title: 'Error',
-        description: result.error.message || 'Something went wrong',
+        description: error.response?.data?.message || 'Server not reachable',
         variant: 'destructive'
       });
     }
@@ -112,6 +89,20 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem className="space-y-1">
+                  <FormLabel>Phone</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your Phone" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="password"
@@ -119,26 +110,13 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                 <FormItem className="space-y-1">
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="********" {...field} />
+                    <Input type="password" placeholder="********" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem className="space-y-1">
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input placeholder="********" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button className="mt-2" variant={'outline'}>
+            <Button className="mt-2" type="submit" variant={'outline'}>
               Create Account
             </Button>
           </div>
