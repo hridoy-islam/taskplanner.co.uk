@@ -5,6 +5,7 @@ import { FeaturesSection } from './components/features-section';
 import { AppPreviewSection } from './components/app-preview-section';
 import { PricingSection } from './components/pricing-section';
 import { SiteFooter } from './components/site-footer';
+import HowItWorkSection from './components/how-it-work-section';
 
 export default function HomePage() {
   return (
@@ -273,6 +274,7 @@ export default function HomePage() {
         <LogosSection />
         <FeaturesSection />
         <AppPreviewSection />
+        <HowItWorkSection />
         <PricingSection />
       </main>
       <SiteFooter />
