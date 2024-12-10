@@ -25,7 +25,6 @@ import UserProfileDetail from '@/pages/users/profile/user-profile-detail';
 import { Suspense, lazy } from 'react';
 import { Navigate, Outlet, useRoutes } from 'react-router-dom';
 import GroupChat from '../pages/group/chat';
-import Reminder from '@/pages/reminder';
 import NotificationsPage from '@/pages/notification';
 
 const DashboardLayout = lazy(
@@ -133,10 +132,6 @@ export default function AppRouter() {
         {
           path: 'task/:id',
           element: <TaskPage />
-        },
-        {
-          path: 'reminder',
-          element: <Reminder />
         },
         {
           path: 'notifications',

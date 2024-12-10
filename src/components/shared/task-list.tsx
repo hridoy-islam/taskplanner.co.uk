@@ -7,8 +7,16 @@ import {
   Calendar,
   ArrowRight,
   CircleUser,
-  MessageSquareText
+  MessageSquareText,
+  AlarmClock,
+  CalendarClock
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem
+} from '@/components/ui/dropdown-menu';
 
 import { Badge } from '../ui/badge';
 import {
@@ -251,6 +259,29 @@ const TaskList = ({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                <Badge className="flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-teal-900" />{' '}
+                  <span>Once</span>
+                </Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="rounded-md p-2 focus:outline-none">
+                      <AlarmClock className="h-5 w-5 text-indigo-800" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="center"
+                    side="top"
+                    className="w-48 bg-primary text-black"
+                  >
+                    <DropdownMenuItem>Daily</DropdownMenuItem>
+                    <DropdownMenuItem>Weekdays</DropdownMenuItem>
+                    <DropdownMenuItem>Weekly</DropdownMenuItem>
+                    <DropdownMenuItem>Monthly</DropdownMenuItem>
+                    <DropdownMenuItem>Yearly</DropdownMenuItem>
+                    <DropdownMenuItem>Customize</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ))}
           </div>
