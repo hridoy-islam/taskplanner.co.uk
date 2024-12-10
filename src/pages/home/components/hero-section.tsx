@@ -1,9 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import dashboardPreview from '../../../assets/imges/home/dashbaord_preview.png';
+import bannerBg from '../../../assets/imges/home/banner_bg.png';
 
 export function HeroSection() {
   return (
-    <section className="bg-navy-900 relative py-20 md:py-32">
+    <section
+      style={{ backgroundImage: `url(${bannerBg})` }}
+      className="relative py-20 md:py-32"
+    >
       <div className="bg-grid-white/[0.05] absolute inset-0 bg-[size:16px]" />
       <div className="container relative">
         <div className="space-y-8 text-center">
@@ -28,7 +33,7 @@ export function HeroSection() {
         </div>
         <div className="mt-16 rounded-lg border bg-white/5 backdrop-blur-sm">
           <img
-            src="/placeholder.svg"
+            src={dashboardPreview}
             alt="Dashboard Preview"
             width={1200}
             height={600}

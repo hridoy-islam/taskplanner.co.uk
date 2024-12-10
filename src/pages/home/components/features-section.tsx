@@ -1,21 +1,23 @@
-import { CalendarDays, Users2, Notebook } from 'lucide-react';
+import notesLogo from '../../../assets/imges/home/logos/notes.svg';
+import teamLogo from '../../../assets/imges/home/logos/team.svg';
+import calendarLogo from '../../../assets/imges/home/logos/calender.svg';
 
 export function FeaturesSection() {
   const features = [
     {
-      icon: Notebook,
+      icon: notesLogo,
       title: 'Smart Notes',
       description:
         'Create, organize, and share notes effortlessly. Keep all your ideas in one place.'
     },
     {
-      icon: CalendarDays,
+      icon: calendarLogo,
       title: 'Planner & Calendar',
       description:
         'Plan your tasks and events with an intuitive calendar interface. Stay on top of your schedule.'
     },
     {
-      icon: Users2,
+      icon: teamLogo,
       title: 'Team Management',
       description:
         'Set up your company, add team members, and assign roles. Collaborate seamlessly across your organization.'
@@ -32,10 +34,14 @@ export function FeaturesSection() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="flex flex-col items-center rounded-lg border bg-white p-6 text-center"
+              className="flex flex-col rounded-lg border bg-white p-6"
             >
-              <div className="bg-navy-900 mb-4 rounded-full p-3">
-                <feature.icon className="h-6 w-6 text-white" />
+              <div className="bg-navy-900 mb-4 items-start rounded-full p-3">
+                <img
+                  src={feature.icon}
+                  alt=""
+                  className="h-[60px] w-[60px] text-white"
+                />
               </div>
               <h3 className="mb-2 text-xl font-semibold">{feature.title}</h3>
               <p className="text-gray-600">{feature.description}</p>

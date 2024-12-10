@@ -64,7 +64,7 @@ export function PricingSection() {
               key={plan.name}
               className={`relative ${
                 plan.highlighted
-                  ? 'bg-navy-900 scale-105 text-white shadow-lg'
+                  ? 'bg-navy-900 scale-105 bg-[#00214C] text-white shadow-lg'
                   : 'bg-white'
               }`}
             >
@@ -83,7 +83,7 @@ export function PricingSection() {
                 <ul className="space-y-4">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-center">
-                      <Check className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <Check className="mr-2 h-4 w-4 flex-shrink-0 rounded-full bg-black p-[2px] text-white" />
                       {feature}
                     </li>
                   ))}
@@ -93,8 +93,8 @@ export function PricingSection() {
                 <Button
                   className={`w-full ${
                     plan.highlighted
-                      ? 'text-navy-900 bg-white hover:bg-gray-100'
-                      : 'bg-navy-900 hover:bg-navy-800 text-white'
+                      ? 'text-navy-900 bg-white text-[#00214C] hover:bg-gray-100'
+                      : 'bg-white text-[#00214C] hover:bg-[#00214C] hover:text-white'
                   }`}
                 >
                   Choose Plan
