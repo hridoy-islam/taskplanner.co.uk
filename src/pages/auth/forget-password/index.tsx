@@ -1,8 +1,48 @@
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { AppDispatch } from '@/redux/store';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { Link } from 'react-router-dom';
+import { z } from 'zod';
+
+const formSchema = z.object({
+  email: z.string().email({ message: 'Enter a valid email address' })
+});
+
+type UserFormValue = z.infer<typeof formSchema>;
 
 export default function ForgotPassword() {
+  const { loading, error } = useSelector((state: any) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
+  const defaultValues = {
+    email: '',
+    password: ''
+  };
+  const form = useForm<UserFormValue>({
+    resolver: zodResolver(formSchema),
+    defaultValues
+  });
+
+  const onSubmit = async (data: UserFormValue) => {
+    //   const result: any = await dispatch(loginUser(data));
+    //   if (result?.payload?.success) {
+    //     router.push('/dashboard');
+    //   }
+    console.log('forgot form data', data);
+  };
+
   return (
     <>
       <div className="container grid h-svh flex-col items-center justify-center bg-primary lg:max-w-none lg:px-0">
@@ -19,6 +59,39 @@ export default function ForgotPassword() {
                 Enter your registered email and <br /> we will send you a link
                 to reset your password.
               </p>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="w-full space-y-2"
+                >
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="Enter your email..."
+                            disabled={loading}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    disabled={loading}
+                    className="ml-auto w-full bg-background text-white hover:bg-background"
+                    type="submit"
+                  >
+                    Reset Password
+                  </Button>
+                </form>
+              </Form>
             </div>
             {/* <ForgotForm /> */}
             <p className="mt-4 px-8 text-center text-sm text-muted-foreground">

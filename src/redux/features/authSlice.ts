@@ -8,6 +8,14 @@ interface UserCredentials {
   password: string;
 }
 
+interface GoogleUserCredentials {
+  googleUid: string;
+  name: string;
+  email: string;
+  image?: string;
+  phone?: string;
+}
+
 interface AuthState {
   user: any | null;
   token: any | null;
@@ -67,7 +75,6 @@ export const loginUser = createAsyncThunk<UserResponse, UserCredentials>(
       }
     );
     const response = await request.data;
-
     localStorage.setItem(
       'taskplanner',
       JSON.stringify(response.data.accessToken)
@@ -75,6 +82,29 @@ export const loginUser = createAsyncThunk<UserResponse, UserCredentials>(
     return response;
   }
 );
+
+export const loginWithGoogle = createAsyncThunk<
+  UserResponse,
+  GoogleUserCredentials
+>('auth/google', async (googleUserCredentials) => {
+  const request = await axios.post(
+    `${import.meta.env.VITE_API_URL}/auth/google`,
+    googleUserCredentials,
+    {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json' //this line solved cors
+      }
+    }
+  );
+  const response = await request.data;
+  localStorage.setItem(
+    'taskplanner',
+    JSON.stringify(response.data.accessToken)
+  );
+  return response;
+});
+
 export const logout = createAsyncThunk<void>('user/logout', async () => {
   localStorage.removeItem('taskplanner');
 });
@@ -103,6 +133,25 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.user = null;
+        state.error = 'Please Check Your Login Credentials';
+        state.token = null;
+      })
+      .addCase(loginWithGoogle.pending, (state) => {
+        state.loading = true;
+        state.user = null;
+        state.error = null;
+        state.token = null;
+      })
+      .addCase(loginWithGoogle.fulfilled, (state, action: any) => {
+        state.loading = false;
+        state.token = action.payload.data.accessToken;
+        const decodedUser = jwtDecode(action.payload.data.accessToken);
+        state.user = decodedUser;
+        state.error = null;
+      })
+      .addCase(loginWithGoogle.rejected, (state, action) => {
         state.loading = false;
         state.user = null;
         state.error = 'Please Check Your Login Credentials';

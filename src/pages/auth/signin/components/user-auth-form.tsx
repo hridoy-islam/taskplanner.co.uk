@@ -9,7 +9,11 @@ import {
   FormMessage
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { loginUser, resetError } from '@/redux/features/authSlice';
+import {
+  loginUser,
+  loginWithGoogle,
+  resetError
+} from '@/redux/features/authSlice';
 import { AppDispatch } from '@/redux/store';
 import { useRouter } from '@/routes/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,10 +34,18 @@ const formSchema = z.object({
   password: z.string()
 });
 
+type googleUserSchema = {
+  name: string;
+  email: string;
+  googleUid: string;
+  image: string | undefined;
+  phone: string | undefined;
+};
+
 type UserFormValue = z.infer<typeof formSchema>;
 
 export default function UserAuthForm() {
-  const [signInWithGoogle, gUser, gLoading, gError] =
+  const [signInWithGoogle, googleUser, gLoading, gError] =
     useSignInWithGoogle(firebaseAuth);
   const [signInWithFacebook, fUser, fLoading, fError] =
     useSignInWithFacebook(firebaseAuth);
@@ -71,11 +83,27 @@ export default function UserAuthForm() {
     await signInWithGithub();
   };
 
-  useEffect(() => {
-    if (gUser) {
-      console.log(gUser);
+  const loginWithGoggleUser = async (data: googleUserSchema) => {
+    const result: any = await dispatch(loginWithGoogle(data));
+    if (result?.payload?.success) {
+      router.push('/dashboard');
     }
-  }, [gUser]);
+  };
+
+  useEffect(() => {
+    if (googleUser) {
+      const { email, displayName, uid, photoURL, phoneNumber } =
+        googleUser?.user;
+      const data = {
+        name: displayName,
+        email,
+        googleUid: uid,
+        image: photoURL ? photoURL : undefined,
+        phone: phoneNumber ? phoneNumber : undefined
+      };
+      loginWithGoggleUser(data);
+    }
+  }, [googleUser]);
 
   useEffect(() => {
     // Reset the error when the component mounts
@@ -166,17 +194,7 @@ export default function UserAuthForm() {
         />{' '}
         sign in with google
       </Button>
-      <Button
-        onClick={handleGithubLogin}
-        className="border-1 mt-6 flex h-12 items-center justify-center gap-2 border border-gray-400"
-      >
-        <img
-          src={`https://www.material-tailwind.com/logos/logo-github.png`}
-          alt="google"
-          className="h-6 w-6"
-        />{' '}
-        sign in with github
-      </Button>
+
       <Button
         onClick={handleFacebookLogin}
         className="border-1 mt-6 flex h-12 items-center justify-center gap-2 border border-gray-400"
