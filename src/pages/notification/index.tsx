@@ -64,7 +64,7 @@ export default function NotificationsPage() {
         {notifications.map((notification) => (
           <div
             key={notification._id}
-            onSelect={() => markAsRead(notification._id)}
+            onClick={() => markAsRead(notification._id)}
             className="overflow-hidden rounded-lg"
           >
             <NotificationItem notification={notification} />

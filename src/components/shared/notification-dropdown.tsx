@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import axiosInstance from '../../lib/axios';
 import { socket, setupSocket } from '../../lib/socket';
 import { useSelector } from 'react-redux';
+import { Badge } from '../ui/badge';
 
 interface Notification {
   _id: string;
@@ -54,6 +55,7 @@ export function NotificationDropdown() {
 
       // Listen for real-time notifications
       socket.on('notification', (notification: Notification) => {
+        console.log('New notification received:', notification);
         setNotifications((prev) => [notification, ...prev]);
         setUnreadCount((prevUnread) => prevUnread + 1);
       });
@@ -67,7 +69,7 @@ export function NotificationDropdown() {
 
   const markAsRead = async (id: string) => {
     try {
-      await axiosInstance.patch(`/notifications/${id}`, { isRead: true }); // API call to mark notification as read
+      await axiosInstance.patch(`/notifications/${id}/read`, { isRead: true }); // API call to mark notification as read
       setNotifications((prev) =>
         prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
       );
@@ -81,18 +83,25 @@ export function NotificationDropdown() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+          {/* <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-red-500" />
+          )} */}
+
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <Badge
+              variant="destructive"
+              className="absolute -right-2 -top-2 h-5 min-w-[20px] px-2"
+            >
+              {unreadCount}
+            </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80 bg-primary">
         <DropdownMenuLabel className="font-normal">
           <h2 className="text-lg font-semibold text-black">Notifications</h2>
-          <p className="text-sm text-black">
-            You have {unreadCount} unread notification
-          </p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup className="max-h-[300px] overflow-y-auto bg-primary">
@@ -100,7 +109,7 @@ export function NotificationDropdown() {
             <DropdownMenuItem
               className="hover:border-none hover:bg-transparent focus:border-none focus:bg-transparent"
               key={notification._id}
-              onSelect={() => markAsRead(notification._id)}
+              onClick={() => markAsRead(notification._id)}
             >
               <NotificationItem notification={notification} />
             </DropdownMenuItem>

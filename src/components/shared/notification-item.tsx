@@ -30,7 +30,7 @@
 export function NotificationItem({ notification }) {
   return (
     <div
-      className={`flex w-full cursor-pointer items-start space-x-4 p-4 ${notification.read ? 'bg-primary' : 'bg-blue-200'}`}
+      className={`flex w-full cursor-pointer items-start space-x-4 p-4 ${notification.isRead ? 'bg-primary' : 'bg-blue-200'}`}
     >
       {/* <Icon className="mt-1 h-5 w-5 text-background" /> */}
       <div className="flex-1 space-y-1">
