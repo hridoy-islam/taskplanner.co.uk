@@ -13,6 +13,7 @@ import CompletedTasks from '@/components/shared/completed-tasks';
 
 export default function DashboardPage() {
   const { user } = useSelector((state: any) => state.auth);
+  console.log(user);
   return (
     <>
       <PageHead title="Dashboard | App" />

@@ -27,6 +27,7 @@ import { Navigate, Outlet, useRoutes } from 'react-router-dom';
 import GroupChat from '../pages/group/chat';
 import Reminder from '@/pages/reminder';
 import NotificationsPage from '@/pages/notification';
+import Otp from '@/pages/auth/otp';
 
 const DashboardLayout = lazy(
   () => import('@/components/layout/dashboard-layout')
@@ -164,6 +165,11 @@ export default function AppRouter() {
     {
       path: '/forgot-password',
       element: <ForgotPassword />,
+      index: true
+    },
+    {
+      path: '/otp',
+      element: <Otp />,
       index: true
     },
     {

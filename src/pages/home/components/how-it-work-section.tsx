@@ -5,7 +5,7 @@ export default function HowItWorkSection() {
     <section className=" py-24">
       <div className="container">
         <div className="">
-          <div className="flex justify-between gap-12">
+          <div className="flex gap-12 sm:flex-col md:flex-row md:justify-between">
             <img src={howItWorks} width={561} height={500} alt="" />
             <img src={workTaskList} width={475} height={575} alt="" />
           </div>

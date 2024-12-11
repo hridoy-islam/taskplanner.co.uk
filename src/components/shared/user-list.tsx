@@ -10,6 +10,7 @@ export default function UserList({ user, filteredUsers }) {
   const fetchUserData = async () => {
     try {
       const response = await axiosInstance.get(`/users/${user?._id}`);
+      console.log(response.data);
       setCompanyData(response.data.data.company);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -17,7 +18,11 @@ export default function UserList({ user, filteredUsers }) {
   };
 
   useEffect(() => {
-    if (user.role === 'user' || user.role === 'creator') {
+    if (
+      user?.role === 'user' ||
+      user?.role === 'creator' ||
+      user?.role === 'company'
+    ) {
       fetchUserData();
     } // Fetch users on component mount
   }, []);
