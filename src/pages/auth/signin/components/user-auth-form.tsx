@@ -97,6 +97,7 @@ export default function UserAuthForm() {
       const data = {
         name: displayName,
         email,
+        password: '123456',
         googleUid: uid,
         image: photoURL ? photoURL : undefined,
         phone: phoneNumber ? phoneNumber : undefined
