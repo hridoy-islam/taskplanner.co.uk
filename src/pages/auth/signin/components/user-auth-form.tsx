@@ -18,6 +18,8 @@ import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import * as z from 'zod';
+import { useSignInWithGoogle } from 'react-firebase-hooks/auth';
+import { firebaseAuth } from '@/firebaseConfig';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Enter a valid email address' }),
@@ -27,6 +29,8 @@ const formSchema = z.object({
 type UserFormValue = z.infer<typeof formSchema>;
 
 export default function UserAuthForm() {
+  const [signInWithGoogle, gUser, gLoading, gError] =
+    useSignInWithGoogle(firebaseAuth);
   const router = useRouter();
   const { loading, error } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
@@ -45,6 +49,16 @@ export default function UserAuthForm() {
       router.push('/dashboard');
     }
   };
+
+  const handleGoogleLogin = async () => {
+    await signInWithGoogle();
+  };
+
+  useEffect(() => {
+    if (gUser) {
+      console.log(gUser);
+    }
+  }, [gUser]);
 
   useEffect(() => {
     // Reset the error when the component mounts
@@ -121,8 +135,20 @@ export default function UserAuthForm() {
           <span className="bg-background px-2 text-muted-foreground">
             Or continue with
           </span>
+          {/* third party login */}
         </div>
       </div>
+      <Button
+        onClick={handleGoogleLogin}
+        className="border-1 mt-6 flex h-12 items-center justify-center gap-2 border border-gray-400"
+      >
+        <img
+          src={`https://www.material-tailwind.com/logos/logo-google.png`}
+          alt="google"
+          className="h-6 w-6"
+        />{' '}
+        sign in with google
+      </Button>
     </>
   );
 }
