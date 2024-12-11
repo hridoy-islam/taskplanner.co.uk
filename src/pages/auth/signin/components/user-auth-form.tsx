@@ -18,7 +18,11 @@ import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import * as z from 'zod';
-import { useSignInWithGoogle } from 'react-firebase-hooks/auth';
+import {
+  useSignInWithFacebook,
+  useSignInWithGithub,
+  useSignInWithGoogle
+} from 'react-firebase-hooks/auth';
 import { firebaseAuth } from '@/firebaseConfig';
 
 const formSchema = z.object({
@@ -31,6 +35,11 @@ type UserFormValue = z.infer<typeof formSchema>;
 export default function UserAuthForm() {
   const [signInWithGoogle, gUser, gLoading, gError] =
     useSignInWithGoogle(firebaseAuth);
+  const [signInWithFacebook, fUser, fLoading, fError] =
+    useSignInWithFacebook(firebaseAuth);
+  const [signInWithGithub, ghUser, ghLoading, ghError] =
+    useSignInWithGithub(firebaseAuth);
+
   const router = useRouter();
   const { loading, error } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
@@ -52,6 +61,14 @@ export default function UserAuthForm() {
 
   const handleGoogleLogin = async () => {
     await signInWithGoogle();
+  };
+
+  const handleFacebookLogin = async () => {
+    await signInWithFacebook();
+  };
+
+  const handleGithubLogin = async () => {
+    await signInWithGithub();
   };
 
   useEffect(() => {
@@ -148,6 +165,28 @@ export default function UserAuthForm() {
           className="h-6 w-6"
         />{' '}
         sign in with google
+      </Button>
+      <Button
+        onClick={handleGithubLogin}
+        className="border-1 mt-6 flex h-12 items-center justify-center gap-2 border border-gray-400"
+      >
+        <img
+          src={`https://www.material-tailwind.com/logos/logo-github.png`}
+          alt="google"
+          className="h-6 w-6"
+        />{' '}
+        sign in with github
+      </Button>
+      <Button
+        onClick={handleFacebookLogin}
+        className="border-1 mt-6 flex h-12 items-center justify-center gap-2 border border-gray-400"
+      >
+        <img
+          src={`https://www.material-tailwind.com/logos/logo-facebook.png`}
+          alt="google"
+          className="h-6 w-6"
+        />{' '}
+        sign in with facebook
       </Button>
     </>
   );
