@@ -7,10 +7,10 @@ export function HeroSection() {
   return (
     <section
       style={{ backgroundImage: `url(${bannerBg})` }}
-      className="relative py-20 md:py-32"
+      className="relative py-32 md:py-20"
     >
-      <div className="bg-grid-white/[0.05] absolute inset-0 bg-[size:16px]" />
-      <div className="container relative">
+      {/* <div className="bg-grid-white/[0.05] absolute inset-0 bg-[size:16px]" /> */}
+      <div className="container relative h-[850px]">
         <div className="space-y-8 text-center">
           <h1 className="text-4xl font-bold text-white sm:text-5xl md:text-6xl lg:text-7xl">
             TaskPlanner brings all your task,
@@ -31,15 +31,14 @@ export function HeroSection() {
             </Button>
           </div>
         </div>
-        <div className="mt-16 rounded-lg border bg-white/5 backdrop-blur-sm">
-          <img
-            src={dashboardPreview}
-            alt="Dashboard Preview"
-            width={1200}
-            height={600}
-            className="rounded-lg"
-          />
-        </div>
+      </div>
+      <div className="container absolute top-[400px] mt-16 w-full rounded-lg">
+        <img
+          src={dashboardPreview}
+          alt="Dashboard Preview"
+          height={564}
+          className="w-full rounded-lg shadow-lg"
+        />
       </div>
     </section>
   );

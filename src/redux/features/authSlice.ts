@@ -83,7 +83,7 @@ export const loginUser = createAsyncThunk<UserResponse, UserCredentials>(
   }
 );
 
-export const loginWithGoogle = createAsyncThunk<
+export const authWithFbORGoogle = createAsyncThunk<
   UserResponse,
   GoogleUserCredentials
 >('auth/google', async (googleUserCredentials) => {
@@ -138,20 +138,20 @@ const authSlice = createSlice({
         state.error = 'Please Check Your Login Credentials';
         state.token = null;
       })
-      .addCase(loginWithGoogle.pending, (state) => {
+      .addCase(authWithFbORGoogle.pending, (state) => {
         state.loading = true;
         state.user = null;
         state.error = null;
         state.token = null;
       })
-      .addCase(loginWithGoogle.fulfilled, (state, action: any) => {
+      .addCase(authWithFbORGoogle.fulfilled, (state, action: any) => {
         state.loading = false;
         state.token = action.payload.data.accessToken;
         const decodedUser = jwtDecode(action.payload.data.accessToken);
         state.user = decodedUser;
         state.error = null;
       })
-      .addCase(loginWithGoogle.rejected, (state, action) => {
+      .addCase(authWithFbORGoogle.rejected, (state, action) => {
         state.loading = false;
         state.user = null;
         state.error = 'Please Check Your Login Credentials';

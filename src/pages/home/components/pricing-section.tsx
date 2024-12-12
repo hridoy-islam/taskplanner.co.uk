@@ -47,7 +47,7 @@ export function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="py-24">
+    <section id="pricing" className="bg-white py-24">
       <div className="container">
         <div className="mb-16 space-y-4 text-center">
           <h2 className="text-navy-900 text-3xl font-bold md:text-4xl">

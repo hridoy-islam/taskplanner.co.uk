@@ -19,7 +19,7 @@ export function LogosSection() {
   ];
 
   return (
-    <section className=" py-16">
+    <section className="py-40">
       <div className="container">
         <div className="flex items-center justify-center gap-12 opacity-70 grayscale md:gap-16 lg:gap-24">
           {logos.map((logo) => (
