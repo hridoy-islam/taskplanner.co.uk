@@ -25,16 +25,16 @@ export function FeaturesSection() {
   ];
 
   return (
-    <section id="features" className="py-24">
+    <section id="features" className="pb-24 pt-32">
       <div className="container">
         <h2 className="text-navy-900 mb-16 text-center text-3xl font-bold md:text-4xl">
           Key Features
         </h2>
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3 md:gap-8">
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="flex flex-col rounded-lg border bg-white p-6"
+              className="flex flex-col rounded-lg border border-[#12141D1A] bg-white p-6"
             >
               <div className="bg-navy-900 mb-4 items-start rounded-full p-3">
                 <img
