@@ -1,20 +1,21 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { validateRequestOtp } from '@/redux/features/authSlice';
+import { AppDispatch } from '@/redux/store';
+import { useRouter } from '@/routes/hooks';
+import { jwtDecode } from 'jwt-decode';
 import { useRef, useState } from 'react';
+import { useDispatch } from 'react-redux';
 
 import { Link } from 'react-router-dom';
 
 export default function Otp() {
-  const [otp, setOtp] = useState(Array(4).fill('')); // Array with 6 empty strings
+  const [otp, setOtp] = useState(Array(4).fill(''));
+  const [error, setError] = useState('');
+  const dispatch = useDispatch<AppDispatch>();
   const inputRefs = useRef([]);
+  const router = useRouter();
+  const email = localStorage.getItem('tp_otp_email');
 
   const handleKeyDown = (e) => {
     if (
@@ -69,10 +70,23 @@ export default function Otp() {
     setOtp(digits);
   };
 
-  const handleOtpSubmit = (e) => {
+  const handleOtpSubmit = async (e) => {
     e.preventDefault();
     const otpCode = otp.join('');
-    console.log('OTP:', otpCode);
+    if (!email) router.push('/forgot-password');
+    const result: any = await dispatch(
+      validateRequestOtp({ email, otp: otpCode })
+    );
+    if (result?.payload?.success) {
+      const decoded = jwtDecode(result?.payload?.data?.resetToken);
+      localStorage.setItem(
+        'tp_user_data',
+        JSON.stringify({ ...decoded, token: result?.payload?.data?.resetToken })
+      );
+      router.push('/new-password');
+    } else {
+      setError('Invalid OTP');
+    }
   };
 
   return (
@@ -90,6 +104,7 @@ export default function Otp() {
               <p className="text-sm text-muted-foreground">
                 Enter the verification code sent to your email
               </p>
+              {error && <p className="text-sm text-red-500">{error}</p>}
               <section className="dark:bg-dark bg-white py-10">
                 <div className="container">
                   <div>

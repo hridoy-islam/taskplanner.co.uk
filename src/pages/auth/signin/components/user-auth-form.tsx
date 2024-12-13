@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
+  authWithFbORGoogle,
   loginUser,
-  loginWithGoogle,
   resetError
 } from '@/redux/features/authSlice';
 import { AppDispatch } from '@/redux/store';
@@ -24,7 +24,6 @@ import { Link } from 'react-router-dom';
 import * as z from 'zod';
 import {
   useSignInWithFacebook,
-  useSignInWithGithub,
   useSignInWithGoogle
 } from 'react-firebase-hooks/auth';
 import { firebaseAuth } from '@/firebaseConfig';
@@ -47,11 +46,8 @@ type UserFormValue = z.infer<typeof formSchema>;
 export default function UserAuthForm() {
   const [signInWithGoogle, googleUser, gLoading, gError] =
     useSignInWithGoogle(firebaseAuth);
-  const [signInWithFacebook, fUser, fLoading, fError] =
+  const [signInWithFacebook, facebookUser, fLoading, fError] =
     useSignInWithFacebook(firebaseAuth);
-  const [signInWithGithub, ghUser, ghLoading, ghError] =
-    useSignInWithGithub(firebaseAuth);
-
   const router = useRouter();
   const { loading, error } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
@@ -79,12 +75,8 @@ export default function UserAuthForm() {
     await signInWithFacebook();
   };
 
-  const handleGithubLogin = async () => {
-    await signInWithGithub();
-  };
-
-  const loginWithGoggleUser = async (data: googleUserSchema) => {
-    const result: any = await dispatch(loginWithGoogle(data));
+  const loginWithFbOrGoogle = async (data: googleUserSchema) => {
+    const result: any = await dispatch(authWithFbORGoogle(data));
     if (result?.payload?.success) {
       router.push('/dashboard');
     }
@@ -102,10 +94,25 @@ export default function UserAuthForm() {
         image: photoURL ? photoURL : undefined,
         phone: phoneNumber ? phoneNumber : undefined
       };
-      loginWithGoggleUser(data);
+      loginWithFbOrGoogle(data);
     }
   }, [googleUser]);
 
+  useEffect(() => {
+    if (facebookUser) {
+      const { email, displayName, uid, photoURL, phoneNumber } =
+        facebookUser?.user;
+      const data = {
+        name: displayName,
+        email,
+        password: '123456',
+        googleUid: uid,
+        image: photoURL ? photoURL : undefined,
+        phone: phoneNumber ? phoneNumber : undefined
+      };
+      loginWithFbOrGoogle(data);
+    }
+  }, [facebookUser]);
   useEffect(() => {
     // Reset the error when the component mounts
     dispatch(resetError());

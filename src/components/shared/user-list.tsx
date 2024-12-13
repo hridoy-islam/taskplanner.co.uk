@@ -10,7 +10,6 @@ export default function UserList({ user, filteredUsers }) {
   const fetchUserData = async () => {
     try {
       const response = await axiosInstance.get(`/users/${user?._id}`);
-      console.log(response.data);
       setCompanyData(response.data.data.company);
     } catch (error) {
       console.error('Error fetching users:', error);

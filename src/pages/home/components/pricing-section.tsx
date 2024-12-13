@@ -47,13 +47,13 @@ export function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="py-24">
+    <section id="pricing" className="bg-white py-24">
       <div className="container">
-        <div className="mb-16 space-y-4 text-center">
-          <h2 className="text-navy-900 text-3xl font-bold md:text-4xl">
+        <div className="mb-9 w-full space-y-4 md:mx-auto md:mb-16 md:w-[648px]">
+          <h2 className="text-navy-900 text-3xl font-bold leading-[54px] md:text-center md:text-5xl">
             We offer great price plans for the application
           </h2>
-          <p className="mx-auto max-w-[800px] text-gray-600">
+          <p className="mx-auto max-w-[800px] text-[16px] leading-[30px] text-gray-600 md:text-center">
             Objectively market-driven intellectual capital rather than covalent
             best practices facilitate strategic information before innovation.
           </p>
@@ -83,7 +83,9 @@ export function PricingSection() {
                 <ul className="space-y-4">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-center">
-                      <Check className="mr-2 h-4 w-4 flex-shrink-0 rounded-full bg-black p-[2px] text-white" />
+                      <Check
+                        className={`${plan.highlighted ? 'bg-white text-[#00214C]' : 'text-white'} mr-2 h-4 w-4 flex-shrink-0 rounded-full bg-black p-[2px]`}
+                      />
                       {feature}
                     </li>
                   ))}

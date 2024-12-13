@@ -27,6 +27,7 @@ import { Navigate, Outlet, useRoutes } from 'react-router-dom';
 import GroupChat from '../pages/group/chat';
 import NotificationsPage from '@/pages/notification';
 import Otp from '@/pages/auth/otp';
+import NewPassword from '@/pages/new-password';
 
 const DashboardLayout = lazy(
   () => import('@/components/layout/dashboard-layout')
@@ -165,6 +166,11 @@ export default function AppRouter() {
     {
       path: '/otp',
       element: <Otp />,
+      index: true
+    },
+    {
+      path: '/new-password',
+      element: <NewPassword />,
       index: true
     },
     {

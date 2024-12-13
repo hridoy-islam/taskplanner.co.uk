@@ -17,11 +17,28 @@ export function LogosSection() {
     { name: 'Dropbox', width: '136.92px', height: '42.72px', src: dropboxLogo },
     { name: 'Airbnb', width: '136.92px', height: '42.72px', src: airbnbLogo }
   ];
+  const smLogos = [
+    { name: 'Dropbox', width: '136.92px', height: '42.72px', src: dropboxLogo },
+    { name: 'Airbnb', width: '136.92px', height: '42.72px', src: airbnbLogo }
+  ];
 
   return (
-    <section className=" py-16">
+    <section className="pt-4 md:py-40">
       <div className="container">
-        <div className="flex items-center justify-center gap-12 opacity-70 grayscale md:gap-16 lg:gap-24">
+        <div className="flex items-center justify-center gap-12 opacity-70 grayscale md:hidden  md:gap-16 lg:gap-24">
+          {smLogos.map((logo) => (
+            <div key={logo.name} className="flex items-center">
+              <img
+                src={logo.src}
+                alt={logo.name}
+                width={logo.width}
+                height={logo.height}
+                className="h-[42px] w-[136px]"
+              />
+            </div>
+          ))}
+        </div>
+        <div className="hidden items-center justify-center gap-12 opacity-70 grayscale md:flex  md:gap-16 lg:gap-24">
           {logos.map((logo) => (
             <div key={logo.name} className="flex items-center">
               <img

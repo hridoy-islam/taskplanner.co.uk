@@ -8,6 +8,25 @@ interface UserCredentials {
   password: string;
 }
 
+interface forgetCredentials {
+  email: string;
+}
+
+interface validateOtpCredentials {
+  email: string;
+  otp: string;
+}
+
+interface ChangePasswordCredentials {
+  userId: string;
+  token: string;
+  password: string;
+}
+
+interface ChangePasswordResponse {
+  message?: string;
+}
+
 interface GoogleUserCredentials {
   googleUid: string;
   name: string;
@@ -51,6 +70,16 @@ interface UserResponse {
   data?: object;
 }
 
+interface ForgetResponse {
+  message?: string;
+}
+
+interface ValidateOtpResponse {
+  success: boolean;
+  message?: string;
+  data?: object;
+}
+
 export const registerUser = createAsyncThunk<
   RegisterResponse,
   RegisterCredentials
@@ -83,7 +112,7 @@ export const loginUser = createAsyncThunk<UserResponse, UserCredentials>(
   }
 );
 
-export const loginWithGoogle = createAsyncThunk<
+export const authWithFbORGoogle = createAsyncThunk<
   UserResponse,
   GoogleUserCredentials
 >('auth/google', async (googleUserCredentials) => {
@@ -102,6 +131,67 @@ export const loginWithGoogle = createAsyncThunk<
     'taskplanner',
     JSON.stringify(response.data.accessToken)
   );
+  return response;
+});
+// forgot password
+
+export const requestOtp = createAsyncThunk<ForgetResponse, forgetCredentials>(
+  'auth/forget',
+  async (userCredentials) => {
+    const request = await axios.post(
+      `${import.meta.env.VITE_API_URL}/auth/forget`,
+      userCredentials,
+      {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json' //this line solved cors
+        }
+      }
+    );
+    const response = await request.data;
+
+    return response;
+  }
+);
+
+// validate request OTP
+export const validateRequestOtp = createAsyncThunk<
+  ValidateOtpResponse,
+  validateOtpCredentials
+>('auth/validate', async (userCredentials) => {
+  const request = await axios.post(
+    `${import.meta.env.VITE_API_URL}/auth/validate`,
+    userCredentials,
+    {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json' //this line solved cors
+      }
+    }
+  );
+  const response = await request.data;
+
+  return response;
+});
+
+// patch new password
+export const changePassword = createAsyncThunk<
+  ChangePasswordResponse,
+  ChangePasswordCredentials
+>('users/:id', async (userCredentials) => {
+  const request = await axios.patch(
+    `${import.meta.env.VITE_API_URL}/users/${userCredentials.userId}`,
+    userCredentials,
+    {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json', //this line solved cors
+        Authorization: `Bearer ${userCredentials.token}`
+      }
+    }
+  );
+  const response = await request.data;
+
   return response;
 });
 
@@ -138,20 +228,20 @@ const authSlice = createSlice({
         state.error = 'Please Check Your Login Credentials';
         state.token = null;
       })
-      .addCase(loginWithGoogle.pending, (state) => {
+      .addCase(authWithFbORGoogle.pending, (state) => {
         state.loading = true;
         state.user = null;
         state.error = null;
         state.token = null;
       })
-      .addCase(loginWithGoogle.fulfilled, (state, action: any) => {
+      .addCase(authWithFbORGoogle.fulfilled, (state, action: any) => {
         state.loading = false;
         state.token = action.payload.data.accessToken;
         const decodedUser = jwtDecode(action.payload.data.accessToken);
         state.user = decodedUser;
         state.error = null;
       })
-      .addCase(loginWithGoogle.rejected, (state, action) => {
+      .addCase(authWithFbORGoogle.rejected, (state, action) => {
         state.loading = false;
         state.user = null;
         state.error = 'Please Check Your Login Credentials';
