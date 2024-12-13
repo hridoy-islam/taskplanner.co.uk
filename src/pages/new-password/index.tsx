@@ -9,10 +9,11 @@ import {
   FormMessage
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { requestOtp } from '@/redux/features/authSlice';
+import { changePassword } from '@/redux/features/authSlice';
 import { AppDispatch } from '@/redux/store';
 import { useRouter } from '@/routes/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -20,18 +21,25 @@ import { Link } from 'react-router-dom';
 import { z } from 'zod';
 
 const formSchema = z.object({
-  email: z.string().email({ message: 'Enter a valid email address' })
+  password: z
+    .string()
+    .min(6, { message: 'Password must be at least 6 characters' }),
+  confirmPassword: z
+    .string()
+    .min(6, { message: 'Password must be at least 6 characters' })
 });
 
 type UserFormValue = z.infer<typeof formSchema>;
 
-export default function ForgotPassword() {
-  const { loading, error } = useSelector((state: any) => state.auth);
+export default function NewPassword() {
+  const { loading } = useSelector((state: any) => state.auth);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const defaultValues = {
-    email: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   };
   const form = useForm<UserFormValue>({
     resolver: zodResolver(formSchema),
@@ -39,12 +47,29 @@ export default function ForgotPassword() {
   });
 
   const onSubmit = async (data: UserFormValue) => {
-    const result: any = await dispatch(requestOtp(data));
+    if (data.password !== data.confirmPassword)
+      setError('Passwords do not match');
+
+    const userData = JSON.parse(localStorage.getItem('tp_user_data'));
+    // console.log({token: userData.token, password: data.password, userId: userData._id });
+    const result: any = await dispatch(
+      changePassword({
+        token: userData.token,
+        password: data.password,
+        userId: userData._id
+      })
+    );
     if (result?.payload?.success) {
-      localStorage.setItem('tp_otp_email', data.email);
-      router.push('/otp');
+      setError('');
+      localStorage.removeItem('tp_user_data');
+      localStorage.removeItem('tp_otp_email');
+      setMessage('Password changed successfully');
     }
   };
+
+  useEffect(() => {
+    if (localStorage.getItem('tp_user_data') === null) router.push('/login');
+  }, []);
 
   return (
     <>
@@ -56,12 +81,20 @@ export default function ForgotPassword() {
           <Card className="p-6">
             <div className="mb-2 flex flex-col space-y-2 text-left">
               <h1 className="text-md font-semibold tracking-tight">
-                Forgot Password
+                Enter new password
               </h1>
               <p className="text-sm text-muted-foreground">
-                Enter your registered email and <br /> we will send you a link
-                to reset your password.
+                Enter your new password to login.
               </p>
+              {error ? <p className="text-sm text-[#f87171]">{error}</p> : null}
+              {message && (
+                <p className="text-sm text-[#3b82f6]">
+                  {message}{' '}
+                  <Link to="/login" className="underline underline-offset-4 ">
+                    Login Now
+                  </Link>
+                </p>
+              )}
               <Form {...form}>
                 <form
                   onSubmit={form.handleSubmit(onSubmit)}
@@ -69,14 +102,32 @@ export default function ForgotPassword() {
                 >
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>Password</FormLabel>
                         <FormControl>
                           <Input
-                            type="email"
-                            placeholder="Enter your email..."
+                            type="password"
+                            placeholder="Enter your password..."
+                            disabled={loading}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="Confirm your password..."
                             disabled={loading}
                             {...field}
                           />
@@ -91,7 +142,7 @@ export default function ForgotPassword() {
                     className="ml-auto w-full bg-background text-white hover:bg-background"
                     type="submit"
                   >
-                    Reset Password
+                    Submit
                   </Button>
                 </form>
               </Form>

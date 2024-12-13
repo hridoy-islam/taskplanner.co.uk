@@ -8,6 +8,25 @@ interface UserCredentials {
   password: string;
 }
 
+interface forgetCredentials {
+  email: string;
+}
+
+interface validateOtpCredentials {
+  email: string;
+  otp: string;
+}
+
+interface ChangePasswordCredentials {
+  userId: string;
+  token: string;
+  password: string;
+}
+
+interface ChangePasswordResponse {
+  message?: string;
+}
+
 interface GoogleUserCredentials {
   googleUid: string;
   name: string;
@@ -46,6 +65,16 @@ interface RegisterResponse {
 }
 
 interface UserResponse {
+  success: boolean;
+  message?: string;
+  data?: object;
+}
+
+interface ForgetResponse {
+  message?: string;
+}
+
+interface ValidateOtpResponse {
   success: boolean;
   message?: string;
   data?: object;
@@ -102,6 +131,67 @@ export const authWithFbORGoogle = createAsyncThunk<
     'taskplanner',
     JSON.stringify(response.data.accessToken)
   );
+  return response;
+});
+// forgot password
+
+export const requestOtp = createAsyncThunk<ForgetResponse, forgetCredentials>(
+  'auth/forget',
+  async (userCredentials) => {
+    const request = await axios.post(
+      `${import.meta.env.VITE_API_URL}/auth/forget`,
+      userCredentials,
+      {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json' //this line solved cors
+        }
+      }
+    );
+    const response = await request.data;
+
+    return response;
+  }
+);
+
+// validate request OTP
+export const validateRequestOtp = createAsyncThunk<
+  ValidateOtpResponse,
+  validateOtpCredentials
+>('auth/validate', async (userCredentials) => {
+  const request = await axios.post(
+    `${import.meta.env.VITE_API_URL}/auth/validate`,
+    userCredentials,
+    {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json' //this line solved cors
+      }
+    }
+  );
+  const response = await request.data;
+
+  return response;
+});
+
+// patch new password
+export const changePassword = createAsyncThunk<
+  ChangePasswordResponse,
+  ChangePasswordCredentials
+>('users/:id', async (userCredentials) => {
+  const request = await axios.patch(
+    `${import.meta.env.VITE_API_URL}/users/${userCredentials.userId}`,
+    userCredentials,
+    {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json', //this line solved cors
+        Authorization: `Bearer ${userCredentials.token}`
+      }
+    }
+  );
+  const response = await request.data;
+
   return response;
 });
 
