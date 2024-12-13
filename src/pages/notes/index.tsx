@@ -1,728 +1,522 @@
-import { useEffect, useState } from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import axiosInstance from '../../lib/axios';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem
+} from '@/components/ui/command';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pencil, Trash2 } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { toast } from '@/components/ui/use-toast';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from '@/components/ui/alert-dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger
+} from '@/components/ui/dropdown-menu';
+import {
+  PlusCircle,
+  Search,
+  ChevronDown,
+  MoreVertical,
+  Hash,
+  Share2,
+  X,
+  Trash,
+  Archive,
+  Star
+} from 'lucide-react';
 
 interface Note {
-  _id: string;
+  id: number;
   title: string;
   content: string;
   tags: string[];
 }
 
-interface Tags {
-  author: {
-    name: string;
-  };
+interface User {
+  id: number;
   name: string;
-  _id: string;
+  email: string;
 }
 
+const initialNotes: Note[] = [
+  {
+    id: 1,
+    title: 'Welcome to Notes',
+    content: 'This is your first note!',
+    tags: ['Personal']
+  },
+  {
+    id: 2,
+    title: 'Shopping List',
+    content: 'Milk, Eggs, Bread',
+    tags: ['To-Do']
+  },
+  {
+    id: 3,
+    title: 'Project Ideas',
+    content: 'AI-powered note taking app',
+    tags: ['Ideas', 'Work']
+  }
+];
+
+const initialTags = [
+  'Personal',
+  'Work',
+  'Ideas',
+  'To-Do',
+  'Important',
+  'Project A',
+  'Project B'
+];
+
+const demoUsers: User[] = [
+  { id: 1, name: 'Alice Johnson', email: 'alice@example.com' },
+  { id: 2, name: 'Bob Smith', email: 'bob@example.com' },
+  { id: 3, name: 'Charlie Brown', email: 'charlie@example.com' },
+  { id: 4, name: 'Diana Prince', email: 'diana@example.com' }
+];
+
 export default function NotesPage() {
-  const { user } = useSelector((state: any) => state.auth);
-  const [notes, setNotes] = useState([]);
-  const [allTags, setAllTags] = useState([]);
-  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
-  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
-  const [editingNote, setEditingNote] = useState(null);
-  const [editingTag, setEditingTag] = useState(null);
-  const [editedTagName, setEditedTagName] = useState('');
+  const [notes, setNotes] = useState<Note[]>(initialNotes);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(notes[0]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [tags, setTags] = useState(initialTags);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [shareRecipients, setShareRecipients] = useState<User[]>([]);
+  const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
-  const [filter, setFilter] = useState(null);
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('id');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [newSharedUser, setNewSharedUser] = useState('');
-  const [activeTab, setActiveTab] = useState('my-notes');
-  const [tagToDelete, setTagToDelete] = useState(null);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [selectedTags, setSelectedTags] = useState([]);
-  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMember2, setSelectedMember2] = useState<number | null>(null);
-  const [initialMembers, setInitialMembers] = useState([]);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
 
-  const fetchTags = async () => {
-    const res = await axiosInstance.get(`/tags?author=${user?._id}`);
-    setAllTags(res.data.data.result);
-  };
-  const fetchNotes = async () => {
-    const res = await axiosInstance.get(`/notes?author=${user?._id}`);
-    setNotes(res.data.data.result);
+  const filteredNotes = notes.filter(
+    (note) =>
+      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.tags.some((tag) =>
+        tag.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+  );
+
+  const filteredUsers = demoUsers.filter(
+    (user) =>
+      user.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(userSearchTerm.toLowerCase())
+  );
+
+  const addNewNote = () => {
+    const newNote = {
+      id: notes.length + 1,
+      title: 'New Note',
+      content: '',
+      date: new Date().toLocaleString('en-US', {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+      }),
+      tags: []
+    };
+    setNotes([newNote, ...notes]);
+    setSelectedNote(newNote);
   };
 
-  const fetchMembers = async () => {
-    const response = await axiosInstance.get(`/users/company/${user?._id}`);
-    setInitialMembers(response.data.data);
+  const addTag = (tag: string) => {
+    if (selectedNote && !selectedNote.tags.includes(tag)) {
+      const updatedNote = {
+        ...selectedNote,
+        tags: [...selectedNote.tags, tag]
+      };
+      const updatedNotes = notes.map((note) =>
+        note.id === selectedNote.id ? updatedNote : note
+      );
+      setNotes(updatedNotes);
+      setSelectedNote(updatedNote);
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    if (selectedNote) {
+      const updatedNote = {
+        ...selectedNote,
+        tags: selectedNote.tags.filter((tag) => tag !== tagToRemove)
+      };
+      const updatedNotes = notes.map((note) =>
+        note.id === selectedNote.id ? updatedNote : note
+      );
+      setNotes(updatedNotes);
+      setSelectedNote(updatedNote);
+    }
+  };
+
+  const shareNote = () => {
+    setIsShareDialogOpen(true);
+  };
+
+  const handleShare = () => {
+    console.log(`Sharing note: ${selectedNote?.title} with:`, shareRecipients);
+    setIsShareDialogOpen(false);
+    setShareRecipients([]);
+  };
+
+  const toggleRecipient = (user: User) => {
+    setShareRecipients((prev) =>
+      prev.some((r) => r.id === user.id)
+        ? prev.filter((r) => r.id !== user.id)
+        : [...prev, user]
+    );
+  };
+
+  const addNewTag = () => {
+    if (newTag && !tags.includes(newTag)) {
+      setTags([...tags, newTag]);
+      setNewTag('');
+    }
+  };
+
+  const removeExistingTag = (tagToRemove: string) => {
+    setTags(tags.filter((tag) => tag !== tagToRemove));
+    setNotes(
+      notes.map((note) => ({
+        ...note,
+        tags: note.tags.filter((tag) => tag !== tagToRemove)
+      }))
+    );
+    if (selectedNote) {
+      setSelectedNote({
+        ...selectedNote,
+        tags: selectedNote.tags.filter((tag) => tag !== tagToRemove)
+      });
+    }
+  };
+
+  const handleNoteAction = (action: string) => {
+    if (selectedNote) {
+      console.log(
+        `Performing action: ${action} on note: ${selectedNote.title}`
+      );
+      // Implement actual actions here
+    }
   };
 
   useEffect(() => {
-    fetchTags();
-    fetchNotes();
-    fetchMembers();
-  }, [user]);
-
-  const filteredNotes = notes
-    .filter((note) =>
-      activeTab === 'shared-notes' ? note.isSharedWithMe : !note.isSharedWithMe
-    )
-    .filter((note) => (filter ? note.tags.includes(filter) : true))
-    .filter(
-      (note) =>
-        note.title.toLowerCase().includes(search.toLowerCase()) ||
-        note.content.toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === 'title') {
-        return sortOrder === 'asc'
-          ? a.title.localeCompare(b.title)
-          : b.title.localeCompare(a.title);
-      } else {
-        return sortOrder === 'asc'
-          ? a._id.localeCompare(b._id)
-          : b._id.localeCompare(a._id);
-      }
-    });
-
-  const addTag = async () => {
-    if (newTag.trim() && !allTags.some((tag) => tag.name === newTag)) {
-      const data = { author: user?._id, name: newTag };
-      const res = await axiosInstance.post('/tags', data);
-      if (res.data.success) {
-        setAllTags([
-          ...allTags,
-          { _id: res.data.data._id, name: newTag, author: { name: user.name } }
-        ]);
-        toast({ title: 'Tag Added Successfully!', description: 'Thank You' });
-        setNewTag('');
-      }
-    }
-  };
-
-  const addSharedUser = () => {
-    // Demo function to simulate adding a shared user
-    if (newSharedUser.trim() && editingNote) {
-      const updatedNote = {
-        ...editingNote,
-        sharedUsers: [
-          ...editingNote.sharedUsers,
-          {
-            _id: `u${editingNote.sharedUsers.length + 1}`,
-            name: newSharedUser,
-            email: `${newSharedUser.toLowerCase()}@example.com`
-          }
-        ]
-      };
-      setEditingNote(updatedNote);
-      setNewSharedUser('');
-    }
-  };
-
-  const removeSharedUser = (userId) => {
-    // Demo function to simulate removing a shared user
-    if (editingNote) {
-      const updatedNote = {
-        ...editingNote,
-        sharedUsers: editingNote.sharedUsers.filter(
-          (user) => user._id !== userId
-        )
-      };
-      setEditingNote(updatedNote);
-    }
-  };
-
-  const startEditingTag = (tag) => {
-    setEditingTag(tag);
-    setEditedTagName(tag.name);
-  };
-
-  const saveEditedTag = async () => {
-    if (
-      editingTag &&
-      editedTagName.trim() &&
-      !allTags.some((tag) => tag.name === editedTagName)
-    ) {
-      const data = { name: editedTagName };
-      const res = await axiosInstance.patch(`/tags/${editingTag._id}`, data);
-      if (res.data.success) {
-        setAllTags(
-          allTags.map((tag) =>
-            tag._id === editingTag._id ? { ...tag, name: editedTagName } : tag
-          )
-        );
-        setEditingTag(null);
-        setEditedTagName('');
-        toast({ title: 'Tag Updated Successfully' });
-      }
-    }
-  };
-
-  const confirmDeleteTag = (tag) => {
-    setTagToDelete(tag);
-  };
-
-  const deleteTag = async () => {
-    if (tagToDelete) {
-      try {
-        const res = await axiosInstance.delete(`/tags/${tagToDelete._id}`);
-        if (res.data.success) {
-          // Remove tag from the tag list
-          setAllTags(allTags.filter((tag) => tag._id !== tagToDelete._id));
-
-          // Remove the deleted tag from all notes
-          setNotes((prevNotes) =>
-            prevNotes.map((note) => ({
-              ...note,
-              tags: note.tags.filter((tag) => tag !== tagToDelete.name)
-            }))
-          );
-
-          // Clear the `tagToDelete` state
-          setTagToDelete(null);
-
-          toast({ title: 'Tag Deleted Successfully!' });
-        } else {
-          throw new Error(res.data.message || 'Failed to delete tag.');
-        }
-      } catch (error) {
-        console.error('Error deleting tag:', error);
-        toast({
-          title: 'Error Deleting Tag',
-          description: error.message || 'An unknown error occurred.',
-          variant: 'destructive'
-        });
-      }
-    }
-  };
-
-  const addOrUpdateNote = async () => {
-    console.log('Function triggered', title, content);
-    if (title && content) {
-      if (editingNote) {
-        // Update existing note
-        const updatedNote = {
-          ...editingNote,
-          title,
-          content,
-          tags: selectedTags
-        };
-        await axiosInstance.put(`/notes/${editingNote._id}`, updatedNote);
-        setNotes((prevNotes) =>
-          prevNotes.map((note) =>
-            note._id === editingNote._id ? updatedNote : note
-          )
-        );
-      } else {
-        // Add new note
-        const newNote = { id: Date.now(), title, content, tags: selectedTags };
-        await axiosInstance.post('/notes', newNote);
-        setNotes((prevNotes) => [...prevNotes, newNote]);
-      }
-      resetNoteForm();
-    }
-  };
-
-  const resetNoteForm = () => {
-    setTitle('');
-    setContent('');
-    setSelectedTags([]);
-    setEditingNote(null);
-    setIsNoteModalOpen(false);
-  };
-
-  const editNote = (note: Note) => {
-    setEditingNote(note);
-    setTitle(note.title);
-    setContent(note.content);
-    setSelectedTags(note.tags);
-    setIsNoteModalOpen(true);
-  };
-
-  const deleteNote = async (noteId: string) => {
-    await axiosInstance.delete(`/notes/${noteId}`);
-    setNotes((prevNotes) => prevNotes.filter((note) => note._id !== noteId));
-    toast({ title: 'Note Deleted Successfully!' });
-  };
-
-  const filteredMembers = initialMembers.filter((member) =>
-    member?.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    setUserSearchTerm('');
+  }, [isShareDialogOpen]);
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Notes</h1>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Search notes..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-xs"
-          />
-          <Select value={sortBy} onValueChange={(value) => setSortBy(value)}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="title">Title</SelectItem>
-              <SelectItem value="id">Date</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="flex h-screen bg-gray-100 text-gray-800">
+      {/* Sidebar */}
+      <div className="w-80 border-r border-gray-300 bg-gray-200">
+        <div className="p-4">
           <Button
-            variant="outline"
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            variant="ghost"
+            className="w-full justify-start text-gray-700 hover:bg-gray-300"
+            onClick={addNewNote}
           >
-            {sortOrder === 'asc' ? '↑' : '↓'}
-          </Button>
-          <Button
-            variant={'outline'}
-            onClick={() => {
-              setEditingNote({
-                title: '',
-                content: '',
-                tags: [],
-                sharedUsers: []
-              });
-              setIsNoteDialogOpen(true);
-            }}
-          >
-            Add Note
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Note
           </Button>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Tags</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4 flex flex-col gap-2">
-              {allTags.map((tag, idx) => (
-                <Badge
-                  key={idx}
-                  //variant={filter === tag ? 'default' : 'secondary'}
-                  className="cursor-pointer"
-                  // onClick={() => setFilter(filter === tag ? null : tag)}
-                >
-                  {tag.name}
-                </Badge>
-              ))}
-            </div>
-            <Button variant="outline" onClick={() => setIsTagModalOpen(true)}>
-              Manage Tags
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-3">
-          <CardContent>
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="w-full"
+        <div className="px-4 pb-4">
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"
+              size={18}
+            />
+            <Input
+              type="text"
+              placeholder="Search"
+              className="border-none bg-gray-300 pl-10 focus:ring-0"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+        <ScrollArea className="h-[calc(100vh-130px)]">
+          {filteredNotes.map((note) => (
+            <div
+              key={note.id}
+              className={`cursor-pointer p-4 ${selectedNote?.id === note.id ? 'bg-white' : 'hover:bg-gray-300'}`}
+              onClick={() => setSelectedNote(note)}
             >
-              <TabsList className="mt-2 grid w-full grid-cols-2">
-                <TabsTrigger value="my-notes" className="bg-gray-200">
-                  My Notes
-                </TabsTrigger>
-                <TabsTrigger value="shared-notes" className="bg-gray-200">
-                  Shared Notes
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="my-notes">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Tags</TableHead>
-                      <TableHead>Shared With</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredNotes.map((note) => (
-                      <TableRow key={note._id}>
-                        <TableCell>{note.title}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {note.tags.map((tag) => (
-                              <Badge key={tag} variant="secondary">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex -space-x-2">
-                            {note.sharedUsers.map((user) => (
-                              <Avatar
-                                key={user._id}
-                                className="h-6 w-6 border-2 border-background"
-                              >
-                                <AvatarFallback>{user.name[0]}</AvatarFallback>
-                              </Avatar>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setEditingNote(note);
-                                setIsNoteDialogOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => deleteNote(note._id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-              <TabsContent value="shared-notes">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Tags</TableHead>
-                      <TableHead>Shared By</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredNotes.map((note) => (
-                      <TableRow key={note._id}>
-                        <TableCell>{note.title}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {note.tags.map((tag) => (
-                              <Badge key={tag} variant="secondary">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback>
-                                {note.sharedUsers[0]?.name[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{note.sharedUsers[0]?.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEditingNote(note);
-                              setIsNoteDialogOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editingNote?._id ? 'Edit Note' : 'Add New Note'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-1 gap-4 space-y-4 md:grid-cols-2">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  placeholder="Note Title"
-                  value={editingNote?.title || ''}
-                  onChange={(e) =>
-                    setEditingNote({ ...editingNote, title: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  placeholder="Note Content"
-                  value={editingNote?.content || ''}
-                  onChange={(e) =>
-                    setEditingNote({ ...editingNote, content: e.target.value })
-                  }
-                  className="min-h-[300px]"
-                />
+              <h3 className="truncate font-semibold">{note.title}</h3>
+              <p className="truncate text-sm text-gray-600">{note.content}</p>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {note.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded bg-gray-300 px-1 text-xs text-gray-700"
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
             </div>
-            <div className="space-y-4">
-              <div>
-                <Label>Tags</Label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {allTags.map((tag) => (
-                    <div key={tag._id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={tag._id}
-                        checked={editingNote?.tags?.includes(tag.name)}
-                        onCheckedChange={(checked) => {
-                          const updatedTags = checked
-                            ? [...(editingNote?.tags || []), tag.name]
-                            : (editingNote?.tags || []).filter(
-                                (t) => t !== tag.name
-                              );
-                          setEditingNote({ ...editingNote, tags: updatedTags });
-                        }}
+          ))}
+        </ScrollArea>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col">
+        {selectedNote ? (
+          <>
+            <header className="flex items-center justify-between border-b border-gray-300 bg-gray-200 p-4">
+              <div className="flex items-center">
+                <h2 className="font-semibold">{selectedNote.title}</h2>
+                <ChevronDown className="ml-2 h-4 w-4 text-gray-600" />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 border-dashed"
+                    >
+                      <Hash className="mr-2 h-4 w-4" />
+                      Add tag
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-0">
+                    <Command>
+                      <CommandInput placeholder="Search tags..." />
+                      <CommandEmpty>No tags found.</CommandEmpty>
+                      <CommandGroup>
+                        {tags.map((tag) => (
+                          <CommandItem key={tag} onSelect={() => addTag(tag)}>
+                            {tag}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Button variant="ghost" size="icon" onClick={shareNote}>
+                  <Share2 className="h-4 w-4" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuLabel>Options</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setIsTagManagementOpen(true)}
+                    >
+                      Manage Tags
+                    </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>Actions</DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem
+                          onClick={() => handleNoteAction('delete')}
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          Delete Note
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleNoteAction('archive')}
+                        >
+                          <Archive className="mr-2 h-4 w-4" />
+                          Archive Note
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleNoteAction('favorite')}
+                        >
+                          <Star className="mr-2 h-4 w-4" />
+                          Favorite Note
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </header>
+            <main className="flex-1 bg-white p-6">
+              <div className="mb-4 flex flex-wrap gap-2">
+                {selectedNote.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="flex items-center rounded-full bg-gray-200 px-2 py-1 text-sm text-gray-700"
+                  >
+                    {tag}
+                    <button
+                      onClick={() => removeTag(tag)}
+                      className="ml-1 text-gray-500 hover:text-gray-700"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <textarea
+                className="h-[calc(100%-2rem)] w-full resize-none border-none focus:outline-none"
+                value={selectedNote.content}
+                onChange={(e) => {
+                  const updatedNotes = notes.map((note) =>
+                    note.id === selectedNote.id
+                      ? { ...note, content: e.target.value }
+                      : note
+                  );
+                  setNotes(updatedNotes);
+                  setSelectedNote({ ...selectedNote, content: e.target.value });
+                }}
+                placeholder="Type your note here..."
+              />
+            </main>
+          </>
+        ) : (
+          <div className="flex flex-1 items-center justify-center text-gray-500">
+            Select a note or create a new one
+          </div>
+        )}
+      </div>
+
+      {/* Share Dialog */}
+      <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Note</DialogTitle>
+            <DialogDescription>
+              Choose users to share this note with and assign tags.
+            </DialogDescription>
+          </DialogHeader>
+          <Tabs defaultValue="users" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="tags">Tags</TabsTrigger>
+            </TabsList>
+            <TabsContent value="users">
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search
+                    className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"
+                    size={18}
+                  />
+                  <Input
+                    type="text"
+                    placeholder="Search users"
+                    className="pl-10"
+                    value={userSearchTerm}
+                    onChange={(e) => setUserSearchTerm(e.target.value)}
+                  />
+                </div>
+                <ScrollArea className="h-[200px]">
+                  {filteredUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="mb-2 flex items-center space-x-2"
+                    >
+                      <input
+                        type="checkbox"
+                        id={`user-${user.id}`}
+                        checked={shareRecipients.some((r) => r.id === user.id)}
+                        onChange={() => toggleRecipient(user)}
+                        className="rounded text-blue-600 focus:ring-blue-500"
                       />
-                      <Label htmlFor={tag._id}>{tag.name}</Label>
+                      <label htmlFor={`user-${user.id}`} className="flex-1">
+                        {user.name} ({user.email})
+                      </label>
                     </div>
                   ))}
-                </div>
+                </ScrollArea>
               </div>
-              {!editingNote?.isSharedWithMe && (
-                <div>
-                  <Label>Shared Users</Label>
-                  <div className="mt-2 space-y-2">
-                    {editingNote?.sharedUsers?.map((user) => (
-                      <div
-                        key={user._id}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <Avatar>
-                            <AvatarFallback>{user.name[0]}</AvatarFallback>
-                          </Avatar>
-                          <span>{user.name}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeSharedUser(user._id)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    ))}
-
-                    <div>
-                      <Label>Select Member</Label>
-                      <Input
-                        placeholder="Search User"
-                        className="mb-2"
-                        value={searchQuery} // Bind the input value to searchQuery state
-                        onChange={(e) => setSearchQuery(e.target.value)} // Update searchQuery on input change
-                      />
-                      <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                        {filteredMembers.length > 0 ? (
-                          filteredMembers.map((member) => (
-                            <div
-                              key={member.id}
-                              className="mb-2 flex items-center space-x-2"
-                            >
-                              <input
-                                type="radio"
-                                id={`member-${member.id}`}
-                                name="member-selection" // Ensure only one selection is possible
-                                checked={selectedMember2 === member.id} // Check if this member is selected
-                                onChange={() => setSelectedMember2(member.id)} // Set selected member on change
-                              />
-                              <Label
-                                htmlFor={`member-${member.id}`}
-                                className="flex items-center space-x-2"
-                              >
-                                <Avatar className="inline-block">
-                                  <AvatarFallback>
-                                    {member?.name
-                                      ?.split(' ')
-                                      ?.map((n) => n[0])
-                                      ?.join('') || 'User'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span>{member.name}</span>
-                              </Label>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-sm text-gray-500">
-                            No members found.
-                          </p>
-                        )}
-                      </ScrollArea>
-                    </div>
+            </TabsContent>
+            <TabsContent value="tags">
+              <ScrollArea className="h-[200px]">
+                {tags.map((tag) => (
+                  <div key={tag} className="mb-2 flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`tag-${tag}`}
+                      checked={selectedNote?.tags.includes(tag)}
+                      onChange={() =>
+                        selectedNote?.tags.includes(tag)
+                          ? removeTag(tag)
+                          : addTag(tag)
+                      }
+                      className="rounded text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor={`tag-${tag}`} className="flex-1">
+                      {tag}
+                    </label>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
+                ))}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setIsNoteDialogOpen(false)}
+              onClick={() => setIsShareDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button onClick={addOrUpdateNote}>
-              {editingNote?._id ? 'Update' : 'Add'} Note
-            </Button>
+            <Button onClick={handleShare}>Share</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isTagModalOpen} onOpenChange={setIsTagModalOpen}>
+      {/* Tag Management Dialog */}
+      <Dialog open={isTagManagementOpen} onOpenChange={setIsTagManagementOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Manage Tags</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex space-x-2">
               <Input
-                placeholder="New Tag"
+                type="text"
+                placeholder="New tag name"
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    addTag();
-                  }
-                }}
               />
-              <Button variant="outline" onClick={addTag}>
-                Add Tag
-              </Button>
+              <Button onClick={addNewTag}>Add</Button>
             </div>
-            <div className="space-y-2">
-              {allTags.map((tag, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  {editingTag?._id === tag._id ? (
-                    <>
-                      <Input
-                        value={editedTagName}
-                        onChange={(e) => setEditedTagName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            saveEditedTag(); // Call the add tag function on Enter
-                          }
-                        }}
-                      />
-                      <Button variant={'outline'} onClick={saveEditedTag}>
-                        Save
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Badge>{tag?.name}</Badge>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => startEditingTag(tag)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => confirmDeleteTag(tag)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
+            <ScrollArea className="h-[200px]">
+              {tags.map((tag) => (
+                <div
+                  key={tag}
+                  className="flex items-center justify-between py-2"
+                >
+                  <span>{tag}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeExistingTag(tag)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
-            </div>
+            </ScrollArea>
           </div>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog
-        open={!!tagToDelete}
-        onOpenChange={() => setTagToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-primary">
-              Confirm Delete
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-primary">
-              Are you sure you want to delete the tag{' '}
-              <strong>{tagToDelete?.name}</strong>? This action cannot be
-              undone, and all notes using this tag will be updated.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setTagToDelete(null)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={deleteTag}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
