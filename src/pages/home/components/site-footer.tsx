@@ -5,7 +5,7 @@ import playstoreLogo from '../../../assets/imges/home/playstore_logo.png';
 
 export function SiteFooter() {
   return (
-    <footer className="bg-white pt-12 md:pt-32">
+    <footer className="bg-white py-12 md:pt-32">
       <div className="container space-y-8 ">
         <div className="space-y-4 pb-40 text-center">
           <h3 className="pb-8 text-5xl font-bold text-[#00214C]">
@@ -159,7 +159,7 @@ export function SiteFooter() {
             </div>
           </div> */}
           </div>
-          <div className="text-center text-sm text-gray-600">
+          <div className="pt-5 text-center text-sm text-gray-600">
             <p>© 2024 TaskPlanner. All rights reserved.</p>
           </div>
         </div>
