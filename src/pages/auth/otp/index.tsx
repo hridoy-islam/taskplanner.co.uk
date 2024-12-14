@@ -101,7 +101,7 @@ export default function Otp() {
               <h1 className="text-md font-semibold tracking-tight">
                 Verification Code
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted">
                 Enter the verification code sent to your email
               </p>
               {error && <p className="text-sm text-red-500">{error}</p>}
@@ -140,11 +140,11 @@ export default function Otp() {
               </section>
             </div>
             {/* <ForgotForm /> */}
-            <p className="mt-4 px-8 text-center text-sm text-muted-foreground">
+            <p className="mt-4 px-8 text-center text-sm text-muted">
               Don't have an account?{' '}
               <Link
                 to="/sign-up"
-                className="underline underline-offset-4 hover:text-primary"
+                className="text-muted underline underline-offset-4"
               >
                 Sign up
               </Link>

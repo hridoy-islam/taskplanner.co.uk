@@ -58,7 +58,7 @@ export default function ForgotPassword() {
               <h1 className="text-md font-semibold tracking-tight">
                 Forgot Password
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted">
                 Enter your registered email and <br /> we will send you a link
                 to reset your password.
               </p>
@@ -97,12 +97,9 @@ export default function ForgotPassword() {
               </Form>
             </div>
             {/* <ForgotForm /> */}
-            <p className="mt-4 px-8 text-center text-sm text-muted-foreground">
+            <p className="mt-4 px-8 text-center text-sm text-muted">
               Don't have an account?{' '}
-              <Link
-                to="/sign-up"
-                className="underline underline-offset-4 hover:text-primary"
-              >
+              <Link to="/sign-up" className="underline underline-offset-4">
                 Sign up
               </Link>
               .
