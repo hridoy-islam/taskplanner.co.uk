@@ -47,9 +47,10 @@ export default function NewPassword() {
   });
 
   const onSubmit = async (data: UserFormValue) => {
-    if (data.password !== data.confirmPassword)
+    if (data.password !== data.confirmPassword) {
       setError('Passwords do not match');
-
+      return;
+    }
     const userData = JSON.parse(localStorage.getItem('tp_user_data'));
     // console.log({token: userData.token, password: data.password, userId: userData._id });
     const result: any = await dispatch(
@@ -80,25 +81,29 @@ export default function NewPassword() {
           </div>
           <Card className="p-6">
             <div className="mb-2 flex flex-col space-y-2 text-left">
-              <h1 className="text-md font-semibold tracking-tight">
-                Enter new password
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Enter your new password to login.
-              </p>
-              {error ? <p className="text-sm text-[#f87171]">{error}</p> : null}
-              {message && (
-                <p className="text-sm text-[#3b82f6]">
-                  {message}{' '}
-                  <Link to="/login" className="underline underline-offset-4 ">
-                    Login Now
-                  </Link>
+              <div className="mb-5 space-x-3">
+                <h1 className="text-md font-semibold tracking-tight">
+                  Enter new password
+                </h1>
+                <p className="text-sm text-muted">
+                  Enter your new password to login.
                 </p>
-              )}
+                {error ? (
+                  <p className="mt-4 text-sm text-red-500">{error}</p>
+                ) : null}
+                {message && (
+                  <p className="text-sm text-[#3b82f6]">
+                    {message}{' '}
+                    <Link to="/login" className="underline underline-offset-4 ">
+                      Login Now
+                    </Link>
+                  </p>
+                )}
+              </div>
               <Form {...form}>
                 <form
                   onSubmit={form.handleSubmit(onSubmit)}
-                  className="w-full space-y-2"
+                  className="w-full space-y-4"
                 >
                   <FormField
                     control={form.control}
@@ -148,12 +153,9 @@ export default function NewPassword() {
               </Form>
             </div>
             {/* <ForgotForm /> */}
-            <p className="mt-4 px-8 text-center text-sm text-muted-foreground">
+            <p className="mt-4 px-8 text-center text-sm text-muted">
               Don't have an account?{' '}
-              <Link
-                to="/sign-up"
-                className="underline underline-offset-4 hover:text-primary"
-              >
+              <Link to="/sign-up" className="underline underline-offset-4">
                 Sign up
               </Link>
               .

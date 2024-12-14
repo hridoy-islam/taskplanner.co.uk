@@ -37,7 +37,7 @@ export function HeroSection() {
           </div>
         </div>
       </div>
-      <div className="container absolute top-[400px] mt-16 w-full rounded-lg">
+      <div className="container absolute top-[400px] mx-auto mt-16 w-full rounded-lg">
         <img
           src={dashboardPreview}
           alt="Dashboard Preview"

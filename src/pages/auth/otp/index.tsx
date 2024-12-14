@@ -101,11 +101,11 @@ export default function Otp() {
               <h1 className="text-md font-semibold tracking-tight">
                 Verification Code
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted">
                 Enter the verification code sent to your email
               </p>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <section className="dark:bg-dark bg-white py-10">
+              <section className="bg-white py-5">
                 <div className="container">
                   <div>
                     <p className="text-dark mb-1.5 text-sm font-medium dark:text-white">
@@ -130,7 +130,7 @@ export default function Otp() {
                     <Button
                       disabled={otp.some((digit) => digit === '')}
                       onClick={handleOtpSubmit}
-                      className="ml-auto mt-5 w-full bg-white text-[#0e3261] hover:bg-[#0e3261] hover:text-white"
+                      className="ml-auto mt-5 w-full bg-background text-white hover:bg-background"
                       variant="outline"
                     >
                       Verify OTP
@@ -140,11 +140,11 @@ export default function Otp() {
               </section>
             </div>
             {/* <ForgotForm /> */}
-            <p className="mt-4 px-8 text-center text-sm text-muted-foreground">
+            <p className="mt-4 px-8 text-center text-sm text-muted">
               Don't have an account?{' '}
               <Link
                 to="/sign-up"
-                className="underline underline-offset-4 hover:text-primary"
+                className="text-muted underline underline-offset-4"
               >
                 Sign up
               </Link>
