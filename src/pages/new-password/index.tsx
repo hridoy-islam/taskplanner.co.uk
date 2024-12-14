@@ -47,9 +47,10 @@ export default function NewPassword() {
   });
 
   const onSubmit = async (data: UserFormValue) => {
-    if (data.password !== data.confirmPassword)
+    if (data.password !== data.confirmPassword) {
       setError('Passwords do not match');
-
+      return;
+    }
     const userData = JSON.parse(localStorage.getItem('tp_user_data'));
     // console.log({token: userData.token, password: data.password, userId: userData._id });
     const result: any = await dispatch(
@@ -86,7 +87,7 @@ export default function NewPassword() {
               <p className="text-sm text-muted-foreground">
                 Enter your new password to login.
               </p>
-              {error ? <p className="text-sm text-[#f87171]">{error}</p> : null}
+              {error ? <p className="text-sm text-red-500">{error}</p> : null}
               {message && (
                 <p className="text-sm text-[#3b82f6]">
                   {message}{' '}
