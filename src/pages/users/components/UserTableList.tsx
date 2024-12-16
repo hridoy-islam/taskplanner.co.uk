@@ -19,6 +19,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserProfile } from '@/redux/features/profileSlice';
 import { AppDispatch } from '@/redux/store';
 import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function UserTableList({ refreshKey }) {
   const { user } = useSelector((state: any) => state.auth);
@@ -26,7 +27,7 @@ export default function UserTableList({ refreshKey }) {
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [entriesPerPage, setEntriesPerPage] = useState(100);
   const [searchTerm, setSearchTerm] = useState('');
   const [companies, setCompanies] = useState([]);
   const { profileData } = useSelector((state: any) => state.profile);
@@ -82,10 +83,10 @@ export default function UserTableList({ refreshKey }) {
     setCurrentPage(1); // Reset to first page when searching
   };
 
-  const handleEntriesPerPageChange = (event) => {
-    setEntriesPerPage(Number(event.target.value));
-    setCurrentPage(1); // Reset to first page when changing entries per page
-  };
+  // const handleEntriesPerPageChange = (event) => {
+  //   setEntriesPerPage(Number(event.target.value));
+  //   setCurrentPage(1); // Reset to first page when changing entries per page
+  // };
 
   const handleCompanyChange = async (selectedOption, userId) => {
     if (!selectedOption) return; // Handle case where selection is cleared
@@ -147,96 +148,88 @@ export default function UserTableList({ refreshKey }) {
           value={searchTerm}
           onChange={handleSearch}
         />
-        <select
-          value={entriesPerPage}
-          onChange={handleEntriesPerPageChange}
-          className="block w-[180px] rounded-md border border-gray-300 bg-white p-2 shadow-sm transition  duration-150 ease-in-out focus:border-black focus:outline-none focus:ring-black"
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-        </select>
+        <div>
+          <DynamicPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Company</TableHead>
-            {(user.role === 'admin' || user.role === 'director') && (
-              <TableHead>Assigned Company</TableHead>
-            )}
-            <TableHead>Actions</TableHead>
-            {(user.role === 'admin' ||
-              user.role === 'director' ||
-              user.role === 'company' ||
-              user.role === 'creator') && <TableHead>User Status</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((stuff: any) => (
-            <TableRow key={stuff._id}>
-              <TableCell>{stuff?.name}</TableCell>
-              <TableCell>{stuff?.email}</TableCell>
-              <TableCell>
-                {stuff.company ? stuff.company.name : 'N/A'}
-              </TableCell>
+      <ScrollArea className="h-[calc(80vh-220px)] rounded-md md:h-[calc(80dvh-80px)]">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Company</TableHead>
               {(user.role === 'admin' || user.role === 'director') && (
-                <TableCell>
-                  <Select
-                    options={companies}
-                    value={null}
-                    onChange={(selectedOption) =>
-                      handleCompanyChange(selectedOption, stuff._id)
-                    }
-                    isClearable
-                    placeholder="Select a company"
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                  />
-                </TableCell>
+                <TableHead>Assigned Company</TableHead>
               )}
-
-              <TableCell>
-                <div className="flex space-x-2">
-                  <Link to={`/dashboard/users/${stuff._id}`}>
-                    <Button variant="outline" size="sm">
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                  </Link>
-                </div>
-              </TableCell>
+              <TableHead>Actions</TableHead>
               {(user.role === 'admin' ||
                 user.role === 'director' ||
                 user.role === 'company' ||
-                user.role === 'creator') && (
-                <TableCell className="flex items-center">
-                  <Switch
-                    checked={stuff?.isDeleted}
-                    onCheckedChange={() =>
-                      toggleIsDeleted(stuff?._id, stuff?.isDeleted)
-                    }
-                  />
-                  <span
-                    className={`ml-1 font-semibold ${stuff.isDeleted ? 'text-red-500' : 'text-green-500'}`}
-                  >
-                    {stuff.isDeleted ? 'Inactive' : 'Active'}
-                  </span>
-                </TableCell>
-              )}
+                user.role === 'creator') && <TableHead>User Status</TableHead>}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {users.map((stuff: any) => (
+              <TableRow key={stuff._id}>
+                <TableCell>{stuff?.name}</TableCell>
+                <TableCell>{stuff?.email}</TableCell>
+                <TableCell>
+                  {stuff.company ? stuff.company.name : 'N/A'}
+                </TableCell>
+                {(user.role === 'admin' || user.role === 'director') && (
+                  <TableCell>
+                    <Select
+                      options={companies}
+                      value={null}
+                      onChange={(selectedOption) =>
+                        handleCompanyChange(selectedOption, stuff._id)
+                      }
+                      isClearable
+                      placeholder="Select a company"
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                    />
+                  </TableCell>
+                )}
 
-      <DynamicPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Link to={`/dashboard/users/${stuff._id}`}>
+                      <Button variant="outline" size="sm">
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                    </Link>
+                  </div>
+                </TableCell>
+                {(user.role === 'admin' ||
+                  user.role === 'director' ||
+                  user.role === 'company' ||
+                  user.role === 'creator') && (
+                  <TableCell className="flex items-center">
+                    <Switch
+                      checked={stuff?.isDeleted}
+                      onCheckedChange={() =>
+                        toggleIsDeleted(stuff?._id, stuff?.isDeleted)
+                      }
+                    />
+                    <span
+                      className={`ml-1 font-semibold ${stuff.isDeleted ? 'text-red-500' : 'text-green-500'}`}
+                    >
+                      {stuff.isDeleted ? 'Inactive' : 'Active'}
+                    </span>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
     </>
   );
 }

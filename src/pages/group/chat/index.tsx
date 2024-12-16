@@ -118,6 +118,7 @@ export default function GroupChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [typing, setTyping] = useState(false);
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Track submission state
 
   const goDown = () => {
     if (commentsEndRef.current) {
@@ -401,6 +402,9 @@ export default function GroupChat() {
   }, [currentPath, router]);
 
   const handleCommentSubmit = async (data) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true); // Set submission flag
+
     if (!data.content) {
       console.error(data, 'Content is required to submit a comment.');
       return;
@@ -446,9 +450,10 @@ export default function GroupChat() {
       };
       socket.emit('stop typing', typer);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false); // Reset submission flag
     }
   };
+
   const handleGroupDescriptionUpdate = async (e) => {
     e.preventDefault();
     const name = e.target.groupName.value;
@@ -1052,7 +1057,7 @@ export default function GroupChat() {
                       <Paperclip className="mr-2 h-4 w-4" /> Upload
                     </Button>
                   ) : (
-                    <Button type="submit">
+                    <Button type="submit" disabled={isSubmitting}>
                       <Send className="mr-2 h-4 w-4" />
                       Send
                     </Button>

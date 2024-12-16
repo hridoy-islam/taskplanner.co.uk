@@ -17,6 +17,7 @@ import { toast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function CreatorTableList({ refreshKey }) {
   const { user } = useSelector((state: any) => state.auth);
@@ -77,10 +78,10 @@ export default function CreatorTableList({ refreshKey }) {
     setCurrentPage(1); // Reset to first page when searching
   };
 
-  const handleEntriesPerPageChange = (event) => {
-    setEntriesPerPage(Number(event.target.value));
-    setCurrentPage(1); // Reset to first page when changing entries per page
-  };
+  // const handleEntriesPerPageChange = (event) => {
+  //   setEntriesPerPage(Number(event.target.value));
+  //   setCurrentPage(1); // Reset to first page when changing entries per page
+  // };
 
   const handleCompanyChange = async (selectedOption, userId) => {
     if (!selectedOption) return; // Handle case where selection is cleared
@@ -142,94 +143,86 @@ export default function CreatorTableList({ refreshKey }) {
           value={searchTerm}
           onChange={handleSearch}
         />
-        <select
-          value={entriesPerPage}
-          onChange={handleEntriesPerPageChange}
-          className="block w-[180px] rounded-md border border-gray-300 bg-white p-2 shadow-sm transition  duration-150 ease-in-out focus:border-black focus:outline-none focus:ring-black"
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-        </select>
+        <div>
+          <DynamicPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Company</TableHead>
-            {(user.role === 'admin' || user.role === 'director') && (
-              <TableHead>Assigned Company</TableHead>
-            )}
-            <TableHead>Actions</TableHead>
-            {(user.role === 'admin' ||
-              user.role === 'director' ||
-              user.role === 'company') && <TableHead>User Status</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((creator: any) => (
-            <TableRow key={creator._id}>
-              <TableCell>{creator?.name}</TableCell>
-              <TableCell>{creator?.email}</TableCell>
-              <TableCell>
-                {creator.company ? creator.company.name : 'N/A'}
-              </TableCell>
+      <ScrollArea className="h-[calc(80vh-220px)] rounded-md md:h-[calc(80dvh-80px)]">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Company</TableHead>
               {(user.role === 'admin' || user.role === 'director') && (
-                <TableCell>
-                  <Select
-                    options={companies}
-                    value={null}
-                    onChange={(selectedOption) =>
-                      handleCompanyChange(selectedOption, creator._id)
-                    }
-                    isClearable
-                    placeholder="Select a company"
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                  />
-                </TableCell>
+                <TableHead>Assigned Company</TableHead>
               )}
-              <TableCell>
-                <div className="flex space-x-2">
-                  <Link to={`/dashboard/creator/${creator?._id}`}>
-                    <Button variant="outline" size="sm">
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                  </Link>
-                </div>
-              </TableCell>
-
+              <TableHead>Actions</TableHead>
               {(user.role === 'admin' ||
                 user.role === 'director' ||
-                user.role === 'company') && (
-                <TableCell className="flex items-center">
-                  <Switch
-                    checked={creator?.isDeleted}
-                    onCheckedChange={() =>
-                      toggleIsDeleted(creator?._id, creator?.isDeleted)
-                    }
-                  />
-                  <span
-                    className={`ml-1 font-semibold ${creator.isDeleted ? 'text-red-500' : 'text-green-500'}`}
-                  >
-                    {creator.isDeleted ? 'Inactive' : 'Active'}
-                  </span>
-                </TableCell>
-              )}
+                user.role === 'company') && <TableHead>User Status</TableHead>}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {users.map((creator: any) => (
+              <TableRow key={creator._id}>
+                <TableCell>{creator?.name}</TableCell>
+                <TableCell>{creator?.email}</TableCell>
+                <TableCell>
+                  {creator.company ? creator.company.name : 'N/A'}
+                </TableCell>
+                {(user.role === 'admin' || user.role === 'director') && (
+                  <TableCell>
+                    <Select
+                      options={companies}
+                      value={null}
+                      onChange={(selectedOption) =>
+                        handleCompanyChange(selectedOption, creator._id)
+                      }
+                      isClearable
+                      placeholder="Select a company"
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                    />
+                  </TableCell>
+                )}
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Link to={`/dashboard/creator/${creator?._id}`}>
+                      <Button variant="outline" size="sm">
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                    </Link>
+                  </div>
+                </TableCell>
 
-      <DynamicPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
+                {(user.role === 'admin' ||
+                  user.role === 'director' ||
+                  user.role === 'company') && (
+                  <TableCell className="flex items-center">
+                    <Switch
+                      checked={creator?.isDeleted}
+                      onCheckedChange={() =>
+                        toggleIsDeleted(creator?._id, creator?.isDeleted)
+                      }
+                    />
+                    <span
+                      className={`ml-1 font-semibold ${creator.isDeleted ? 'text-red-500' : 'text-green-500'}`}
+                    >
+                      {creator.isDeleted ? 'Inactive' : 'Active'}
+                    </span>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
     </>
   );
 }

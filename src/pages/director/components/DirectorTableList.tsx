@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
 import { useSelector } from 'react-redux';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function DirectorTableList({ refreshKey }) {
   const { user } = useSelector((state: any) => state.auth);
@@ -49,10 +50,10 @@ export default function DirectorTableList({ refreshKey }) {
     setCurrentPage(1); // Reset to first page when searching
   };
 
-  const handleEntriesPerPageChange = (event) => {
-    setEntriesPerPage(Number(event.target.value));
-    setCurrentPage(1); // Reset to first page when changing entries per page
-  };
+  // const handleEntriesPerPageChange = (event) => {
+  //   setEntriesPerPage(Number(event.target.value));
+  //   setCurrentPage(1); // Reset to first page when changing entries per page
+  // };
 
   const toggleIsDeleted = async (userId: string, currentStatus: boolean) => {
     try {
@@ -84,69 +85,61 @@ export default function DirectorTableList({ refreshKey }) {
           value={searchTerm}
           onChange={handleSearch}
         />
-        <select
-          value={entriesPerPage}
-          onChange={handleEntriesPerPageChange}
-          className="block w-[180px] rounded-md border border-gray-300 bg-white p-2 shadow-sm transition  duration-150 ease-in-out focus:border-black focus:outline-none focus:ring-black"
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-        </select>
+        <div>
+          <DynamicPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            {/*<TableHead>Assigned Company</TableHead> */}
-            <TableHead>Actions</TableHead>
-            {user.role === 'admin' && <TableHead>User Status</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((director: any) => (
-            <TableRow key={director._id}>
-              <TableCell>{director?.name}</TableCell>
-              <TableCell>{director?.email}</TableCell>
-
-              <TableCell>
-                <div className="flex space-x-2">
-                  <Link to={`/dashboard/director/${director._id}`}>
-                    <Button variant="outline" size="sm">
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                  </Link>
-                </div>
-              </TableCell>
-              {user.role === 'admin' && (
-                <TableCell className="flex items-center">
-                  <Switch
-                    checked={director?.isDeleted}
-                    onCheckedChange={() =>
-                      toggleIsDeleted(director?._id, director?.isDeleted)
-                    }
-                  />
-                  <span
-                    className={`ml-1 font-semibold ${director.isDeleted ? 'text-red-500' : 'text-green-500'}`}
-                  >
-                    {director.isDeleted ? 'Inactive' : 'Active'}
-                  </span>
-                </TableCell>
-              )}
+      <ScrollArea className="h-[calc(80vh-220px)] rounded-md md:h-[calc(80dvh-80px)]">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              {/*<TableHead>Assigned Company</TableHead> */}
+              <TableHead>Actions</TableHead>
+              {user.role === 'admin' && <TableHead>User Status</TableHead>}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {users.map((director: any) => (
+              <TableRow key={director._id}>
+                <TableCell>{director?.name}</TableCell>
+                <TableCell>{director?.email}</TableCell>
 
-      <DynamicPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Link to={`/dashboard/director/${director._id}`}>
+                      <Button variant="outline" size="sm">
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                    </Link>
+                  </div>
+                </TableCell>
+                {user.role === 'admin' && (
+                  <TableCell className="flex items-center">
+                    <Switch
+                      checked={director?.isDeleted}
+                      onCheckedChange={() =>
+                        toggleIsDeleted(director?._id, director?.isDeleted)
+                      }
+                    />
+                    <span
+                      className={`ml-1 font-semibold ${director.isDeleted ? 'text-red-500' : 'text-green-500'}`}
+                    >
+                      {director.isDeleted ? 'Inactive' : 'Active'}
+                    </span>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
     </>
   );
 }

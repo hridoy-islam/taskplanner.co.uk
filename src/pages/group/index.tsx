@@ -28,6 +28,7 @@ import {
   MessageSquareText,
   Plus,
   Search,
+  Trash,
   X
 } from 'lucide-react';
 import {
@@ -414,7 +415,9 @@ export default function GroupPage() {
               <TableBody>
                 {filteredGroups.map((group) => (
                   <TableRow key={group.id}>
-                    <TableCell>{group.name}</TableCell>
+                    <TableCell>
+                      <Link to={`${group?.id}`}>{group.name}</Link>
+                    </TableCell>
                     <TableCell>
                       <div className="flex -space-x-2 overflow-hidden">
                         {group.members.slice(0, 3).map((member) => (
@@ -449,23 +452,7 @@ export default function GroupPage() {
                         )}
                       </div>
                     </TableCell>
-                    {/* <TableCell>
-                      {group.status === 'active' ? (
-                        <Badge
-                          variant="outline"
-                          className="bg-green-200 text-black"
-                        >
-                          General
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="bg-red-200 text-black"
-                        >
-                          Admin
-                        </Badge>
-                      )}
-                    </TableCell> */}
+
                     <TableCell>
                       <Link to={`${group?.id}`}>
                         <Button
@@ -483,6 +470,11 @@ export default function GroupPage() {
                           </sup>
                         </Button>
                       </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Trash
+                        className={`h-4 w-4 cursor-pointer text-red-900`}
+                      ></Trash>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -551,45 +543,6 @@ export default function GroupPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* <div className="fixed bottom-4 right-4">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="rounded-full p-2">
-              <Bell className="h-6 w-6" />
-              {notifications.filter((n) => !n.isRead).length > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -right-2 -top-2"
-                >
-                  {notifications.filter((n) => !n.isRead).length}
-                </Badge>
-              )}
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Notifications</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`mb-2 cursor-pointer rounded p-2 ${
-                    notification.isRead ? 'bg-gray-100' : 'bg-blue-100'
-                  }`}
-                  onClick={() =>
-                    !notification.isRead &&
-                    markNotificationAsRead(notification.id)
-                  }
-                >
-                  {notification.content}
-                </div>
-              ))}
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-      </div> */}
     </div>
   );
 }
