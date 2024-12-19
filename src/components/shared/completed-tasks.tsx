@@ -79,7 +79,7 @@ export default function CompletedTasks({ user }) {
     <Card className="h-[calc(85vh-8rem)] overflow-hidden">
       <CardHeader>
         <CardTitle className="flex justify-between gap-2">
-          <span>Completed</span>
+          <span></span>
           <Link to={'completedtask'}>See All</Link>
         </CardTitle>
       </CardHeader>

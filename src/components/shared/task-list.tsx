@@ -133,7 +133,7 @@ const TaskList = ({
                       openUpdateModal(task);
                     } else {
                       toast({
-                        title: `Please Contact with ${task?.author.name}`,
+                        title: `Please Contact with ${task?.author?.name}`,
                         description:
                           'You do not have permission for this action',
                         variant: 'destructive'

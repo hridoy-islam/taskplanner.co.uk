@@ -77,7 +77,7 @@ export default function UpcomingTasks({ user }) {
     <Card className="h-[calc(85vh-8rem)] overflow-hidden">
       <CardHeader>
         <CardTitle className="flex justify-between gap-2">
-          <span>Due In 7 Days</span>
+          <span></span>
           <Link to={'upcomingtask'}>See All</Link>
         </CardTitle>
       </CardHeader>

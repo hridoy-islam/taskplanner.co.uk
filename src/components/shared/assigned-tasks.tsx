@@ -77,7 +77,7 @@ export default function AssignedTasks({ user }) {
     <Card className="h-[calc(85vh-8rem)] overflow-hidden">
       <CardHeader>
         <CardTitle className="flex justify-between gap-2">
-          <span>Assigned To others</span>
+          <span></span>
           <Link to={'assignedtask'}>See All</Link>
         </CardTitle>
       </CardHeader>

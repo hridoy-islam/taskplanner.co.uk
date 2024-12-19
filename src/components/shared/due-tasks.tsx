@@ -77,7 +77,7 @@ export default function DueTasks({ user }) {
     <Card className="h-[calc(85vh-8rem)] overflow-hidden">
       <CardHeader className="flex">
         <CardTitle className="flex justify-between gap-2">
-          <span>Overdue</span>
+          <span></span>
           <Link to={'duetask'}>See All</Link>
         </CardTitle>
       </CardHeader>

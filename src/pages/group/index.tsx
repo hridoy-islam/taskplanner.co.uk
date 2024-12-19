@@ -409,7 +409,7 @@ export default function GroupPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Members</TableHead>
                   {/* <TableHead>G Type</TableHead> */}
-                  <TableHead>Actions</TableHead>
+                  <TableHead>View</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
