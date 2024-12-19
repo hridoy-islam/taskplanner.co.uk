@@ -152,11 +152,11 @@ const TaskList = ({
                         className="flex items-center gap-1 bg-green-100 text-black"
                       >
                         <UserRoundCheck className="h-3 w-3" />
-                        {task.author.name}
+                        {task?.author?.name}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Created By {task.author.name}</p>
+                      <p>Created By {task?.author?.name}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
