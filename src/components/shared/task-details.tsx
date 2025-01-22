@@ -294,7 +294,7 @@ export default function TaskDetails({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="flex h-full w-[400px] flex-col p-0 sm:w-[540px]">
+      <SheetContent className="flex h-full w-full flex-col p-0 md:w-[540px]">
         <div className="flex-shrink-0 p-6">
           <SheetHeader>
             <SheetTitle>{task?.taskName}</SheetTitle>

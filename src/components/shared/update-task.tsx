@@ -4,6 +4,7 @@ import { Input } from '../ui/input';
 import { useForm } from 'react-hook-form';
 import { useEffect } from 'react';
 import moment from 'moment';
+import { Textarea } from '../ui/textarea';
 
 const UpdateTask = ({
   task,
@@ -38,21 +39,20 @@ const UpdateTask = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="p-4">
+      <div className="md:p-4">
         <h2 className="text-lg font-bold">{title}</h2>
         <p className="mb-4">{description}</p>
         <form onSubmit={handleSubmit(handleConfirm)}>
-          <Input
+          <Textarea
             {...register('taskName', { required: true })}
-            type="text"
-            className="mb-4"
+            className="mb-4 h-24 resize-none"
             placeholder="Task Name"
           />
 
           <Input
             type="date"
             {...register('dueDate', { required: true })}
-            className="mb-4"
+            className="mb-4 "
           />
           <div className="mt-4 flex justify-end space-x-2">
             <Button variant="default" onClick={onClose}>

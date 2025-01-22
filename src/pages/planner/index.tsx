@@ -157,7 +157,7 @@ export default function TaskPlanner() {
         days.push(
           <div
             key={day.toString()}
-            className={`my-1 rounded-sm border p-2 ${
+            className={`my-1 rounded-sm border p-2  ${
               !isSameMonth(day, monthStart)
                 ? 'text-gray-400'
                 : isSameDay(day, new Date())
@@ -169,14 +169,14 @@ export default function TaskPlanner() {
             }
           >
             <span className="float-right">{formattedDate}</span>
-            <ScrollArea className="mt-2 h-24">
+            <ScrollArea className="mt-2 md:h-20 ">
               {filteredTasks
                 .filter((task) => isSameDay(task.dueDate, cloneDay))
                 .slice(0, 3)
                 .map((task) => (
                   <div
                     key={task._id}
-                    className={`mb-1 rounded p-1 text-xs font-semibold ${task?.important ? 'bg-orange-400' : 'bg-green-400'}`}
+                    className={`mb-1 rounded p-1 text-xs  font-semibold ${task?.important ? 'bg-orange-400' : 'bg-green-400'}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedTask(task);
@@ -291,7 +291,7 @@ export default function TaskPlanner() {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-8">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Task Planner</h1>
         <div className="flex space-x-2">
@@ -344,11 +344,13 @@ export default function TaskPlanner() {
           />
         </div>
       </div>
-      {renderHeader()}
-      {calendarView === 'month' && renderDays()}
-      {calendarView === 'month' && renderCells()}
-      {calendarView === 'week' && renderWeekView()}
-      {calendarView === 'day' && renderDayView()}
+      <div className="flex flex-col ">
+        {renderHeader()}
+        {calendarView === 'month' && renderDays()}
+        {calendarView === 'month' && renderCells()}
+        {calendarView === 'week' && renderWeekView()}
+        {calendarView === 'day' && renderDayView()}
+      </div>
 
       <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
         <DialogContent>

@@ -99,7 +99,7 @@ export function NotificationDropdown() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 bg-primary">
+      <DropdownMenuContent className="mr-4 w-80 bg-primary">
         <DropdownMenuLabel className="font-normal">
           <h2 className="text-lg font-semibold text-black">Notifications</h2>
         </DropdownMenuLabel>

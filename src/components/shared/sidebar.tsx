@@ -76,13 +76,15 @@ export default function Sidebar({ className }: SidebarProps) {
         <div className="px-2 py-2">
           <div className="mt-3 space-y-1">
             <DashboardNav items={filteredNavItems} />
-            <Input
-              type="text"
-              placeholder="Search users"
-              className="mb-4"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            {!isMinimized && (
+              <Input
+                type="text"
+                placeholder="Search users"
+                className="lg: mb-4"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            )}
             <UserList user={user} filteredUsers={filteredUsers} />
           </div>
         </div>

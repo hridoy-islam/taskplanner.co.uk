@@ -239,13 +239,13 @@ export default function TaskPage() {
           </DropdownMenu>
         </Button>
 
-        <div>
+        {/* <div>
           <DynamicPagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
-        </div>
+        </div> */}
       </div>
       <TaskList
         tasks={filteredGroups}

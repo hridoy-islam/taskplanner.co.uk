@@ -1,9 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import axiosInstance from '../../lib/axios';
 import { useEffect, useState } from 'react';
 import TaskList from './task-list';
 import { useToast } from '../ui/use-toast';
-import { Link } from 'react-router-dom';
 
 export default function DueTasks({ user }) {
   const { toast } = useToast();
@@ -75,12 +74,12 @@ export default function DueTasks({ user }) {
 
   return (
     <Card className="h-[calc(85vh-8rem)] overflow-hidden">
-      <CardHeader className="flex">
+      {/* <CardHeader className="flex">
         <CardTitle className="flex justify-between gap-2">
-          <span></span>
-          <Link to={'duetask'}>See All</Link>
+          <span></span> 
+           <Link to={'duetask'}>See All</Link> 
         </CardTitle>
-      </CardHeader>
+      </CardHeader> */}
       <CardContent className="pl-2">
         <TaskList
           tasks={tasks}
