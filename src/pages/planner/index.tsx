@@ -40,6 +40,7 @@ import axiosInstance from '../../lib/axios';
 import moment from 'moment';
 import { useSelector } from 'react-redux';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type Task = {
   _id: string;
@@ -295,13 +296,16 @@ export default function TaskPlanner() {
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Task Planner</h1>
         <div className="flex space-x-2">
-          {/* <Tabs value={calendarView} onValueChange={(value: CalendarViewType) => setCalendarView(value)}>
+          <Tabs
+            value={calendarView}
+            onValueChange={(value: CalendarViewType) => setCalendarView(value)}
+          >
             <TabsList>
               <TabsTrigger value="month">Month</TabsTrigger>
               <TabsTrigger value="week">Week</TabsTrigger>
               <TabsTrigger value="day">Day</TabsTrigger>
             </TabsList>
-          </Tabs> */}
+          </Tabs>
           <Button
             variant="outline"
             onClick={() => {

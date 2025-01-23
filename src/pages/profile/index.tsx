@@ -99,7 +99,10 @@ export default function ProfilePage() {
         ]}
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col space-y-8 "
+        >
           <div className="flex flex-col items-center space-y-4">
             <Avatar className="h-32 w-32">
               <AvatarImage src={user?.image} alt="Profile picture" />

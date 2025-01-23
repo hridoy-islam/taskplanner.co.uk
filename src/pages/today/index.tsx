@@ -74,14 +74,16 @@ export default function TodayPage() {
   };
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8 ">
       <PageHead title="Task Page" />
-      <Breadcrumbs
-        items={[
-          { title: 'Dashboard', link: '/dashboard' },
-          { title: 'Todays Task', link: `/task` }
-        ]}
-      />
+      <div className="pb-4">
+        <Breadcrumbs
+          items={[
+            { title: 'Dashboard', link: '/dashboard' },
+            { title: 'Todays Task', link: `/task` }
+          ]}
+        />
+      </div>
       <TaskList
         tasks={tasks}
         onMarkAsImportant={handleMarkAsImportant}

@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CornerDownLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import notask from '@/assets/imges/home/notask.png';
+
 import DynamicPagination from '@/components/shared/DynamicPagination';
 import {
   DropdownMenu,
@@ -19,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function TaskPage() {
   const { id } = useParams();
@@ -189,84 +192,95 @@ export default function TaskPage() {
   };
 
   return (
-    <div className="p-4 md:p-8">
-      <PageHead title="Task Page" />
-      <Breadcrumbs
-        items={[
-          { title: 'Dashboard', link: '/dashboard' },
-          { title: userDetail?.name, link: `/task/${id}` }
-        ]}
-      />
-      <div className="my-2 flex items-center justify-between gap-2">
-        <Input
-          placeholder="Search task..."
-          value={searchTerm}
-          onChange={handleSearch}
+    <div className=" flex h-full flex-col  justify-between  p-4 md:p-6">
+      <div>
+        <PageHead title="Task Page" />
+        <Breadcrumbs
+          items={[
+            { title: 'Dashboard', link: '/dashboard' },
+            { title: userDetail?.name, link: `/task/${id}` }
+          ]}
         />
-        <Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex min-w-fit flex-row">
-              {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  setSortBy('name');
-                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                }}
-              >
-                Name
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setSortBy('unread');
-                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                }}
-              >
-                New Message
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setSortBy('recent');
-                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                }}
-              >
-                Date Created
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </Button>
+        <div className="my-2 flex items-center justify-between gap-2">
+          <Input
+            placeholder="Search task..."
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+          <Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex min-w-fit flex-row">
+                {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSortBy('name');
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                  }}
+                >
+                  Name
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSortBy('unread');
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                  }}
+                >
+                  New Message
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSortBy('recent');
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                  }}
+                >
+                  Date Created
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </Button>
 
-        {/* <div>
+          {/* <div>
           <DynamicPagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
         </div> */}
+        </div>
       </div>
-      <TaskList
-        tasks={filteredGroups}
-        onMarkAsImportant={handleMarkAsImportant}
-        onToggleTaskCompletion={handleToggleTaskCompletion}
-        fetchTasks={fetchTasks}
-      />
-
-      <footer className="bg-white p-4 shadow">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex space-x-2">
-          <Input
+      <div className=" ">
+        {tasks.length === 0 ? (
+          <div className="flex items-center justify-center">
+            <img src={notask} alt="No Task" />
+          </div>
+        ) : (
+          <TaskList
+            tasks={filteredGroups}
+            onMarkAsImportant={handleMarkAsImportant}
+            onToggleTaskCompletion={handleToggleTaskCompletion}
+            fetchTasks={fetchTasks}
+          />
+        )}
+      </div>
+      <div className="relative rounded-xl bg-white p-4 shadow ">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex items-center justify-center space-x-2"
+        >
+          <Textarea
             {...register('taskName', { required: true })}
-            type="text"
             placeholder="Add a task"
-            className="flex-1"
+            className="flex-1 resize-none"
           />
           <Button type="submit" variant={'outline'}>
             <CornerDownLeft className="mr-2 h-4 w-4" />
           </Button>
         </form>
-      </footer>
+      </div>
     </div>
   );
 }

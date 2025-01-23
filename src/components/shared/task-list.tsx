@@ -106,7 +106,7 @@ const TaskList = ({
 
   return (
     <div>
-      <main className="flex-1 overflow-auto lg:p-4 ">
+      <main className="flex-1 overflow-auto ">
         <ScrollArea className="h-[calc(80vh-8rem)]">
           <div className="space-y-2">
             {tasks?.map((task) => (

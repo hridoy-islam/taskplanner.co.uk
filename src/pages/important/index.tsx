@@ -70,12 +70,14 @@ export default function ImportantPage() {
   return (
     <div className="p-4 md:p-8">
       <PageHead title="Task Page" />
-      <Breadcrumbs
-        items={[
-          { title: 'Dashboard', link: '/dashboard' },
-          { title: 'Important Tasks', link: `/important` }
-        ]}
-      />
+      <div className="pb-4">
+        <Breadcrumbs
+          items={[
+            { title: 'Dashboard', link: '/dashboard' },
+            { title: 'Important Tasks', link: `/important` }
+          ]}
+        />
+      </div>
       <TaskList
         tasks={tasks}
         onMarkAsImportant={handleMarkAsImportant}

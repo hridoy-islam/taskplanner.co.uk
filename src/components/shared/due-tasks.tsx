@@ -3,7 +3,7 @@ import axiosInstance from '../../lib/axios';
 import { useEffect, useState } from 'react';
 import TaskList from './task-list';
 import { useToast } from '../ui/use-toast';
-
+import notask from '@/assets/imges/home/notask.png';
 export default function DueTasks({ user }) {
   const { toast } = useToast();
   const [tasks, setTasks] = useState([]);
@@ -73,20 +73,26 @@ export default function DueTasks({ user }) {
   };
 
   return (
-    <Card className="h-[calc(85vh-8rem)] overflow-hidden">
+    <Card className="h-[calc(85vh-8rem)] overflow-hidden ">
       {/* <CardHeader className="flex">
         <CardTitle className="flex justify-between gap-2">
           <span></span> 
            <Link to={'duetask'}>See All</Link> 
         </CardTitle>
       </CardHeader> */}
-      <CardContent className="pl-2">
-        <TaskList
-          tasks={tasks}
-          onMarkAsImportant={handleMarkAsImportant}
-          onToggleTaskCompletion={handleToggleTaskCompletion}
-          fetchTasks={fetchDueTasks}
-        />
+      <CardContent className="p-4">
+        {tasks.length === 0 ? (
+          <div className="mt-48 flex flex-col items-center justify-center">
+            <img src={notask} alt="No Task" />
+          </div>
+        ) : (
+          <TaskList
+            tasks={tasks}
+            onMarkAsImportant={handleMarkAsImportant}
+            onToggleTaskCompletion={handleToggleTaskCompletion}
+            fetchTasks={fetchDueTasks}
+          />
+        )}
       </CardContent>
     </Card>
   );
