@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
+import taskplan from '@/assets/imges/home/taskplan.jpg';
 
 export default function SignInPage() {
   const { user } = useSelector((state: any) => state.auth);
@@ -27,9 +28,15 @@ export default function SignInPage() {
       >
         Login
       </Link>
-      <div className="relative hidden h-full flex-col bg-primary p-10 text-white dark:border-r lg:flex">
-        <div className="absolute inset-0 bg-primary dark:bg-secondary" />
-        <div className="relative z-20 flex items-center text-lg font-medium">
+      <div
+        className="relative hidden h-full flex-col p-10 text-black dark:border-r lg:flex"
+        style={{
+          backgroundImage: `url(${taskplan})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        <div className="relative z-20 flex items-center text-lg font-semibold">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -44,14 +51,15 @@ export default function SignInPage() {
           </svg>
           Task Planner
         </div>
+
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
-            <p className="text-lg">
+            <p className="text-lg font-semibold">
               &ldquo;This library has saved me countless hours of work and
               helped me deliver stunning designs to my clients faster than ever
               before.&rdquo;
             </p>
-            <footer className="text-sm">Sofia Davis</footer>
+            <footer className="text-sm font-medium">Sofia Davis</footer>
           </blockquote>
         </div>
       </div>

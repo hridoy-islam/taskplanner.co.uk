@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import axiosInstance from '../../../lib/axios';
 import { io } from 'socket.io-client';
 import Linkify from 'react-linkify';
-
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import {
   UserMinus,
   Send,
@@ -22,6 +22,8 @@ import {
   ArrowUp,
   UserPlus
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
 import {
   Dialog,
   DialogContent,
@@ -47,6 +49,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { ImageUploader } from '@/components/shared/image-uploader';
 
 // Mock data
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
@@ -106,6 +109,8 @@ export default function GroupChat() {
   const [pageNumber, setPageNumber] = useState(1);
   const limit = 50;
   const [initialMembers, setInitialMembers] = useState<Member[]>([]);
+  const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
+
   const [groupMembers, setGroupMembers] = useState(
     initialMembers?.map((member) => ({
       ...member,
@@ -119,7 +124,7 @@ export default function GroupChat() {
   const [typing, setTyping] = useState(false);
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false); // Track submission state
-
+  const buttonRef = useRef(null);
   const goDown = () => {
     if (commentsEndRef.current) {
       commentsEndRef.current.scrollTop = commentsEndRef.current.scrollHeight;
@@ -604,16 +609,16 @@ export default function GroupChat() {
     }
 
     // Access the ctxProvider reference
-    const ctxProvider = ctxProviderRef.current;
+    // const ctxProvider = ctxProviderRef.current;
 
-    if (ctxProvider) {
-      // Clear the file collection in ctxProvider if available
-      if (typeof ctxProvider.clearFiles === 'function') {
-        ctxProvider.clearFiles();
-      } else {
-        console.warn('ctxProvider.clearFiles() method is not available.');
-      }
-    }
+    // if (ctxProvider) {
+    //   // Clear the file collection in ctxProvider if available
+    //   if (typeof ctxProvider.clearFiles === 'function') {
+    //     ctxProvider.clearFiles();
+    //   } else {
+    //     console.warn('ctxProvider.clearFiles() method is not available.');
+    //   }
+    // }
 
     // Clear the files array
     setFiles([]); // This will trigger the useEffect that watches `files`
@@ -680,16 +685,56 @@ export default function GroupChat() {
     }
   }, [groupDetails?.members, groupDetails?.status, user?._id]);
 
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  const [isSideGroupVisible, setIsSideGroupVisible] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // If the click is outside the button, act like ArrowLeft (hide the sidebar)
+      if (buttonRef.current && !buttonRef.current.contains(event.target)) {
+        setIsSidebarVisible(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
-    <div className="mx-auto flex h-full max-w-full">
+    <div className="mx-auto flex h-full max-w-full  ">
       {/* Sidebar with group members */}
-      <div className="w-64 space-y-3 border-r border-gray-300 p-4">
+      <Button
+        variant="default"
+        size="icon"
+        className="fixed  left-4 top-16 z-50 rounded-full md:hidden"
+        onClick={() => setIsSidebarVisible(!isSidebarVisible)}
+        ref={buttonRef}
+      >
+        {isSidebarVisible ? (
+          <ArrowLeft className="h-6 w-6 " />
+        ) : (
+          <ArrowRight className="h-6 w-6 " />
+        )}
+      </Button>
+
+      {/* Sidebar */}
+      <div
+        className={cn(
+          'fixed z-20 w-80 space-y-3 rounded-md bg-white p-4  transition-transform duration-300 ease-in-out max-md:border md:relative', // Sidebar base styles
+          isSidebarVisible ? 'block' : 'hidden', // Control visibility on small screens
+          'md:block'
+        )}
+        // style={{ display: isSideGroupVisible ?   "hidden": "block" }}
+      >
+        {/* Sidebar content */}
         <div className="flex w-full items-start justify-between gap-2">
-          <h2 className=" text-lg font-bold">
+          <h2 className="text-lg font-bold">
             {groupName.substring(0, 15)}
             {groupName.length > 15 && '...'}
           </h2>
-
           <div>
             {groupDetails?.members?.map((member) => {
               if (member._id === user?._id && isCurrentUserAdmin) {
@@ -707,7 +752,7 @@ export default function GroupChat() {
           </div>
         </div>
         <div className="flex flex-row items-end justify-between">
-          <h3 className=" font-semibold">Group Members</h3>
+          <h3 className="font-semibold">Group Members</h3>
           <div className="flex items-center justify-between gap-2">
             <Button
               variant={'outline'}
@@ -721,12 +766,10 @@ export default function GroupChat() {
         </div>
         <ScrollArea className="xs:h-[calc(100%-10rem)] h-[calc(100%-11rem)] sm:h-[calc(100%-8rem)]">
           {loading ? (
-            // Display the loading animation while loading is true
             <div className="flex h-full items-center justify-center">
               <Loader className="h-6 w-6 animate-spin text-gray-500" />
             </div>
           ) : error ? (
-            // Handle errors with an error message
             <div className="text-red-500">Failed to load members: {error}</div>
           ) : (
             groupDetails?.members?.map((member) => (
@@ -775,26 +818,24 @@ export default function GroupChat() {
                   <DropdownMenuContent>
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {
-                      <>
+                    <>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          handleChangeRole(member?._id, member?.role)
+                        }
+                      >
+                        Make {member.role === 'admin' ? 'member' : 'admin'}
+                      </DropdownMenuItem>
+                      {member?.role !== 'admin' && (
                         <DropdownMenuItem
-                          onClick={() =>
-                            handleChangeRole(member?._id, member?.role)
-                          }
+                          onClick={() => handleRemoveMember(member._id)}
+                          className="flex justify-between"
                         >
-                          Make {member.role === 'admin' ? 'member' : 'admin'}
+                          <span>Remove</span>
+                          <UserMinus className="h-4 w-4" />
                         </DropdownMenuItem>
-                        {member?.role !== 'admin' && (
-                          <DropdownMenuItem
-                            onClick={() => handleRemoveMember(member._id)}
-                            className="flex justify-between"
-                          >
-                            <span>Remove</span>
-                            <UserMinus className="h-4 w-4" />
-                          </DropdownMenuItem>
-                        )}
-                      </>
-                    }
+                      )}
+                    </>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -810,24 +851,9 @@ export default function GroupChat() {
           >
             Return
           </Button>
-
-          {/* <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant={'secondary'} size={'sm'}>
-                <Settings2 className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Settings</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-
-              <DropdownMenuItem>Change Group Info</DropdownMenuItem>
-              <DropdownMenuItem disabled>Mute Notifications</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu> */}
         </div>
       </div>
+
       {/* Main chat area */}
       {/* Chat messages */}
       <div className="flex w-full flex-1  flex-col ">
@@ -867,23 +893,24 @@ export default function GroupChat() {
                       : 'justify-start'
                   }`}
                 >
-                  <div
-                    className={`inline-block max-w-prose ${
-                      comment.authorId._id === user?._id
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200'
-                    } rounded-lg p-3`}
-                    style={{
-                      wordWrap: 'break-word',
-                      whiteSpace: 'pre-wrap',
-                      overflowWrap: 'break-word'
-                    }}
-                  >
-                    {/* Header Section: Avatar and Name */}
-                    <div className="mb-1 flex items-center space-x-2">
-                      <Avatar className="h-6 w-6">
+                  <div className="flex flex-col items-end justify-end">
+                    <div
+                      className={`inline-block max-w-prose ${
+                        comment.authorId._id === user?._id
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200'
+                      } rounded-lg p-3`}
+                      style={{
+                        wordWrap: 'break-word',
+                        whiteSpace: 'pre-wrap',
+                        overflowWrap: 'break-word'
+                      }}
+                    >
+                      {/* Header Section: Avatar and Name */}
+                      <div className="mb-1 flex items-center space-x-2">
+                        {/* <Avatar className="h-6 w-6 ">
                         <AvatarFallback
-                          className="text-xs"
+                          className="text-[8px]"
                           style={{
                             backgroundColor:
                               groupMembers.find(
@@ -896,94 +923,97 @@ export default function GroupChat() {
                             .map((n) => n[0])
                             .join('') || 'U'}
                         </AvatarFallback>
-                      </Avatar>
-                      <span
-                        className="font-semibold"
-                        style={{
-                          color: groupMembers.find(
-                            (m) => m.name === comment.sender
-                          )?.color
-                        }}
-                      >
-                        {comment?.authorId?.name}
-                      </span>
+                      </Avatar> */}
+                        <span
+                          className="md:text-md text-xs md:font-semibold"
+                          style={{
+                            color: groupMembers.find(
+                              (m) => m.name === comment.sender
+                            )?.color
+                          }}
+                        >
+                          {comment?.authorId?.name}
+                        </span>
+                      </div>
+
+                      {/* Message Content Section */}
+                      <div className="max-w-full">
+                        {isFile ? (
+                          <div
+                            className={`flex items-center space-x-2 rounded-lg p-2 ${
+                              comment.authorId._id === user?._id
+                                ? 'bg-blue-500/15'
+                                : 'bg-gray-200/15'
+                            }`}
+                          >
+                            {/* Display File (Image or Non-Image) */}
+                            {parsedContent.mimeType?.startsWith('image/') ? (
+                              <div className="flex items-end space-x-2">
+                                <img
+                                  src={parsedContent.cdnUrl}
+                                  alt={
+                                    parsedContent.originalFilename || 'Preview'
+                                  }
+                                  className="max-h-32 max-w-full rounded shadow-sm"
+                                />
+                                <a
+                                  href={parsedContent.cdnUrl}
+                                  download={parsedContent.originalFilename}
+                                  className="justify-between text-gray-900  hover:underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <ArrowUpRightFromSquare className="h-5 w-5" />
+                                </a>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between space-x-2">
+                                <span>
+                                  {parsedContent.originalFilename || 'File'}
+                                </span>
+                                <a
+                                  href={parsedContent.cdnUrl}
+                                  download={parsedContent.originalFilename}
+                                  className="text-gray-900 hover:underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <DownloadIcon className="h-5 w-5" />
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <Linkify
+                            componentDecorator={(
+                              decoratedHref,
+                              decoratedText,
+                              key
+                            ) => (
+                              <a
+                                href={decoratedHref}
+                                key={key}
+                                style={{
+                                  textDecoration: 'underline',
+                                  color: 'inherit'
+                                }}
+                              >
+                                {decoratedText}
+                              </a>
+                            )}
+                          >
+                            {comment.content}
+                          </Linkify>
+                        )}
+                      </div>
+                    </div>
+                    <div>
                       <span className="text-xs opacity-70">
                         {new Date(comment?.createdAt).toLocaleDateString() ===
                         new Date().toLocaleDateString()
                           ? new Date(comment?.createdAt).toLocaleTimeString()
                           : new Date(comment?.createdAt).toLocaleDateString()}
                       </span>
-                    </div>
-
-                    {/* Message Content Section */}
-                    <div className="max-w-full">
-                      {isFile ? (
-                        <div
-                          className={`flex items-center space-x-2 rounded-lg p-2 ${
-                            comment.authorId._id === user?._id
-                              ? 'bg-blue-500/15'
-                              : 'bg-gray-200/15'
-                          }`}
-                        >
-                          {/* Display File (Image or Non-Image) */}
-                          {parsedContent.mimeType?.startsWith('image/') ? (
-                            <div className="flex items-end space-x-2">
-                              <img
-                                src={parsedContent.cdnUrl}
-                                alt={
-                                  parsedContent.originalFilename || 'Preview'
-                                }
-                                className="max-h-32 max-w-full rounded shadow-sm"
-                              />
-                              <a
-                                href={parsedContent.cdnUrl}
-                                download={parsedContent.originalFilename}
-                                className="justify-between text-gray-900  hover:underline"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <ArrowUpRightFromSquare className="h-5 w-5" />
-                              </a>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between space-x-2">
-                              <span>
-                                {parsedContent.originalFilename || 'File'}
-                              </span>
-                              <a
-                                href={parsedContent.cdnUrl}
-                                download={parsedContent.originalFilename}
-                                className="text-gray-900 hover:underline"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <DownloadIcon className="h-5 w-5" />
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <Linkify
-                          componentDecorator={(
-                            decoratedHref,
-                            decoratedText,
-                            key
-                          ) => (
-                            <a
-                              href={decoratedHref}
-                              key={key}
-                              style={{
-                                textDecoration: 'underline',
-                                color: 'inherit'
-                              }}
-                            >
-                              {decoratedText}
-                            </a>
-                          )}
-                        >
-                          {comment.content}
-                        </Linkify>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1026,11 +1056,11 @@ export default function GroupChat() {
                   {...register('content', { required: true })}
                   placeholder="Type your comment here..."
                   rows={1}
-                  className="flex-1"
+                  className="flex-1 resize-none"
                   onKeyDown={handleKeyDown}
                 />
-                <div className="flex max-w-fit flex-col-reverse items-center gap-1">
-                  <uc-config
+                <div className="flex max-w-full flex-col-reverse items-center gap-1">
+                  {/* <uc-config
                     ctx-name="my-uploader-3"
                     pubkey="48a797785d228ebb9033"
                     sourceList="local, url, camera, dropbox"
@@ -1045,20 +1075,33 @@ export default function GroupChat() {
                   <uc-upload-ctx-provider
                     ctx-name="my-uploader-3"
                     ref={ctxProviderRef}
-                  ></uc-upload-ctx-provider>
+                  ></uc-upload-ctx-provider> */}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="default"
+                    onClick={() => setIsImageUploaderOpen(true)}
+                  >
+                    <Paperclip className="mr-2 h-4 w-4" /> Upload
+                  </Button>
+
                   {files.length > 0 ? (
                     <Button
+                      className="w-full"
                       type="button"
                       variant="outline"
                       size="default"
                       // onClick={() => fileInputRef.current?.click()}
                       onClick={handleFileSubmit}
-                    >
-                      <Paperclip className="mr-2 h-4 w-4" /> Upload
-                    </Button>
+                    ></Button>
                   ) : (
-                    <Button type="submit" disabled={isSubmitting}>
-                      <Send className="mr-2 h-4 w-4" />
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isSubmitting}
+                    >
+                      <Send className=" h-4 w-4" />
                       Send
                     </Button>
                   )}
@@ -1066,6 +1109,16 @@ export default function GroupChat() {
               </div>
             </form>
           )}
+          <ImageUploader
+            open={isImageUploaderOpen}
+            onOpenChange={setIsImageUploaderOpen}
+            multiple={false}
+            onUploadComplete={(uploadedFiles) => {
+              console.log('Uploaded files:', uploadedFiles);
+              setFiles(uploadedFiles);
+            }}
+            className="uc-light"
+          />
         </div>
       </div>
       <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>

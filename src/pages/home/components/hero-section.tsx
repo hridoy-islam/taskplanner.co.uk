@@ -38,12 +38,12 @@ export function HeroSection() {
         </div>
       </div>
       <div className="container absolute top-[400px] mx-auto mt-16 w-full rounded-lg">
-        <img
+        {/* <img
           src={dashboardPreview}
           alt="Dashboard Preview"
           height={564}
           className="hidden w-full rounded-lg shadow-lg md:block"
-        />
+        /> */}
       </div>
     </section>
   );

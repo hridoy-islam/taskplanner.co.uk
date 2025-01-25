@@ -74,7 +74,7 @@ export default function Sidebar({ className }: SidebarProps) {
       </div>
       <div className="space-y-4">
         <div className="px-2 py-2">
-          <div className="mt-3 space-y-1">
+          <div className="mt-3 flex flex-col space-y-1">
             <DashboardNav items={filteredNavItems} />
             {!isMinimized && (
               <Input
@@ -85,7 +85,9 @@ export default function Sidebar({ className }: SidebarProps) {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             )}
-            <UserList user={user} filteredUsers={filteredUsers} />
+            <div className="-ml-2 py-4">
+              <UserList user={user} filteredUsers={filteredUsers} />
+            </div>
           </div>
         </div>
       </div>

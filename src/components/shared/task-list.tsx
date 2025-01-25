@@ -107,16 +107,16 @@ const TaskList = ({
   return (
     <div>
       <main className="flex-1 overflow-auto ">
-        <ScrollArea className="h-[calc(80vh-8rem)]">
+        <ScrollArea className="h-[calc(80vh-8rem)] ">
           <div className="space-y-2">
             {tasks?.map((task) => (
               <div
                 key={task._id}
-                className={`flex items-center space-x-2 rounded-lg p-3 shadow-md ${
+                className={`flex items-center space-x-2 rounded-lg border border-gray-200 p-3 shadow-md ${
                   task.important ? 'bg-orange-100' : 'bg-white'
                 }`}
               >
-                <div className="border- flex w-full flex-col items-center justify-between gap-2 lg:flex-row ">
+                <div className=" flex w-full flex-col items-center justify-between gap-2 lg:flex-row ">
                   <div className="flex w-full flex-row items-center justify-between">
                     <div className="flex items-center justify-center gap-2">
                       <Checkbox

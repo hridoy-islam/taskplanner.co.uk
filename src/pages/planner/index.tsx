@@ -61,15 +61,14 @@ export default function TaskPlanner() {
   const { user } = useSelector((state: any) => state.auth);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  // @ts-ignore
   const [calendarView, setCalendarView] = useState<CalendarViewType>('month');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchTasks = async () => {
-    const year = moment(currentDate).format('YYYY'); // Get the year in YYYY format
-    const month = moment(currentDate).format('MM'); // Get the month in MM format
+    const year = moment(currentDate).format('YYYY');
+    const month = moment(currentDate).format('MM');
     const week = moment(currentDate).isoWeek();
 
     try {
@@ -103,7 +102,7 @@ export default function TaskPlanner() {
 
   useEffect(() => {
     fetchTasks();
-  }, [currentDate]); // Re-fetch tasks whenever the current date changes
+  }, [currentDate]);
 
   const renderHeader = () => {
     const dateFormat =
@@ -114,14 +113,22 @@ export default function TaskPlanner() {
           : 'EEEE, MMMM d, yyyy';
     return (
       <div className="mb-4 flex items-center justify-between">
-        <Button variant="outline" onClick={prevView}>
+        <Button
+          variant="default"
+          onClick={prevView}
+          className="max-md:scale-75"
+        >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-[15px] font-semibold lg:text-xl">
           {format(currentDate, dateFormat)}
         </h2>
-        <Button variant="outline" onClick={nextView}>
-          <ChevronRight className="h-4 w-4" />
+        <Button
+          variant="default"
+          onClick={nextView}
+          className="max-md:scale-75"
+        >
+          <ChevronRight className="h-4 md:w-4" />
         </Button>
       </div>
     );
@@ -129,7 +136,7 @@ export default function TaskPlanner() {
 
   const renderDays = () => {
     const dateFormat = 'EEE';
-    const days: React.ReactNode[] = []; // Explicitly define the type here
+    const days: React.ReactNode[] = [];
     let startDate = startOfWeek(currentDate);
     for (let i = 0; i < 7; i++) {
       days.push(
@@ -139,6 +146,26 @@ export default function TaskPlanner() {
       );
     }
     return <div className="mb-2 grid grid-cols-7 gap-2">{days}</div>;
+  };
+
+  const nextView = () => {
+    if (calendarView === 'month') {
+      setCurrentDate(addMonths(currentDate, 1));
+    } else if (calendarView === 'week') {
+      setCurrentDate(addDays(currentDate, 7));
+    } else {
+      setCurrentDate(addDays(currentDate, 1));
+    }
+  };
+
+  const prevView = () => {
+    if (calendarView === 'month') {
+      setCurrentDate(addMonths(currentDate, -1));
+    } else if (calendarView === 'week') {
+      setCurrentDate(addDays(currentDate, -7));
+    } else {
+      setCurrentDate(addDays(currentDate, -1));
+    }
   };
 
   const renderCells = () => {
@@ -170,14 +197,14 @@ export default function TaskPlanner() {
             }
           >
             <span className="float-right">{formattedDate}</span>
-            <ScrollArea className="mt-2 md:h-20 ">
+            <ScrollArea className="mt-2 lg:h-16 ">
               {filteredTasks
                 .filter((task) => isSameDay(task.dueDate, cloneDay))
                 .slice(0, 3)
                 .map((task) => (
                   <div
                     key={task._id}
-                    className={`mb-1 rounded p-1 text-xs  font-semibold ${task?.important ? 'bg-orange-400' : 'bg-green-400'}`}
+                    className={`mb-1 rounded p-1 text-xs font-semibold  max-lg:hidden ${task?.important ? 'bg-orange-400' : 'bg-green-400'}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedTask(task);
@@ -217,15 +244,18 @@ export default function TaskPlanner() {
     for (let i = 0; i < 7; i++) {
       const day = addDays(startDate, i);
       days.push(
-        <div key={i} className="border p-2">
-          <div className="mb-2 font-semibold">{format(day, 'EEE, MMM d')}</div>
-          <ScrollArea className="h-96">
+        <div key={i} className="p-2 lg:border ">
+          <div className="mb-2 font-semibold max-lg:hidden">
+            {format(day, 'EEE, MMM,YYY ')}
+          </div>
+          <div className="mb-2  font-semibold">{format(day, ' d')}</div>
+          <ScrollArea className=" lg:h-40">
             {filteredTasks
               .filter((task) => isSameDay(task.dueDate, day))
               .map((task) => (
                 <div
                   key={task._id}
-                  className={`mb-2 rounded p-2 ${task?.important ? 'bg-orange-400' : 'bg-green-400'} cursor-pointer`}
+                  className={`mb-2 rounded p-2 max-lg:hidden ${task?.important ? 'bg-orange-400' : 'bg-green-400'} cursor-pointer`}
                   onClick={() => setSelectedTask(task)}
                 >
                   <div className="text-xs font-semibold">{task.taskName}</div>
@@ -240,7 +270,7 @@ export default function TaskPlanner() {
 
   const renderDayView = () => {
     return (
-      <ScrollArea className="h-[calc(100vh-200px)]">
+      <ScrollArea className="h-[calc(100vh-200px)] ">
         {filteredTasks
           .filter((task) => isSameDay(task.dueDate, currentDate))
           .map((task) => (
@@ -256,7 +286,7 @@ export default function TaskPlanner() {
                 <div className="mt-2 flex items-center">
                   <Clock className="mr-1 h-4 w-4" />
                   <span className="text-sm">
-                    {format(task.dueDate, 'HH:mm')}
+                    {format(task.dueDate, 'EEE, MMM d, yyyy')}
                   </span>
                 </div>
               </CardContent>
@@ -266,77 +296,106 @@ export default function TaskPlanner() {
     );
   };
 
-  const onDateClick = (day: Date) => {
-    setSelectedDate(day);
-    setCurrentDate(day);
-  };
+  const renderDueTasksForSmallScreen = () => {
+    let filteredTasksForView: Task[] = [];
 
-  const nextView = () => {
     if (calendarView === 'month') {
-      setCurrentDate(addMonths(currentDate, 1));
+      // Filter tasks for the entire month
+      const monthStart = startOfMonth(currentDate);
+      const monthEnd = endOfMonth(monthStart);
+      filteredTasksForView = filteredTasks.filter((task) => {
+        const taskDueDate = new Date(task.dueDate); // Convert dueDate to Date object
+        return taskDueDate >= monthStart && taskDueDate <= monthEnd;
+      });
     } else if (calendarView === 'week') {
-      setCurrentDate(addDays(currentDate, 7));
-    } else {
-      setCurrentDate(addDays(currentDate, 1));
+      // Filter tasks for the current week
+      const weekStart = startOfWeek(currentDate);
+      const weekEnd = endOfWeek(currentDate);
+      filteredTasksForView = filteredTasks.filter((task) => {
+        const taskDueDate = new Date(task.dueDate); // Convert dueDate to Date object
+        return taskDueDate >= weekStart && taskDueDate <= weekEnd;
+      });
     }
-  };
 
-  const prevView = () => {
-    if (calendarView === 'month') {
-      setCurrentDate(addMonths(currentDate, -1));
-    } else if (calendarView === 'week') {
-      setCurrentDate(addDays(currentDate, -7));
-    } else {
-      setCurrentDate(addDays(currentDate, -1));
-    }
+    return (
+      <div className="lg:hidden">
+        <h2 className="mb-4 text-lg font-semibold">
+          {calendarView === 'month' ? 'Monthly Tasks' : 'Weekly Tasks'}
+        </h2>
+        <ScrollArea className="h-[calc(100vh-200px)]">
+          {filteredTasksForView.map((task) => (
+            <Card
+              key={task._id}
+              className="mb-4 cursor-pointer"
+              onClick={() => setSelectedTask(task)}
+            >
+              <CardHeader>
+                <CardTitle className="text-lg">{task.taskName}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mt-2 flex items-center">
+                  <Clock className="mr-1 h-4 w-4" />
+                  <span className="text-sm">
+                    {format(new Date(task.dueDate), 'EEE, MMM d, yyyy')}{' '}
+                    {/* Convert dueDate to Date object */}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </ScrollArea>
+      </div>
+    );
   };
 
   return (
-    <div className="container mx-auto p-8">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="container mx-auto p-2 md:p-8">
+      <div className="mb-4 flex flex-col items-center  justify-between md:flex-row">
         <h1 className="text-2xl font-bold">Task Planner</h1>
-        <div className="flex space-x-2">
+        <div className="flex flex-col items-center justify-center gap-2 space-x-2  md:flex-row">
           <Tabs
             value={calendarView}
             onValueChange={(value: CalendarViewType) => setCalendarView(value)}
           >
-            <TabsList>
+            <TabsList className="border border-gray-200">
               <TabsTrigger value="month">Month</TabsTrigger>
               <TabsTrigger value="week">Week</TabsTrigger>
               <TabsTrigger value="day">Day</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button
-            variant="outline"
-            onClick={() => {
-              const today = new Date();
-              setCurrentDate(today);
-              setSelectedDate(today); // Set selected date to today for highlighting
-            }}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            Today
-          </Button>
-          <Popover>
-            <PopoverTrigger>
-              <Button variant="outline">
-                <CalendarIcon />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => {
-                  if (date) {
-                    setCurrentDate(date);
-                    setSelectedDate(date);
-                  }
-                }}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <div className="flex w-full flex-row items-center  justify-between gap-4 max-md:hidden">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const today = new Date();
+                setCurrentDate(today);
+                setSelectedDate(today);
+              }}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              Today
+            </Button>
+            <Popover>
+              <PopoverTrigger>
+                <Button variant="outline">
+                  <CalendarIcon />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setCurrentDate(date);
+                      setSelectedDate(date);
+                    }
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </div>
       <div className="mb-4 flex space-x-4">
@@ -348,12 +407,16 @@ export default function TaskPlanner() {
           />
         </div>
       </div>
-      <div className="flex flex-col ">
+      <div className="flex flex-col">
         {renderHeader()}
-        {calendarView === 'month' && renderDays()}
-        {calendarView === 'month' && renderCells()}
+        <div className={calendarView === 'month' ? 'max-md:hidden' : ''}>
+          {calendarView === 'month' && renderDays()}
+          {calendarView === 'month' && renderCells()}
+        </div>
         {calendarView === 'week' && renderWeekView()}
+
         {calendarView === 'day' && renderDayView()}
+        {renderDueTasksForSmallScreen()}
       </div>
 
       <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>

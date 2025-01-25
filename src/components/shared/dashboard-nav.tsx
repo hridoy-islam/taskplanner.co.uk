@@ -45,8 +45,8 @@ export default function DashboardNav({
                     className={cn(
                       'flex items-center gap-2 overflow-hidden rounded-md py-2 text-sm font-medium hover:text-muted-foreground',
                       path === item.href
-                        ? 'bg-white text-black hover:text-black'
-                        : 'transparent',
+                        ? 'border border-gray-400 bg-white text-black hover:text-black'
+                        : '',
                       item.disabled && 'cursor-not-allowed opacity-80'
                     )}
                     onClick={() => {

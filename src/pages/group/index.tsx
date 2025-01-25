@@ -332,18 +332,19 @@ export default function GroupPage() {
   return (
     <div className="container mx-auto h-full overflow-auto p-4">
       <h1 className="mb-4 text-2xl font-bold">Groups</h1>
-      <div className="mb-4 flex gap-4">
-        <div className="relative flex-grow">
-          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
-          <Input
-            placeholder="Search groups..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
-        </div>
+      <div className="flex md:flex-row  ">
+        <div className="mb-4 flex w-full gap-4 max-md:flex-col">
+          <div className="relative flex-grow">
+            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+            <Input
+              placeholder="Search groups..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
+          </div>
 
-        {/* <Button
+          {/* <Button
           onClick={() => {
             setSortBy('members');
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -351,53 +352,57 @@ export default function GroupPage() {
         >
           {sortOrder === 'asc' ? '↑' : '↓'}
         </Button> */}
-        <Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  setSortBy('unread');
-                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                }}
-              >
-                New Message
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setSortBy('name');
-                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                }}
-              >
-                Name
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setSortBy('members');
-                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                }}
-              >
-                Member Count
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setSortBy('recent');
-                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                }}
-              >
-                Date Created
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </Button>
 
-        <Button onClick={() => setIsGroupModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Group
-        </Button>
+          <div className="flex flex-row  items-center justify-end gap-2">
+            <Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger>
+                  {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSortBy('unread');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    New Message
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSortBy('name');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Name
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSortBy('members');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Member Count
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSortBy('recent');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Date Created
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </Button>
+
+            <Button onClick={() => setIsGroupModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Add Group
+            </Button>
+          </div>
+        </div>
       </div>
 
       <Card>
@@ -414,8 +419,11 @@ export default function GroupPage() {
               </TableHeader>
               <TableBody>
                 {filteredGroups.map((group) => (
-                  <TableRow key={group.id}>
-                    <TableCell>
+                  <TableRow
+                    key={group.id}
+                    className="shadow hover:bg-slate-100"
+                  >
+                    <TableCell className="font-semibold">
                       <Link to={`${group?.id}`}>{group.name}</Link>
                     </TableCell>
                     <TableCell>

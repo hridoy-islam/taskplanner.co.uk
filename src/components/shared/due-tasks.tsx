@@ -4,85 +4,120 @@ import { useEffect, useState } from 'react';
 import TaskList from './task-list';
 import { useToast } from '../ui/use-toast';
 import notask from '@/assets/imges/home/notask.png';
+import { Input } from '../ui/input';
+
 export default function DueTasks({ user }) {
   const { toast } = useToast();
   const [tasks, setTasks] = useState([]);
-  const fetchDueTasks = async () => {
-    const response = await axiosInstance(`/task/duetasks/${user._id}`);
-    setTasks(response.data.data.result);
-  };
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    fetchDueTasks();
-    const intervalId = setInterval(() => {
-      fetchDueTasks();
-    }, 30000); // 30 seconds
+  const fetchDueTasks = async (searchTerm = '', sortOrder = 'desc') => {
+    try {
+      const sortQuery = sortOrder === 'asc' ? 'dueDate' : '-dueDate';
+      const response = await axiosInstance(
+        `/task/duetasks/${user._id}?searchTerm=${searchTerm}&sort=${sortQuery}`
+      );
 
-    // const timeoutId = setTimeout(() => {
-    //   clearInterval(intervalId);
-    // }, 3600000); // 1 hour
-
-    // Cleanup on component unmount
-    return () => {
-      // clearInterval(intervalId);
-      clearTimeout(intervalId);
-    };
-  }, [user]);
-
-  const handleMarkAsImportant = async (taskId) => {
-    const task: any = tasks.find((t: any) => t._id === taskId);
-
-    const response = await axiosInstance.patch(
-      `/task/${taskId}`,
-      { important: !task.important } // Toggle important status
-    );
-
-    if (response.data.success) {
-      fetchDueTasks();
-      toast({
-        title: 'Task Updated',
-        description: 'Thank You'
-      });
-    } else {
+      if (response.data && response.data.data && response.data.data.result) {
+        setTasks(response.data.data.result);
+      } else {
+        console.error('Unexpected response structure:', response);
+      }
+    } catch (error) {
+      console.error('Error fetching due tasks:', error);
       toast({
         variant: 'destructive',
-        title: 'Something Went Wrong!'
+        title: 'Error fetching tasks',
+        description: 'Please try again later.'
       });
     }
   };
 
-  const handleToggleTaskCompletion = async (taskId) => {
-    const task: any = tasks.find((t: any) => t._id === taskId);
+  useEffect(() => {
+    fetchDueTasks(searchTerm, sortOrder);
+    const intervalId = setInterval(() => {
+      fetchDueTasks(searchTerm, sortOrder);
+    }, 30000); // 30 seconds
 
-    const response = await axiosInstance.patch(`/task/${taskId}`, {
-      status: task?.status === 'completed' ? 'pending' : 'completed'
-    });
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [user, searchTerm, sortOrder]);
 
-    if (response.data.success) {
-      fetchDueTasks();
-      toast({
-        title: 'Task Updated',
-        description: 'Thank You'
+  const handleMarkAsImportant = async (taskId) => {
+    const task = tasks.find((t) => t._id === taskId);
+
+    try {
+      const response = await axiosInstance.patch(`/task/${taskId}`, {
+        important: !task.important
       });
-    } else {
+
+      if (response.data.success) {
+        fetchDueTasks(searchTerm, sortOrder);
+        toast({
+          title: 'Task Updated',
+          description: 'Thank You'
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Something Went Wrong!'
+        });
+      }
+    } catch (error) {
+      console.error('Error marking task as important:', error);
       toast({
         variant: 'destructive',
-        title: 'Something Went Wrong!'
+        title: 'Error updating task'
+      });
+    }
+  };
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleToggleTaskCompletion = async (taskId) => {
+    const task = tasks.find((t) => t._id === taskId);
+
+    try {
+      const response = await axiosInstance.patch(`/task/${taskId}`, {
+        status: task?.status === 'completed' ? 'pending' : 'completed'
+      });
+
+      if (response.data.success) {
+        fetchDueTasks(searchTerm, sortOrder);
+        toast({
+          title: 'Task Updated',
+          description: 'Thank You'
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Something Went Wrong!'
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling task completion:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error updating task'
       });
     }
   };
 
   return (
-    <Card className="h-[calc(85vh-8rem)] overflow-hidden ">
-      {/* <CardHeader className="flex">
-        <CardTitle className="flex justify-between gap-2">
-          <span></span> 
-           <Link to={'duetask'}>See All</Link> 
-        </CardTitle>
-      </CardHeader> */}
+    <Card className="h-[calc(85vh-8rem)] overflow-hidden p-2">
+      <Input
+        className="m-4 flex h-[40px] w-[90%] items-center   p-4 md:w-[98%]"
+        placeholder="Search notes..."
+        value={searchTerm}
+        onChange={handleSearch}
+      />
       <CardContent className="p-4">
         {tasks.length === 0 ? (
-          <div className="mt-48 flex flex-col items-center justify-center">
+          <div className="mt-36 flex flex-col items-center justify-center">
             <img src={notask} alt="No Task" />
           </div>
         ) : (

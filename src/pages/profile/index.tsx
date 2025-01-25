@@ -72,6 +72,7 @@ export default function ProfilePage() {
 
     fetchProfileData();
   }, [userId]);
+  console.log(userId);
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
@@ -101,7 +102,7 @@ export default function ProfilePage() {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col space-y-8 "
+          className="flex flex-col items-center justify-center space-y-8 "
         >
           <div className="flex flex-col items-center space-y-4">
             <Avatar className="h-32 w-32">
@@ -134,7 +135,11 @@ export default function ProfilePage() {
               <FormItem>
                 <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Your Name..." {...field} />
+                  <Input
+                    className="h-[50px] w-[400px] "
+                    placeholder="Enter Your Name..."
+                    {...field}
+                  />
                 </FormControl>
               </FormItem>
             )}
@@ -147,6 +152,7 @@ export default function ProfilePage() {
                 <FormLabel>Email</FormLabel>
                 <FormControl>
                   <Input
+                    className="h-[50px] w-[400px] "
                     placeholder="example@example.com"
                     disabled
                     {...field}
@@ -163,7 +169,11 @@ export default function ProfilePage() {
               <FormItem>
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Phone" {...field} />
+                  <Input
+                    className="h-[50px] w-[400px] "
+                    placeholder="Phone"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -176,13 +186,21 @@ export default function ProfilePage() {
               <FormItem>
                 <FormLabel>Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Your Address" {...field} />
+                  <Input
+                    className="h-[50px] w-[400px] "
+                    placeholder="Enter Your Address"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button variant="outline" type="submit">
+          <Button
+            className="h-[50px] w-[400px] "
+            variant="outline"
+            type="submit"
+          >
             Update profile
           </Button>
         </form>

@@ -28,8 +28,10 @@ import {
   ArrowUp,
   ArrowUpRightFromSquare,
   DownloadIcon,
-  ForwardIcon
+  ForwardIcon,
+  Paperclip
 } from 'lucide-react';
+import { ImageUploader } from '@/components/shared/image-uploader';
 
 UC.defineComponents(UC);
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
@@ -62,6 +64,7 @@ export default function TaskDetails({
   const router = useRouter();
   const [displayedComments, setDisplayedComments] = useState<any[]>([]);
   const [maxComments, setMaxComments] = useState(50);
+  const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
 
   // logic to scroll to the bottom of the chat
   useEffect(() => {
@@ -473,7 +476,7 @@ export default function TaskDetails({
               />
             )}
             <div className="flex flex-row items-center justify-center gap-2">
-              <uc-config
+              {/* <uc-config
                 ctx-name="my-uploader-3"
                 pubkey="48a797785d228ebb9033"
                 sourceList="local, url, camera, dropbox"
@@ -487,7 +490,17 @@ export default function TaskDetails({
               <uc-upload-ctx-provider
                 ctx-name="my-uploader-3"
                 ref={ctxProviderRef}
-              ></uc-upload-ctx-provider>
+              ></uc-upload-ctx-provider> */}
+
+              <Button
+                type="button"
+                variant="outline"
+                size="default"
+                onClick={() => setIsImageUploaderOpen(true)}
+              >
+                <Paperclip className="mr-2 h-4 w-4" /> Upload
+              </Button>
+
               {files?.length > 0 ? (
                 <Button
                   onClick={handleFileSubmit}
@@ -504,6 +517,16 @@ export default function TaskDetails({
               )}
             </div>
           </form>
+          <ImageUploader
+            open={isImageUploaderOpen}
+            onOpenChange={setIsImageUploaderOpen}
+            multiple={false}
+            onUploadComplete={(uploadedFiles) => {
+              console.log('Uploaded files:', uploadedFiles);
+              setFiles(uploadedFiles);
+            }}
+            className="uc-light"
+          />
         </div>
       </SheetContent>
     </Sheet>

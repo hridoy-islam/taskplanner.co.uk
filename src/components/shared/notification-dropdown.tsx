@@ -21,6 +21,8 @@ interface Notification {
   _id: string;
   message: string;
   isRead: boolean;
+  senderId?: string;
+  updatedAt: string;
 }
 
 export function NotificationDropdown() {
@@ -79,6 +81,24 @@ export function NotificationDropdown() {
     }
   };
 
+  // Function to calculate duration
+  const calculateDuration = (updatedAt: string): string => {
+    const currentTime = new Date();
+    const updatedTime = new Date(updatedAt);
+    const durationInMinutes = Math.floor(
+      (currentTime.getTime() - updatedTime.getTime()) / 60000
+    );
+
+    if (durationInMinutes < 60) {
+      return `${durationInMinutes}m `;
+    } else if (durationInMinutes < 1440) {
+      return `${Math.floor(durationInMinutes / 60)}h`;
+    } else {
+      const days = Math.floor(durationInMinutes / 1440);
+      return days === 1 ? `${days}d` : `${days}d`;
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -92,18 +112,20 @@ export function NotificationDropdown() {
           {unreadCount > 0 && (
             <Badge
               variant="destructive"
-              className="absolute -right-2 -top-2 h-5 min-w-[20px] px-2"
+              className="absolute -right-2 -top-2 h-5 min-w-[20px] rounded-full px-2"
             >
               {unreadCount}
             </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="mr-4 w-80 bg-primary">
+      <DropdownMenuContent className="mr-4 w-80 bg-primary ">
         <DropdownMenuLabel className="font-normal">
-          <h2 className="text-lg font-semibold text-black">Notifications</h2>
+          <h2 className="text-center text-lg font-semibold text-black">
+            Notifications
+          </h2>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+        {/* <DropdownMenuSeparator /> */}
         <DropdownMenuGroup className="max-h-[300px] overflow-y-auto bg-primary">
           {notifications.map((notification) => (
             <DropdownMenuItem
@@ -111,15 +133,23 @@ export function NotificationDropdown() {
               key={notification._id}
               onClick={() => markAsRead(notification._id)}
             >
-              <NotificationItem notification={notification} />
+              <NotificationItem
+                notification={notification}
+                userImage={
+                  notification.senderId === user?._id
+                    ? { image: user?.image, name: user.name }
+                    : undefined
+                }
+                duration={calculateDuration(notification.updatedAt)}
+              />
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
+        {/* <DropdownMenuSeparator /> */}
         <DropdownMenuItem className="hover:border-none hover:bg-transparent focus:border-none focus:bg-transparent">
           <Link
             to="notifications"
-            className="w-full text-black hover:bg-primary"
+            className="w-full text-black hover:bg-primary hover:underline"
           >
             View all notifications
           </Link>

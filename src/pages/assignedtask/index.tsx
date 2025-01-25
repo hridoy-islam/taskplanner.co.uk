@@ -147,7 +147,7 @@ export default function AssignedTaskPage() {
           { title: 'Assigned Task', link: '/assignedtask' }
         ]}
       />
-      <div className="my-2 flex justify-between gap-2">
+      <div className="my-2 flex justify-between gap-2 ">
         <Input
           placeholder="Search notes..."
           value={searchTerm}

@@ -31,14 +31,14 @@ export default function UserNav() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-14 w-14 rounded-full">
-          <Avatar className="h-14 w-14">
-            <AvatarImage
-              src={
-                'https://png.pngtree.com/png-clipart/20230927/original/pngtree-man-avatar-image-for-profile-png-image_13001882.png'
-              }
-              alt={''}
-            />
-            <AvatarFallback>hello</AvatarFallback>
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={user?.image} alt="Profile picture" />
+            <AvatarFallback>
+              {user?.name
+                ?.split(' ')
+                .map((n) => n[0])
+                .join('') || 'U'}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

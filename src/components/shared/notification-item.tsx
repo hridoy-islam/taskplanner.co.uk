@@ -7,6 +7,8 @@
 //   Bell
 // } from 'lucide-react';
 
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+
 // export type NotificationType =
 //   | 'message'
 //   | 'like'
@@ -27,19 +29,32 @@
 //   reminder: Bell
 // };
 
-export function NotificationItem({ notification }) {
+export function NotificationItem({ notification, userImage, duration }) {
   return (
     <div
-      className={`flex w-full cursor-pointer items-start space-x-6 p-4  ${notification.isRead ? 'bg-primary' : 'bg-blue-200'}`}
+      className={`flex w-full cursor-pointer items-start space-x-6 py-1  ${notification.isRead ? 'bg-primary' : 'bg-blue-200'}`}
     >
       {/* <Icon className="mt-1 h-5 w-5 text-background" /> */}
-      <div className="flex-1 space-y-1">
-        <p className="text-sm font-medium leading-none  text-black">
-          {notification.message}
+      <div className="flex items-center  space-x-2">
+        {userImage ? (
+          <Avatar className="h-8 w-8 bg-black p-5 ">
+            <AvatarImage src={userImage.image} alt="Profile picture" />
+            <AvatarFallback>
+              {userImage.name
+                ?.split(' ')
+                .map((n) => n[0])
+                .join('') || 'U'}
+            </AvatarFallback>
+          </Avatar>
+        ) : (
+          <div className="h-8 w-8 rounded-full bg-gray-700 p-4" />
+        )}
+        <p className="text-sm font-medium leading-none text-black">
+          {notification.message.length > 60
+            ? `${notification.message.substring(0, 60)}...`
+            : notification.message}
         </p>
-        {/* <p className="text-xs text-black">
-          {formatDistanceToNow(notification.timestamp, { addSuffix: true })}
-        </p> */}
+        <p className="-mt-6 text-xs text-gray-500">{duration}</p>
       </div>
     </div>
   );
