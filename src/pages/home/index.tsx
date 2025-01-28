@@ -14,10 +14,10 @@ export default function HomePage() {
       <main className="flex-1 bg-white">
         <HeroSection />
         <LogosSection />
-        <FeaturesSection />
+        <FeaturesSection id="features" />
         <AppPreviewSection />
-        <HowItWorkSection />
-        <PricingSection />
+        <HowItWorkSection id="how-it-works" />
+        <PricingSection id="pricing" />
       </main>
       <SiteFooter />
     </div>

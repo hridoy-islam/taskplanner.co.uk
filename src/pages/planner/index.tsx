@@ -41,6 +41,10 @@ import moment from 'moment';
 import { useSelector } from 'react-redux';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  useFetchPlannerMonthQuery,
+  useFetchPlannerWeekQuery
+} from '@/redux/features/taskSlice';
 
 type Task = {
   _id: string;
@@ -66,24 +70,23 @@ export default function TaskPlanner() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const year = moment(currentDate).format('YYYY');
+  const month = moment(currentDate).format('MM');
+  const week = moment(currentDate).isoWeek();
   const fetchTasks = async () => {
-    const year = moment(currentDate).format('YYYY');
-    const month = moment(currentDate).format('MM');
-    const week = moment(currentDate).isoWeek();
-
     try {
-      if (calendarView === 'month') {
-        const response = await axiosInstance(
-          `/task/planner/${year}/${month}/${user._id}`
-        );
-        setTasks(response.data.data);
-      }
-      if (calendarView === 'week') {
-        const response = await axiosInstance(
-          `/task/planner/week/${year}/${week}/${user._id}`
-        );
-        setTasks(response.data.data);
-      }
+      // if (calendarView === 'month') {
+      //   const response = await axiosInstance(
+      //     `/task/planner/${year}/${month}/${user._id}`
+      //   );
+      //   setTasks(response.data.data);
+      // }
+      // if (calendarView === 'week') {
+      //   const response = await axiosInstance(
+      //     `/task/planner/week/${year}/${week}/${user._id}`
+      //   );
+      //   setTasks(response.data.data);
+      // }
       if (calendarView === 'day') {
         const formattedDate = currentDate.toISOString().split('T')[0];
         const response = await axiosInstance(
@@ -103,6 +106,50 @@ export default function TaskPlanner() {
   useEffect(() => {
     fetchTasks();
   }, [currentDate]);
+
+  const {
+    data: monthTasks,
+    isLoading: isMonthLoading,
+    isError: isMonthError
+  } = useFetchPlannerMonthQuery({ year, month, userId: user._id });
+
+  // const {
+  //   data: weekTasks,
+  //   isLoading: isWeekLoading,
+  //   isError: isWeekError
+  // } = useFetchPlannerWeekQuery({ year, week, userId: user._id });
+
+  useEffect(() => {
+    const fetchTasks = () => {
+      try {
+        if (calendarView === 'month') {
+          if (isMonthError) throw new Error('Failed to fetch month tasks');
+          setTasks(monthTasks?.data || []);
+        }
+        // else if (calendarView === 'week') {
+        //   if (isWeekError) throw new Error('Failed to fetch week tasks');
+        //   setTasks(weekTasks?.data || []);
+        // }
+        // else if (calendarView === 'day') {
+        //   if (isDayError) throw new Error('Failed to fetch day tasks');
+        //   setTasks(dayTasks?.data || []);
+        // }
+      } catch (error) {
+        console.error(error);
+        setTasks([]); // Fallback to an empty array in case of errors
+      }
+    };
+
+    fetchTasks();
+  }, [
+    calendarView,
+    isMonthError,
+    monthTasks
+    // weekTasks,
+    // dayTasks,
+    // isWeekError,
+    // isDayError
+  ]);
 
   const renderHeader = () => {
     const dateFormat =
@@ -322,7 +369,7 @@ export default function TaskPlanner() {
         <h2 className="mb-4 text-lg font-semibold">
           {calendarView === 'month' ? 'Monthly Tasks' : 'Weekly Tasks'}
         </h2>
-        <ScrollArea className="h-[calc(100vh-200px)]">
+        <ScrollArea className="h-[calc(100vh-200px)] pb-8">
           {filteredTasksForView.map((task) => (
             <Card
               key={task._id}
@@ -330,10 +377,12 @@ export default function TaskPlanner() {
               onClick={() => setSelectedTask(task)}
             >
               <CardHeader>
-                <CardTitle className="text-lg">{task.taskName}</CardTitle>
+                <CardTitle className="text-md md:text-lg">
+                  {task.taskName}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="mt-2 flex items-center">
+                <div className=" flex items-center">
                   <Clock className="mr-1 h-4 w-4" />
                   <span className="text-sm">
                     {format(new Date(task.dueDate), 'EEE, MMM d, yyyy')}{' '}

@@ -9,7 +9,7 @@ import {
   CardTitle
 } from '@/components/ui/card';
 
-export function PricingSection() {
+export function PricingSection({ id }) {
   const plans = [
     {
       name: 'Basic',

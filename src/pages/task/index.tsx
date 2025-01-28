@@ -11,6 +11,11 @@ import { Button } from '@/components/ui/button';
 import { CornerDownLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import notask from '@/assets/imges/home/notask.png';
+import {
+  TaskSlice,
+  useFetchTasksForBothUsersQuery
+} from '@/redux/features/taskSlice';
+import Loader from '@/components/shared/loader';
 
 import DynamicPagination from '@/components/shared/DynamicPagination';
 import {
@@ -27,6 +32,8 @@ export default function TaskPage() {
   const { id } = useParams();
   const { user } = useSelector((state: any) => state.auth);
   const { toast } = useToast();
+  const [page, setPage] = useState(1);
+
   const [userDetail, setUserDetail] = useState<any>();
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -36,7 +43,6 @@ export default function TaskPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(100);
   const [searchTerm, setSearchTerm] = useState('');
-
   const { register, handleSubmit, reset } = useForm();
 
   const fetchUserDetails = async () => {
@@ -44,40 +50,48 @@ export default function TaskPage() {
     setUserDetail(response.data.data);
   };
 
-  const fetchTasks = useCallback(
-    async (page, entriesPerPage, searchTerm = '', sortOrder = 'desc') => {
-      try {
-        const sortQuery = sortOrder === 'asc' ? 'dueDate' : '-dueDate';
-        const res = await axiosInstance.get(
-          `/task/getbothuser/${user?._id}/${id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}&status=pending`
-        );
-        setTasks(res.data.data.result);
-        setTotalPages(res.data.data.meta.totalPage);
-      } catch (err) {
-        console.log(err);
-      }
-    },
-    [id]
-  );
+  // const fetchTasks = useCallback(
+  //   async (page, entriesPerPage, searchTerm = '', sortOrder = 'desc') => {
+  //     try {
+  //       const sortQuery = sortOrder === 'asc' ? 'dueDate' : '-dueDate';
+  //       const res = await axiosInstance.get(
+  //         `/task/getbothuser/${user?._id}/${id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}&status=pending`
+  //       );
+  //       setTasks(res.data.data.result);
+  //       setTotalPages(res.data.data.meta.totalPage);
+  //     } catch (err) {
+  //       console.log(err);
+  //     }
+  //   },
+  //   [id]
+  // );
+
+  const { data, error, isLoading, refetch } = useFetchTasksForBothUsersQuery({
+    authorId: user?._id,
+    assignedId: id,
+    searchTerm,
+    sortOrder,
+    page: currentPage,
+    limit: entriesPerPage
+  });
 
   useEffect(() => {
-    fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
-    fetchUserDetails();
+    if (data?.data?.result) {
+      setTasks(data.data.result);
+      fetchUserDetails();
+      // Extract the `result` array
+    }
+  }, [data]);
 
-    const intervalId = setInterval(() => {
-      fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
-    }, 30000); // 30 seconds
+  // useEffect(() => {
+  //   const intervalId = setInterval(() => {
+  //     refetch(); // Automatically refetch the data every 30 seconds
+  //   }, 30000); // 30 seconds
 
-    // const timeoutId = setTimeout(() => {
-    //   clearInterval(intervalId);
-    // }, 3600000); // 1 hour
-
-    // Cleanup on component unmount
-    return () => {
-      // clearInterval(intervalId);
-      clearTimeout(intervalId);
-    };
-  }, [currentPage, entriesPerPage, searchTerm, sortOrder, id]);
+  //   return () => {
+  //     clearInterval(intervalId); // Cleanup the interval on unmount
+  //   };
+  // }, [refetch]);
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
@@ -117,41 +131,93 @@ export default function TaskPage() {
     });
 
   const handleMarkAsImportant = async (taskId) => {
-    const task: any = tasks.find((t: any) => t._id === taskId);
+    const taskToToggle = tasks.find((task) => task._id === taskId);
+    if (!taskToToggle) return;
 
-    const response = await axiosInstance.patch(
-      `/task/${taskId}`,
-      { important: !task.important } // Toggle important status
+    // Optimistically update UI
+    const previousTasks = [...tasks];
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task._id === taskId ? { ...task, important: !task.important } : task
+      )
     );
 
-    if (response.data.success) {
-      fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
-      toast({
-        title: 'Task Updated',
-        description: 'Thank You'
+    try {
+      // Update server
+      const response = await axiosInstance.patch(`/task/${taskId}`, {
+        important: !taskToToggle.important
       });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Something Went Wrong!'
-      });
+
+      if (response.data.success) {
+        // Update RTK Query cache
+        TaskSlice.util.updateQueryData(
+          'fetchTasksForBothUsers',
+          { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
+          (draft) => {
+            const task = draft?.data?.result?.find((t) => t._id === taskId);
+            if (task) {
+              task.important = !task.important;
+            }
+          }
+        );
+        toast({ title: 'Task Updated', description: 'Thank You' });
+      } else {
+        throw new Error('Failed to update task');
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setTasks(previousTasks);
+      toast({ variant: 'destructive', title: 'Something Went Wrong!' });
     }
   };
 
-  const handleToggleTaskCompletion = async (taskId) => {
-    const task: any = tasks.find((t: any) => t._id === taskId);
+  const handleToggleTaskCompletion = async (taskId: string) => {
+    // Find the task in the state
+    const taskToToggle = tasks.find((task) => task._id === taskId);
+    if (!taskToToggle) return;
 
-    const response = await axiosInstance.patch(`/task/${taskId}`, {
-      status: task?.status === 'completed' ? 'pending' : 'completed'
-    });
+    // Optimistically update UI
+    const previousTasks = [...tasks];
+    const updatedTasks = tasks.map((task) =>
+      task._id === taskId
+        ? {
+            ...task,
+            status: task.status === 'completed' ? 'pending' : 'completed'
+          }
+        : task
+    );
+    setTasks(updatedTasks.filter((task) => task.status !== 'completed')); // Hide completed tasks
 
-    if (response.data.success) {
-      fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
-      toast({
-        title: 'Task Updated',
-        description: 'Thank You'
+    try {
+      // Update server
+      const response = await axiosInstance.patch(`/task/${taskId}`, {
+        status: taskToToggle.status === 'completed' ? 'pending' : 'completed'
       });
-    } else {
+
+      if (response.data.success) {
+        // Update RTK Query cache
+        TaskSlice.util.updateQueryData(
+          'fetchTasksForBothUsers',
+          { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
+          (draft) => {
+            const task = draft?.data?.result?.find((t) => t._id === taskId);
+            if (task) {
+              task.status =
+                task.status === 'completed' ? 'pending' : 'completed';
+            }
+          }
+        );
+        toast({
+          title: 'Task Updated',
+          description: 'Thank You'
+        });
+      } else {
+        throw new Error('Failed to update task');
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setTasks(previousTasks); // Restore previous state
+      console.error('Error toggling task completion:', error);
       toast({
         variant: 'destructive',
         title: 'Something Went Wrong!'
@@ -170,7 +236,7 @@ export default function TaskPage() {
       console.log(response);
       if (response.data.success) {
         reset();
-        fetchTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
+        refetch();
         toast({
           title: 'Task Added',
           description: 'Thank You'
@@ -252,21 +318,28 @@ export default function TaskPage() {
         </div> */}
         </div>
       </div>
-      <div className=" ">
-        {tasks.length === 0 ? (
-          <div className="flex items-center justify-center">
-            <img src={notask} alt="No Task" />
-          </div>
-        ) : (
-          <TaskList
-            tasks={filteredGroups}
-            onMarkAsImportant={handleMarkAsImportant}
-            onToggleTaskCompletion={handleToggleTaskCompletion}
-            fetchTasks={fetchTasks}
-          />
-        )}
-      </div>
-      <div className="relative rounded-xl bg-white p-4 shadow ">
+      {isLoading ? (
+        <div className="-mt-48">
+          <Loader />
+        </div>
+      ) : (
+        <div className=" ">
+          {tasks.length === 0 ? (
+            <div className="flex items-center justify-center">
+              <img src={notask} alt="No Task" />
+            </div>
+          ) : (
+            <TaskList
+              tasks={tasks}
+              onMarkAsImportant={handleMarkAsImportant}
+              onToggleTaskCompletion={handleToggleTaskCompletion}
+              fetchTasks={refetch}
+            />
+          )}
+        </div>
+      )}
+
+      <div className="relative mt-2 rounded-xl bg-white p-4 shadow ">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="flex items-center justify-center space-x-2"

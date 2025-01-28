@@ -32,7 +32,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 export function NotificationItem({ notification, userImage, duration }) {
   return (
     <div
-      className={`flex w-full cursor-pointer items-start space-x-6 py-1  ${notification.isRead ? 'bg-primary' : 'bg-blue-200'}`}
+      className={`flex w-full cursor-pointer items-start space-x-6 rounded-lg px-2 py-1  ${notification.isRead ? 'bg-primary' : 'bg-blue-200'}`}
     >
       {/* <Icon className="mt-1 h-5 w-5 text-background" /> */}
       <div className="flex items-center  space-x-2">

@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import axiosInstance from '../../lib/axios';
+import { ImageUploader } from '@/components/shared/image-uploader';
 
 import { useToast } from '@/components/ui/use-toast';
 
@@ -36,6 +37,9 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState<ProfileFormValues | null>(
     null
   );
+  const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
+  const [files, setFiles] = useState<OutputFileEntry<'success'>[]>([]);
+
   const { toast } = useToast();
 
   const defaultValues: Partial<ProfileFormValues> = {
@@ -95,7 +99,7 @@ export default function ProfilePage() {
       <PageHead title="Profile Page" />
       <Breadcrumbs
         items={[
-          { title: 'Dashboard', link: '/' },
+          { title: 'Dashboard', link: '/dashboard' },
           { title: 'Profile', link: '/profile' }
         ]}
       />
@@ -122,8 +126,13 @@ export default function ProfilePage() {
                 className="hidden"
               />
               <Label htmlFor="avatar" className="cursor-pointer">
-                <Button type="button" variant="outline" size="sm">
-                  Change Avatar
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="default"
+                  onClick={() => setIsImageUploaderOpen(true)}
+                >
+                  Update Image
                 </Button>
               </Label>
             </div>
@@ -204,6 +213,16 @@ export default function ProfilePage() {
             Update profile
           </Button>
         </form>
+        <ImageUploader
+          open={isImageUploaderOpen}
+          onOpenChange={setIsImageUploaderOpen}
+          multiple={false}
+          onUploadComplete={(uploadedFiles) => {
+            console.log('Uploaded files:', uploadedFiles);
+            setFiles(uploadedFiles);
+          }}
+          className="uc-light"
+        />
       </Form>
     </div>
   );

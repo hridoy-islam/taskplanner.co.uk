@@ -16,15 +16,15 @@ export function SiteHeader() {
           <img src="/logo.png" alt="Logo" className="w-32" />
         </Link>
         <nav className="hidden items-center space-x-6 md:flex">
-          <Link to="#features" className="text-sm font-medium">
+          <a href="#features" className="text-sm font-medium">
             Features
-          </Link>
-          <Link to="#how-it-works" className="text-sm font-medium">
+          </a>
+          <a href="#how-it-works" className="text-sm font-medium">
             How it works
-          </Link>
-          <Link to="#pricing" className="text-sm font-medium">
+          </a>
+          <a href="#pricing" className="text-sm font-medium">
             Pricing
-          </Link>
+          </a>
         </nav>
         <div className="hidden items-center space-x-4 md:flex">
           <Link to="/login" className="text-sm font-medium">
@@ -78,14 +78,39 @@ export function SiteHeader() {
               </button>
             </div>
             <div className="flex w-full flex-col items-start space-y-4 p-6">
+              <a
+                href="#features"
+                className="text-md w-full  px-2 py-2  font-medium hover:bg-black hover:text-white"
+                onClick={toggleSidebar}
+              >
+                Features
+              </a>
+              <a
+                href="#how-it-works"
+                className="text-md w-full  px-2 py-2  font-medium hover:bg-black hover:text-white"
+                onClick={toggleSidebar}
+              >
+                How it works
+              </a>
+              <a
+                href="#pricing"
+                className="text-md w-full  px-2 py-2  font-medium hover:bg-black hover:text-white"
+                onClick={toggleSidebar}
+              >
+                Pricing
+              </a>
               <Link
                 to="/login"
-                className="text-md w-full border-b px-2 py-4  font-medium hover:bg-black hover:text-white"
+                className="text-md w-full  px-2 py-2  font-medium hover:bg-black hover:text-white"
+                onClick={toggleSidebar}
               >
                 Login
               </Link>
 
-              <button className="text-md  rounded-lg border px-2 py-3 font-medium shadow-lg  hover:bg-black hover:text-white">
+              <button
+                className="text-md  rounded-lg border border-gray-400 px-2 py-3 font-medium shadow-lg  hover:bg-black hover:text-white"
+                onClick={toggleSidebar}
+              >
                 Request Demo
               </button>
             </div>

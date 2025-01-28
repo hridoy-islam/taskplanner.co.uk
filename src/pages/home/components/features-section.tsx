@@ -2,7 +2,7 @@ import notesLogo from '../../../assets/imges/home/logos/notes.svg';
 import teamLogo from '../../../assets/imges/home/logos/team.svg';
 import calendarLogo from '../../../assets/imges/home/logos/calender.svg';
 
-export function FeaturesSection() {
+export function FeaturesSection({ id }) {
   const features = [
     {
       icon: notesLogo,

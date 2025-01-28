@@ -1007,12 +1007,16 @@ export default function GroupChat() {
                         )}
                       </div>
                     </div>
-                    <div>
+                    <div className="flex w-full flex-row-reverse items-center justify-between py-1">
                       <span className="text-xs opacity-70">
                         {new Date(comment?.createdAt).toLocaleDateString() ===
                         new Date().toLocaleDateString()
                           ? new Date(comment?.createdAt).toLocaleTimeString()
                           : new Date(comment?.createdAt).toLocaleDateString()}
+                      </span>
+
+                      <span className="text-xs opacity-70">
+                        <p>Seen</p>
                       </span>
                     </div>
                   </div>
