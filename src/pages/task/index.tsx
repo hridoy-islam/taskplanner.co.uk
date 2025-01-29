@@ -16,6 +16,7 @@ import {
   useFetchTasksForBothUsersQuery
 } from '@/redux/features/taskSlice';
 import Loader from '@/components/shared/loader';
+import InfiniteScroll from 'react-infinite-scroll-component';
 
 import DynamicPagination from '@/components/shared/DynamicPagination';
 import {
@@ -275,7 +276,7 @@ export default function TaskPage() {
           />
           <Button>
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex min-w-fit flex-row">
+              <DropdownMenuTrigger className="flex min-w-fit flex-row ">
                 {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -294,6 +295,7 @@ export default function TaskPage() {
                     setSortBy('unread');
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                   }}
+                  className="hover:bg-black hover:text-white"
                 >
                   New Message
                 </DropdownMenuItem>
@@ -324,17 +326,15 @@ export default function TaskPage() {
         </div>
       ) : (
         <div className=" ">
-          {tasks.length === 0 ? (
-            <div className="flex items-center justify-center">
+          <TaskList
+            tasks={tasks}
+            onMarkAsImportant={handleMarkAsImportant}
+            onToggleTaskCompletion={handleToggleTaskCompletion}
+          />
+          {tasks.length === 0 && (
+            <div className="mt-36 flex flex-col items-center justify-center">
               <img src={notask} alt="No Task" />
             </div>
-          ) : (
-            <TaskList
-              tasks={tasks}
-              onMarkAsImportant={handleMarkAsImportant}
-              onToggleTaskCompletion={handleToggleTaskCompletion}
-              fetchTasks={refetch}
-            />
           )}
         </div>
       )}

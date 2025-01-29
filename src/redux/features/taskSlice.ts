@@ -39,7 +39,9 @@ interface DueTaskQueryParams {
 
 export const TaskSlice = createApi({
   reducerPath: 'taskSlice',
-  baseQuery: axiosBaseQuery({ baseUrl: `${import.meta.env.VITE_API_URL}` }),
+  baseQuery: axiosBaseQuery({
+    baseUrl: `${import.meta.env.VITE_API_URL}/task`
+  }),
   tagTypes: ['Task'],
   endpoints: (builder: EndpointBuilder<any, any, any>) => ({
     fetchDueTasks: builder.query<any, DueTaskQueryParams>({
@@ -47,10 +49,10 @@ export const TaskSlice = createApi({
         userId,
         searchTerm = '',
         sortOrder = 'desc',
-        page = 1,
-        limit = 15
+        page,
+        limit
       }) => ({
-        url: `/task/duetasks/${userId}`,
+        url: `/duetasks/${userId}`,
         params: {
           searchTerm,
           sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
@@ -71,10 +73,10 @@ export const TaskSlice = createApi({
         userId,
         searchTerm = '',
         sortOrder = 'desc',
-        page = 1,
-        limit = 15
+        page,
+        limit
       }) => ({
-        url: `/task/assignedtasks/${userId}`,
+        url: `/assignedtasks/${userId}`,
         params: {
           searchTerm,
           sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
@@ -97,9 +99,9 @@ export const TaskSlice = createApi({
         searchTerm = '',
         sortOrder = 'desc',
         page = 1,
-        limit = 15
+        limit
       }) => ({
-        url: `/task/getbothuser/${authorId}/${assignedId}`,
+        url: `/getbothuser/${authorId}/${assignedId}`,
         params: {
           searchTerm,
           sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
@@ -117,7 +119,7 @@ export const TaskSlice = createApi({
     }),
     fetchPlannerMonth: builder.query({
       query: ({ year, month, userId }) => ({
-        url: `/task/planner/${year}/${month}/${userId}`
+        url: `/planner/${year}/${month}/${userId}`
       }),
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
         return `${endpointName}-${queryArgs.year}-${queryArgs.month}-${queryArgs.userId}`;
@@ -128,7 +130,7 @@ export const TaskSlice = createApi({
     }),
     fetchPlannerWeek: builder.query({
       query: ({ year, week, userId }) => ({
-        url: `/task/planner/week/${year}/${week}/${userId}`
+        url: `/planner/week/${year}/${week}/${userId}`
       }),
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
         return `${endpointName}-${queryArgs.year}-${queryArgs.week}-${queryArgs.userId}`;
@@ -139,7 +141,7 @@ export const TaskSlice = createApi({
     }),
     fetchPlannerDay: builder.query({
       query: ({ day, userId }) => ({
-        url: `/task/planner/day/${day}/${userId}`
+        url: `/planner/day/${day}/${userId}`
       }),
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
         return `${endpointName}-${queryArgs.day}-${queryArgs.userId}`;
@@ -155,9 +157,9 @@ export const TaskSlice = createApi({
         searchTerm = '',
         sortOrder = 'desc',
         page = 1,
-        limit = 15
+        limit
       }) => ({
-        url: `/task/upcommingtasks/${userId}`,
+        url: `/upcommingtasks/${userId}`,
         params: {
           searchTerm,
           sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
@@ -178,9 +180,9 @@ export const TaskSlice = createApi({
         searchTerm = '',
         sortOrder = 'desc',
         page = 1,
-        limit = 15
+        limit
       }) => ({
-        url: `/task`,
+        url: ``,
         params: {
           author: userId,
           status: 'completed',
@@ -196,6 +198,53 @@ export const TaskSlice = createApi({
       providesTags: (result, error, { userId }) => [
         { type: 'Task', id: `COMPLETED-${userId}` }
       ]
+    }),
+    fetchImportantTasks: builder.query({
+      query: ({ userId, sortOrder = 'desc', page = 1, limit }) => ({
+        url: ``,
+        params: {
+          author: userId,
+          important: true,
+          status: 'pending',
+          sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
+          page,
+          limit
+        }
+      }),
+      serializeQueryArgs: ({ endpointName, queryArgs }) => {
+        return `${endpointName}-${queryArgs.userId}-${queryArgs.sortOrder}`;
+      },
+      providesTags: (result, error, { userId }) => [
+        { type: 'Task', id: `IMPORTANT-${userId}` }
+      ]
+    }),
+    fetchTodayTasks: builder.query({
+      query: ({
+        userId,
+        searchTerm = '',
+        sortOrder = 'desc',
+        page = 1,
+        limit
+      }) => ({
+        url: `/today/${userId}`,
+        params: {
+          searchTerm,
+          sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
+          page,
+          limit,
+          status: 'completed'
+        }
+      }),
+
+      // Adjusted to match the pattern in fetchAssignedTasks
+      serializeQueryArgs: ({ endpointName, queryArgs }) => {
+        return `${endpointName}-${queryArgs.userId}-${queryArgs.searchTerm}-${queryArgs.sortOrder}`;
+      },
+
+      // Updated providesTags to match the pattern
+      providesTags: (result, error, { userId }) => [
+        { type: 'Task', id: `TODAY-${userId}` } // Ensures cache updates for today-specific tasks
+      ]
     })
   })
 });
@@ -209,5 +258,7 @@ export const {
   useFetchPlannerWeekQuery,
   useFetchPlannerDayQuery,
   useFetchUpcomingTasksQuery,
-  useFetchCompletedTasksQuery
+  useFetchCompletedTasksQuery,
+  useFetchImportantTasksQuery,
+  useFetchTodayTasksQuery
 } = TaskSlice;

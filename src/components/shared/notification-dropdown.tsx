@@ -16,6 +16,8 @@ import axiosInstance from '../../lib/axios';
 import { socket, setupSocket } from '../../lib/socket';
 import { useSelector } from 'react-redux';
 import { Badge } from '../ui/badge';
+import ReactHowler from 'react-howler';
+import notification from '@/assets/sound/notification.mp3';
 
 interface Notification {
   _id: string;
@@ -29,7 +31,7 @@ export function NotificationDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useSelector((state: any) => state.auth);
-
+  const [playSound, setPlaySound] = useState(false);
   // Fetch notifications on component mount
   useEffect(() => {
     const loadNotifications = async (userId: string) => {
@@ -60,6 +62,7 @@ export function NotificationDropdown() {
         console.log('New notification received:', notification);
         setNotifications((prev) => [notification, ...prev]);
         setUnreadCount((prevUnread) => prevUnread + 1);
+        setPlaySound(true);
       });
 
       // Cleanup socket listeners on unmount
@@ -100,61 +103,68 @@ export function NotificationDropdown() {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button size="icon" className="relative">
-          {/* <Bell className="h-5 w-5" />
+    <>
+      <ReactHowler
+        src={notification}
+        playing={playSound}
+        onEnd={() => setPlaySound(false)}
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="icon" className="relative">
+            {/* <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-red-500" />
           )} */}
 
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -right-2 -top-2 h-5 min-w-[20px] rounded-full px-2"
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -right-2 -top-2 h-5 min-w-[20px] rounded-full px-2"
+              >
+                {unreadCount}
+              </Badge>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="mr-4 w-80 bg-primary ">
+          <DropdownMenuLabel className="font-normal">
+            <h2 className="text-center text-lg font-semibold text-black">
+              Notifications
+            </h2>
+          </DropdownMenuLabel>
+          {/* <DropdownMenuSeparator /> */}
+          <DropdownMenuGroup className="max-h-[300px] overflow-y-auto bg-primary">
+            {notifications.map((notification) => (
+              <DropdownMenuItem
+                className="hover:border-none hover:bg-transparent focus:border-none focus:bg-transparent"
+                key={notification._id}
+                onClick={() => markAsRead(notification._id)}
+              >
+                <NotificationItem
+                  notification={notification}
+                  userImage={
+                    notification.senderId === user?._id
+                      ? { image: user?.image, name: user.name }
+                      : undefined
+                  }
+                  duration={calculateDuration(notification.updatedAt)}
+                />
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+          {/* <DropdownMenuSeparator /> */}
+          <DropdownMenuItem className="hover:border-none hover:bg-transparent focus:border-none focus:bg-transparent">
+            <Link
+              to="notifications"
+              className="w-full text-black hover:bg-primary hover:underline"
             >
-              {unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="mr-4 w-80 bg-primary ">
-        <DropdownMenuLabel className="font-normal">
-          <h2 className="text-center text-lg font-semibold text-black">
-            Notifications
-          </h2>
-        </DropdownMenuLabel>
-        {/* <DropdownMenuSeparator /> */}
-        <DropdownMenuGroup className="max-h-[300px] overflow-y-auto bg-primary">
-          {notifications.map((notification) => (
-            <DropdownMenuItem
-              className="hover:border-none hover:bg-transparent focus:border-none focus:bg-transparent"
-              key={notification._id}
-              onClick={() => markAsRead(notification._id)}
-            >
-              <NotificationItem
-                notification={notification}
-                userImage={
-                  notification.senderId === user?._id
-                    ? { image: user?.image, name: user.name }
-                    : undefined
-                }
-                duration={calculateDuration(notification.updatedAt)}
-              />
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuGroup>
-        {/* <DropdownMenuSeparator /> */}
-        <DropdownMenuItem className="hover:border-none hover:bg-transparent focus:border-none focus:bg-transparent">
-          <Link
-            to="notifications"
-            className="w-full text-black hover:bg-primary hover:underline"
-          >
-            View all notifications
-          </Link>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+              View all notifications
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 }

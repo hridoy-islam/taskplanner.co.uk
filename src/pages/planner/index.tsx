@@ -152,12 +152,18 @@ export default function TaskPlanner() {
   ]);
 
   const renderHeader = () => {
-    const dateFormat =
-      calendarView === 'month'
-        ? 'MMMM yyyy'
-        : calendarView === 'week'
-          ? 'MMM d, yyyy'
-          : 'EEEE, MMMM d, yyyy';
+    let dateDisplay;
+
+    if (calendarView === 'month') {
+      dateDisplay = format(currentDate, 'MMMM yyyy'); // Month view
+    } else if (calendarView === 'week') {
+      const startDate = startOfWeek(currentDate); // Start of the week
+      const endDate = addDays(startDate, 6); // 7th day (end of the week)
+      dateDisplay = `${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}`;
+    } else {
+      dateDisplay = format(currentDate, 'EEEE, MMMM d, yyyy'); // Day view
+    }
+
     return (
       <div className="mb-4 flex items-center justify-between">
         <Button
@@ -167,9 +173,7 @@ export default function TaskPlanner() {
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-[15px] font-semibold lg:text-xl">
-          {format(currentDate, dateFormat)}
-        </h2>
+        <h2 className="text-[15px] font-semibold lg:text-xl">{dateDisplay}</h2>
         <Button
           variant="default"
           onClick={nextView}
@@ -287,6 +291,7 @@ export default function TaskPlanner() {
 
   const renderWeekView = () => {
     const startDate = startOfWeek(currentDate);
+    const endDate = addDays(startDate, 6);
     const days: React.ReactNode[] = [];
     for (let i = 0; i < 7; i++) {
       const day = addDays(startDate, i);
@@ -295,7 +300,6 @@ export default function TaskPlanner() {
           <div className="mb-2 font-semibold max-lg:hidden">
             {format(day, 'EEE, MMM,YYY ')}
           </div>
-          <div className="mb-2  font-semibold">{format(day, ' d')}</div>
           <ScrollArea className=" lg:h-40">
             {filteredTasks
               .filter((task) => isSameDay(task.dueDate, day))

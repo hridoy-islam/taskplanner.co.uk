@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { EyeOpenIcon } from '@radix-ui/react-icons';
+
 import {
   Sheet,
   SheetContent,
@@ -338,7 +340,7 @@ export default function TaskDetails({
                       comment.authorId._id === user?._id
                         ? 'flex-row-reverse'
                         : 'flex-row'
-                    } items-start space-x-2`}
+                    }  items-center space-x-2`}
                     style={{
                       wordWrap: 'break-word',
                       whiteSpace: 'pre-wrap',
@@ -346,33 +348,35 @@ export default function TaskDetails({
                     }}
                   >
                     <Avatar
-                      className={`h-8 w-8 ${
+                      className={`h-8 w-8  ${
                         comment.authorId._id === user?._id && 'ml-1'
-                      } ${socketConnected && 'border border-green-500'}`}
+                      } ${socketConnected && 'border border-gray-800'}`}
                     >
-                      <AvatarFallback>
+                      <AvatarFallback className="text-xs">
                         {comment?.authorId.name
                           ?.split(' ')
                           .map((n) => n[0])
                           .join('') || 'U'}
                       </AvatarFallback>
                     </Avatar>
+
                     <div
                       className={`max-w-[90%] ${
                         comment.authorId._id === user?._id ? 'mr-2' : 'ml-2'
                       }`}
                     >
                       <div
-                        className={`max-w-prose overflow-x-auto rounded-lg ${
+                        className={`inline-block max-w-prose rounded-lg p-2 ${
                           isFile
                             ? 'border border-gray-300'
                             : comment.authorId._id === user?._id
-                              ? 'bg-blue-500 p-2 text-white'
+                              ? 'bg-[#002055] p-2 text-white'
                               : 'bg-gray-200 p-2'
                         }`}
                         style={{
                           wordWrap: 'break-word',
-                          whiteSpace: 'pre-wrap'
+                          whiteSpace: 'pre-wrap',
+                          overflowWrap: 'break-word'
                         }}
                       >
                         {isFile ? (
@@ -438,7 +442,30 @@ export default function TaskDetails({
                               </a>
                             )}
                           >
-                            {comment.content}
+                            <div>
+                              {comment.content}
+                              <div className="flex flex-row justify-between p-1">
+                                <span className=" flex flex-row gap-2 text-xs opacity-70">
+                                  <EyeOpenIcon />
+                                  <p>2</p>
+                                </span>
+                                <span className="text-xs opacity-70">
+                                  {new Date(
+                                    comment?.createdAt
+                                  ).toLocaleDateString() ===
+                                  new Date().toLocaleDateString()
+                                    ? new Date(
+                                        comment?.createdAt
+                                      ).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })
+                                    : new Date(
+                                        comment?.createdAt
+                                      ).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
                           </Linkify>
                         )}
                       </div>
@@ -449,7 +476,7 @@ export default function TaskDetails({
             })}
           </div>
         </div>
-        <div className="flex-shrink-0 border-t bg-gray-50 p-6">
+        <div className="flex-shrink-0 border-t border-gray-200 bg-gray-50 p-6">
           {typing && (
             <div className="relative bottom-5 flex h-[5px] items-center space-x-2 p-2 text-xs">
               <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>

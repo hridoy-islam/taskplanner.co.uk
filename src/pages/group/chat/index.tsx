@@ -50,6 +50,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { ImageUploader } from '@/components/shared/image-uploader';
+import { EyeOpenIcon } from '@radix-ui/react-icons';
 
 // Mock data
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
@@ -845,7 +846,7 @@ export default function GroupChat() {
         <div className="flex flex-row gap-2">
           <Button
             variant="default"
-            className="w-full text-gray-700"
+            className="w-full text-gray-700 hover:bg-black hover:text-white"
             size="sm"
             onClick={() => router.push('/dashboard/group')}
           >
@@ -897,7 +898,7 @@ export default function GroupChat() {
                     <div
                       className={`inline-block max-w-prose ${
                         comment.authorId._id === user?._id
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-[#151261] text-white'
                           : 'bg-gray-200'
                       } rounded-lg p-3`}
                       style={{
@@ -1015,8 +1016,9 @@ export default function GroupChat() {
                           : new Date(comment?.createdAt).toLocaleDateString()}
                       </span>
 
-                      <span className="text-xs opacity-70">
-                        <p>Seen</p>
+                      <span className=" flex flex-row gap-2 text-xs opacity-70">
+                        <EyeOpenIcon />
+                        <p>2</p>
                       </span>
                     </div>
                   </div>

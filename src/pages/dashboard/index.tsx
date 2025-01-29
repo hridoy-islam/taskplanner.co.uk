@@ -19,9 +19,9 @@ export default function DashboardPage() {
   return (
     <>
       <PageHead title="Dashboard | App" />
-      <div className="max-h-screen flex-1 space-y-4 overflow-y-auto p-4 pt-6 md:p-8">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">
+      <div className="max-h-screen flex-1 space-y-2 overflow-y-auto px-4 pt-2 md:px-8 md:py-4">
+        <div className="flex items-center justify-between space-y-1">
+          <h2 className="text-xl font-bold tracking-tight md:text-3xl">
             Hi, {user.name} 👋
           </h2>
         </div>
@@ -40,11 +40,11 @@ export default function DashboardPage() {
           defaultValue="dueTasks"
           value={selectedTab}
           onValueChange={setSelectedTab}
-          className="space-y-4"
+          className=""
         >
           {/* Tabs List for larger screens */}
-          <div className="hidden md:flex">
-            <TabsList>
+          <div className="hidden md:flex   ">
+            <TabsList className="border border-gray-300 shadow-sm">
               <TabsTrigger value="dueTasks">Overdue</TabsTrigger>
               <TabsTrigger value="upcomingTasks">Due In 7 Days</TabsTrigger>
               <TabsTrigger value="assignedTasks">
@@ -55,7 +55,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Select dropdown for smaller screens */}
-          <div className="flex md:hidden">
+          <div className="flex  md:hidden">
             <select
               value={selectedTab}
               onChange={(e) => setSelectedTab(e.target.value)}
@@ -69,19 +69,19 @@ export default function DashboardPage() {
           </div>
 
           {/* Tab content */}
-          <TabsContent value="dueTasks" className="space-y-4">
+          <TabsContent value="dueTasks">
             <DueTasks user={user} />
           </TabsContent>
 
-          <TabsContent value="upcomingTasks" className="space-y-4">
+          <TabsContent value="upcomingTasks">
             <UpcomingTasks user={user} />
           </TabsContent>
 
-          <TabsContent value="assignedTasks" className="space-y-4">
+          <TabsContent value="assignedTasks">
             <AssignedTasks user={user} />
           </TabsContent>
 
-          <TabsContent value="completedTasks" className="space-y-4">
+          <TabsContent value="completedTasks">
             <CompletedTasks user={user} />
           </TabsContent>
         </Tabs>

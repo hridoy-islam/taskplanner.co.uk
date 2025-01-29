@@ -5,67 +5,145 @@ import axiosInstance from '../../lib/axios';
 import { useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { TaskSlice, useFetchTodayTasksQuery } from '@/redux/features/taskSlice';
+
+import { CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+
+import notask from '@/assets/imges/home/notask.png';
+import Loader from '@/components/shared/loader';
 
 export default function TodayPage() {
   const { user } = useSelector((state: any) => state.auth);
   const [tasks, setTasks] = useState([]);
   const { toast } = useToast();
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchTasks = async () => {
-    const response = await axiosInstance.get(`/task/today/${user?._id}`);
-    setTasks(response.data.data);
-  };
+  const { data, refetch, isLoading, isFetching, isSuccess } =
+    useFetchTodayTasksQuery(
+      {
+        userId: user._id,
+        searchTerm,
+        sortOrder,
+        page,
+        limit: 15
+      },
+      { skip: !user._id }
+    );
+
+  console.log(tasks);
 
   useEffect(() => {
-    fetchTasks();
+    refetch();
+  }, [refetch]);
 
-    const intervalId = setInterval(() => {
-      fetchTasks();
-    }, 30000); // 30 seconds
+  useEffect(() => {
+    if (data?.data?.result) {
+      setTasks(data.data.result);
+    }
+  }, [data]);
 
-    return () => {
-      // clearInterval(intervalId);
-      clearTimeout(intervalId);
-    };
-  }, [user]);
-
-  const handleMarkAsImportant = async (taskId) => {
-    const task: any = tasks.find((t: any) => t._id === taskId);
-
-    const response = await axiosInstance.patch(
-      `/task/${taskId}`,
-      { important: !task.important } // Toggle important status
-    );
-    console.log(response.data);
-
-    if (response.data.success) {
-      fetchTasks();
-      toast({
-        title: 'Task Updated',
-        description: 'Thank You'
-      });
+  const handleRefetch = () => {
+    if (!isFetching && isSuccess) {
+      refetch(); // Only refetch if the query is not already in progress and has been successful
     } else {
-      toast({
-        variant: 'destructive',
-        title: 'Something Went Wrong!'
-      });
+      console.log('Query is already in progress or has not been started yet.');
     }
   };
 
-  const handleToggleTaskCompletion = async (taskId) => {
-    const task: any = tasks.find((t: any) => t._id === taskId);
+  const handleMarkAsImportant = async (taskId) => {
+    const taskToToggle = tasks.find((task) => task._id === taskId);
+    if (!taskToToggle) return;
 
-    const response = await axiosInstance.patch(`/task/${taskId}`, {
-      status: task?.status === 'completed' ? 'pending' : 'completed'
-    });
+    // Optimistically update UI
+    const previousTasks = [...tasks];
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task._id === taskId ? { ...task, important: !task.important } : task
+      )
+    );
 
-    if (response.data.success) {
-      fetchTasks();
-      toast({
-        title: 'Task Updated',
-        description: 'Thank You'
+    try {
+      // Update server
+      const response = await axiosInstance.patch(`/task/${taskId}`, {
+        important: !taskToToggle.important
       });
-    } else {
+
+      if (response.data.success) {
+        // Update RTK Query cache
+        TaskSlice.util.updateQueryData(
+          'fetchCompletedTasks',
+          { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
+          (draft) => {
+            const task = draft?.data?.result?.find((t) => t._id === taskId);
+            if (task) {
+              task.important = !task.important;
+            }
+          }
+        );
+        toast({ title: 'Task Updated', description: 'Thank You' });
+      } else {
+        throw new Error('Failed to update task');
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setTasks(previousTasks);
+      toast({ variant: 'destructive', title: 'Something Went Wrong!' });
+    }
+  };
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleToggleTaskCompletion = async (taskId: string) => {
+    const taskToToggle = tasks.find((task) => task._id === taskId);
+    if (!taskToToggle) return;
+
+    // Optimistically update UI
+    const previousTasks = [...tasks];
+    const updatedTasks = tasks.map((task) =>
+      task._id === taskId
+        ? {
+            ...task,
+            status: task.status === 'completed' ? 'pending' : 'completed'
+          }
+        : task
+    );
+    setTasks(updatedTasks.filter((task) => task.status !== 'completed')); // Hide completed tasks
+
+    try {
+      // Update server
+      const response = await axiosInstance.patch(`/task/${taskId}`, {
+        status: taskToToggle.status === 'completed' ? 'pending' : 'completed'
+      });
+
+      if (response.data.success) {
+        // Update RTK Query cache
+        TaskSlice.util.updateQueryData(
+          'fetchCompletedTasks',
+          { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
+          (draft) => {
+            const task = draft?.data?.result?.find((t) => t._id === taskId);
+            if (task) {
+              task.status =
+                task.status === 'completed' ? 'pending' : 'completed';
+            }
+          }
+        );
+        toast({
+          title: 'Task Updated',
+          description: 'Thank You'
+        });
+      } else {
+        throw new Error('Failed to update task');
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setTasks(previousTasks); // Restore previous state
+      console.error('Error toggling task completion:', error);
       toast({
         variant: 'destructive',
         title: 'Something Went Wrong!'
@@ -84,12 +162,30 @@ export default function TodayPage() {
           ]}
         />
       </div>
-      <TaskList
-        tasks={tasks}
-        onMarkAsImportant={handleMarkAsImportant}
-        onToggleTaskCompletion={handleToggleTaskCompletion}
-        fetchTasks={fetchTasks}
+      <Input
+        className="m-4 flex h-[40px] w-[90%] items-center p-4 md:w-[98%]"
+        placeholder="Search notes..."
+        value={searchTerm}
+        onChange={handleSearch}
       />
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <CardContent className="flex-1 overflow-y-auto px-4 scrollbar-hide">
+          {tasks.length === 0 ? (
+            <div className="mt-36 flex flex-col items-center justify-center">
+              <img src={notask} alt="No Task" />
+            </div>
+          ) : (
+            <TaskList
+              tasks={tasks}
+              onMarkAsImportant={handleMarkAsImportant}
+              onToggleTaskCompletion={handleToggleTaskCompletion}
+              fetchTasks={handleRefetch}
+            />
+          )}
+        </CardContent>
+      )}
     </div>
   );
 }

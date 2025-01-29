@@ -33,12 +33,7 @@ import axiosInstance from '../../lib/axios';
 import { toast } from '../ui/use-toast';
 import UpdateTask from './update-task';
 
-const TaskList = ({
-  tasks,
-  onMarkAsImportant,
-  onToggleTaskCompletion,
-  fetchTasks
-}) => {
+const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
   const { user } = useSelector((state: any) => state.auth);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isTaskDetailsOpen, setTaskDetailsOpen] = useState(false);
@@ -46,6 +41,10 @@ const TaskList = ({
 
   const [openUpdate, setOpenUpdate] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  const [loadedTasks, setLoadedTasks] = useState(tasks || []);
 
   // const sortedTasks = tasks?.sort((a, b) => {
   //   return a.status === 'completed' && b.status === 'pending' ? 1 : -1;
@@ -71,10 +70,6 @@ const TaskList = ({
     setSelectedTask(null);
   };
 
-  useEffect(() => {
-    fetchTasks();
-  }, [isTaskDetailsOpen]);
-
   const onUpdateConfirm = async (data) => {
     setLoading(true);
     try {
@@ -84,7 +79,7 @@ const TaskList = ({
         taskName: data.taskName
       });
       if (res.data.success) {
-        fetchTasks(); // Refresh tasks
+        // fetchTasks(); // Refresh tasks
         //setOpenUpdate(false); // Close modal after update
         toast({
           title: 'Task Updated Successfully',

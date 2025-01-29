@@ -172,6 +172,7 @@ import { Button } from '@/components/ui/button';
 import { ImageIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import axiosInstance from '../../lib/axios'; // Adjust the path as necessary
+import axios from 'axios';
 
 export function ImageUploader({ open, onOpenChange, onUploadComplete }) {
   const [dragActive, setDragActive] = useState(false);
@@ -231,17 +232,21 @@ export function ImageUploader({ open, onOpenChange, onUploadComplete }) {
       formData.append('file_type', 'profile');
       formData.append('files[]', file);
 
-      const response = await axiosInstance.post('/documents', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          setUploadProgress(percentCompleted);
+      const response = await axios.post(
+        `${import.meta.env.VITE_DOCUMENT_URL}/documents`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            setUploadProgress(percentCompleted);
+          }
         }
-      });
+      );
 
       if (response.status === 200) {
         onUploadComplete(response.data);

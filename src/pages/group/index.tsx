@@ -354,7 +354,7 @@ export default function GroupPage() {
         </Button> */}
 
           <div className="flex flex-row  items-center justify-end gap-2">
-            <Button>
+            <Button className="hover:bg-black hover:text-white">
               <DropdownMenu>
                 <DropdownMenuTrigger>
                   {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
@@ -398,7 +398,10 @@ export default function GroupPage() {
               </DropdownMenu>
             </Button>
 
-            <Button onClick={() => setIsGroupModalOpen(true)}>
+            <Button
+              onClick={() => setIsGroupModalOpen(true)}
+              className="hover:bg-black hover:text-white"
+            >
               <Plus className="mr-2 h-4 w-4" /> Add Group
             </Button>
           </div>

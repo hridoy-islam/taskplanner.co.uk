@@ -10,7 +10,6 @@ import {
   useFetchUpcomingTasksQuery
 } from '@/redux/features/taskSlice';
 import notask from '@/assets/imges/home/notask.png';
-import { debounce } from 'lodash';
 
 export default function UpcomingTasks({ user }) {
   const { toast } = useToast();
@@ -91,12 +90,8 @@ export default function UpcomingTasks({ user }) {
     }
   };
 
-  const debouncedSearch = debounce((value) => {
-    setSearchTerm(value);
-  }, 300);
-
   const handleSearch = (event) => {
-    debouncedSearch(event.target.value);
+    setSearchTerm(event.target.value);
   };
 
   const handleToggleTaskCompletion = async (taskId: string) => {
@@ -153,7 +148,7 @@ export default function UpcomingTasks({ user }) {
   };
 
   return (
-    <Card className="h-[calc(85vh-8rem)] overflow-hidden p-2">
+    <Card className="flex h-[calc(88vh-7rem)] flex-col overflow-hidden px-2">
       {/* <CardHeader>
         <CardTitle className="flex justify-between gap-2">
           <span></span>
@@ -161,7 +156,7 @@ export default function UpcomingTasks({ user }) {
         </CardTitle>
       </CardHeader> */}
       <Input
-        className="m-4 flex h-[40px] w-[90%] items-center p-4 md:w-[98%]"
+        className="m-4 flex h-[40px] w-[92%] items-center p-4 md:w-[98%]"
         placeholder="Search notes..."
         value={searchTerm}
         onChange={handleSearch}
@@ -170,17 +165,15 @@ export default function UpcomingTasks({ user }) {
         <Loader />
       ) : (
         <CardContent className="flex-1 overflow-y-auto px-4 scrollbar-hide">
-          {tasks.length === 0 ? (
+          <TaskList
+            tasks={tasks}
+            onMarkAsImportant={handleMarkAsImportant}
+            onToggleTaskCompletion={handleToggleTaskCompletion}
+          />
+          {tasks.length === 0 && (
             <div className="mt-36 flex flex-col items-center justify-center">
               <img src={notask} alt="No Task" />
             </div>
-          ) : (
-            <TaskList
-              tasks={tasks}
-              onMarkAsImportant={handleMarkAsImportant}
-              onToggleTaskCompletion={handleToggleTaskCompletion}
-              fetchTasks={handleRefetch}
-            />
           )}
         </CardContent>
       )}
