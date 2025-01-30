@@ -76,6 +76,20 @@ export default function TaskPage() {
     limit: entriesPerPage
   });
 
+  const getTasksForBothUsersFn = TaskSlice.usePrefetch(
+    'fetchTasksForBothUsers'
+  );
+  useEffect(() => {
+    getTasksForBothUsersFn({
+      authorId: user?._id,
+      assignedId: id,
+      searchTerm,
+      sortOrder,
+      page: currentPage,
+      limit: entriesPerPage
+    });
+  }, []);
+
   useEffect(() => {
     if (data?.data?.result) {
       setTasks(data.data.result);
@@ -83,6 +97,10 @@ export default function TaskPage() {
       // Extract the `result` array
     }
   }, [data]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   // useEffect(() => {
   //   const intervalId = setInterval(() => {
@@ -274,7 +292,7 @@ export default function TaskPage() {
             value={searchTerm}
             onChange={handleSearch}
           />
-          <Button>
+          {/* <Button>
             <DropdownMenu>
               <DropdownMenuTrigger className="flex min-w-fit flex-row ">
                 {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
@@ -309,7 +327,7 @@ export default function TaskPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </Button>
+          </Button> */}
 
           {/* <div>
           <DynamicPagination
@@ -327,7 +345,7 @@ export default function TaskPage() {
       ) : (
         <div className=" ">
           <TaskList
-            tasks={tasks}
+            tasks={filteredGroups}
             onMarkAsImportant={handleMarkAsImportant}
             onToggleTaskCompletion={handleToggleTaskCompletion}
           />

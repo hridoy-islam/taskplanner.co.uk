@@ -31,6 +31,17 @@ export default function UpcomingTasks({ user }) {
       { skip: !user._id }
     );
 
+  const getUpcommingTaskFn = TaskSlice.usePrefetch('fetchUpcomingTasks');
+  useEffect(() => {
+    getUpcommingTaskFn({
+      userId: user._id,
+      searchTerm: '',
+      sortOrder: 'desc',
+      page: 1,
+      limit: 15
+    });
+  }, []);
+
   useEffect(() => {
     refetch();
   }, [refetch]);
@@ -70,7 +81,7 @@ export default function UpcomingTasks({ user }) {
       if (response.data.success) {
         // Update RTK Query cache
         TaskSlice.util.updateQueryData(
-          'fetchCompletedTasks',
+          'fetchUpcomingTasks',
           { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
           (draft) => {
             const task = draft?.data?.result?.find((t) => t._id === taskId);
@@ -119,7 +130,7 @@ export default function UpcomingTasks({ user }) {
       if (response.data.success) {
         // Update RTK Query cache
         TaskSlice.util.updateQueryData(
-          'fetchCompletedTasks',
+          'fetchUpcomingTasks',
           { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
           (draft) => {
             const task = draft?.data?.result?.find((t) => t._id === taskId);

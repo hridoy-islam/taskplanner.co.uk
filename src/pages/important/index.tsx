@@ -19,13 +19,22 @@ export default function ImportantPage() {
   const { toast } = useToast();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
-  const { data, refetch, isLoading, isFetching, isSuccess } =
-    useFetchImportantTasksQuery({
+  const { data, refetch, isLoading } = useFetchImportantTasksQuery({
+    userId: user?._id,
+    sortOrder: 'desc',
+    page: 1,
+    limit: 15
+  });
+
+  const getImportantTaskFn = TaskSlice.usePrefetch('fetchImportantTasks');
+  useEffect(() => {
+    getImportantTaskFn({
       userId: user?._id,
       sortOrder: 'desc',
       page: 1,
       limit: 15
     });
+  }, []);
 
   useEffect(() => {
     refetch();
@@ -36,14 +45,6 @@ export default function ImportantPage() {
       setTasks(data.data.result);
     }
   }, [data]);
-
-  const handleRefetch = () => {
-    if (!isFetching && isSuccess) {
-      refetch(); // Only refetch if the query is not already in progress and has been successful
-    } else {
-      console.log('Query is already in progress or has not been started yet.');
-    }
-  };
 
   const handleMarkAsImportant = async (taskId) => {
     const taskToToggle = tasks.find((task) => task._id === taskId);
@@ -115,7 +116,7 @@ export default function ImportantPage() {
         // Update RTK Query cache
         TaskSlice.util.updateQueryData(
           'fetchImportantTasks',
-          { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
+          { userId: user._id, sortOrder, page, limit: 15 },
           (draft) => {
             const task = draft?.data?.result?.find((t) => t._id === taskId);
             if (task) {
@@ -157,17 +158,15 @@ export default function ImportantPage() {
         <Loader />
       ) : (
         <CardContent className="flex-1 overflow-y-auto px-4 scrollbar-hide">
-          {tasks.length === 0 ? (
+          <TaskList
+            tasks={tasks}
+            onMarkAsImportant={handleMarkAsImportant}
+            onToggleTaskCompletion={handleToggleTaskCompletion}
+          />
+          {tasks.length === 0 && (
             <div className="mt-36 flex flex-col items-center justify-center">
               <img src={notask} alt="No Task" />
             </div>
-          ) : (
-            <TaskList
-              tasks={tasks}
-              onMarkAsImportant={handleMarkAsImportant}
-              onToggleTaskCompletion={handleToggleTaskCompletion}
-              fetchTasks={handleRefetch}
-            />
           )}
         </CardContent>
       )}

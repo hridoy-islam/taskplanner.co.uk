@@ -29,6 +29,16 @@ export default function DueTasks({ user }) {
     limit: 15
   });
 
+  const getDueTaskFn = TaskSlice.usePrefetch('fetchDueTasks');
+  useEffect(() => {
+    getDueTaskFn({
+      userId: user._id,
+      searchTerm: '',
+      sortOrder: 'desc',
+      page: 1,
+      limit: 15
+    });
+  }, []);
   // Lazy fetch for infinite scroll
   const [triggerFetch, { data: lazyData, isFetching: isLazyFetching }] =
     useLazyFetchDueTasksQuery();

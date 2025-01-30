@@ -30,6 +30,17 @@ export default function CompletedTasks({ user }) {
       { skip: !user._id }
     );
 
+  const getCompletedTaskFn = TaskSlice.usePrefetch('fetchCompletedTasks');
+  useEffect(() => {
+    getCompletedTaskFn({
+      userId: user._id,
+      searchTerm: '',
+      sortOrder: 'desc',
+      page: 1,
+      limit: 15
+    });
+  }, []);
+
   useEffect(() => {
     refetch();
   }, [refetch]);
@@ -69,7 +80,7 @@ export default function CompletedTasks({ user }) {
       if (response.data.success) {
         // Update RTK Query cache
         TaskSlice.util.updateQueryData(
-          'fetchUpcomingTasks',
+          'fetchCompletedTasks',
           { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
           (draft) => {
             const task = draft?.data?.result?.find((t) => t._id === taskId);
@@ -94,50 +105,49 @@ export default function CompletedTasks({ user }) {
   };
 
   const handleToggleTaskCompletion = async (taskId: string) => {
+    // Find the task in the state
     const taskToToggle = tasks.find((task) => task._id === taskId);
     if (!taskToToggle) return;
 
-    // Optimistically update UI
+    // Optimistically update UI - Toggle only the clicked task
     const previousTasks = [...tasks];
     const updatedTasks = tasks.map((task) =>
       task._id === taskId
-        ? {
-            ...task,
-            status: task.status === 'completed' ? 'pending' : 'completed'
-          }
+        ? { ...task, status: 'pending' } // Change only this task to pending
         : task
     );
-    setTasks(updatedTasks.filter((task) => task.status !== 'completed')); // Hide completed tasks
+
+    setTasks(updatedTasks.filter((task) => task.status == 'completed'));
 
     try {
       // Update server
       const response = await axiosInstance.patch(`/task/${taskId}`, {
-        status: taskToToggle.status === 'completed' ? 'pending' : 'completed'
+        status: 'pending' // Since we know all tasks are "completed", toggle to "pending"
       });
 
       if (response.data.success) {
         // Update RTK Query cache
         TaskSlice.util.updateQueryData(
-          'fetchUpcomingTasks',
+          'fetchCompletedTasks',
           { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
           (draft) => {
             const task = draft?.data?.result?.find((t) => t._id === taskId);
             if (task) {
-              task.status =
-                task.status === 'completed' ? 'pending' : 'completed';
+              task.status = 'pending'; // Change only this task
             }
           }
         );
+
         toast({
           title: 'Task Updated',
-          description: 'Thank You'
+          description: 'The task is now pending.'
         });
       } else {
         throw new Error('Failed to update task');
       }
     } catch (error) {
       // Revert optimistic update on error
-      setTasks(previousTasks); // Restore previous state
+      setTasks(previousTasks);
       console.error('Error toggling task completion:', error);
       toast({
         variant: 'destructive',
@@ -145,6 +155,7 @@ export default function CompletedTasks({ user }) {
       });
     }
   };
+
   return (
     <Card className="flex h-[calc(88vh-7rem)] flex-col overflow-hidden px-2">
       {/* <CardHeader>

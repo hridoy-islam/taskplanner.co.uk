@@ -23,7 +23,8 @@ import {
   UserPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
+import seen from '@/assets/imges/home/logos/seen.svg';
+import delivered from '@/assets/imges/home/logos/delivered.svg';
 import {
   Dialog,
   DialogContent,
@@ -1004,23 +1005,33 @@ export default function GroupChat() {
                             )}
                           >
                             {comment.content}
+                            <div className="flex flex-row justify-end  gap-2 px-1">
+                              <span className="text-[10px] opacity-70">
+                                {new Date(
+                                  comment?.createdAt
+                                ).toLocaleDateString() ===
+                                new Date().toLocaleDateString()
+                                  ? new Date(
+                                      comment?.createdAt
+                                    ).toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })
+                                  : new Date(
+                                      comment?.createdAt
+                                    ).toLocaleDateString()}
+                              </span>
+                              <img
+                                src={delivered}
+                                alt="delivered"
+                                className="h-3 w-3 "
+                              />
+                            </div>
                           </Linkify>
                         )}
                       </div>
                     </div>
-                    <div className="flex w-full flex-row-reverse items-center justify-between py-1">
-                      <span className="text-xs opacity-70">
-                        {new Date(comment?.createdAt).toLocaleDateString() ===
-                        new Date().toLocaleDateString()
-                          ? new Date(comment?.createdAt).toLocaleTimeString()
-                          : new Date(comment?.createdAt).toLocaleDateString()}
-                      </span>
-
-                      <span className=" flex flex-row gap-2 text-xs opacity-70">
-                        <EyeOpenIcon />
-                        <p>2</p>
-                      </span>
-                    </div>
+                    <div className="flex w-full flex-row-reverse items-center justify-between py-1"></div>
                   </div>
                 </div>
               );

@@ -229,11 +229,11 @@ export function ImageUploader({ open, onOpenChange, onUploadComplete }) {
 
       const formData = new FormData();
 
-      formData.append('file_type', 'profile');
+      // formData.append('file_type', 'profile');
       formData.append('files[]', file);
 
       const response = await axios.post(
-        `${import.meta.env.VITE_DOCUMENT_URL}/documents`,
+        `https://core.qualitees.co.uk/api/files/upload`,
         formData,
         {
           headers: {

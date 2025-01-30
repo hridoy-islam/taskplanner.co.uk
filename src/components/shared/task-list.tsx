@@ -7,15 +7,8 @@ import {
   Calendar,
   ArrowRight,
   CircleUser,
-  MessageSquareText,
-  AlarmClock
+  MessageSquareText
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem
-} from '@/components/ui/dropdown-menu';
 
 import { Badge } from '../ui/badge';
 import {
@@ -41,10 +34,6 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
 
   const [openUpdate, setOpenUpdate] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-
-  const [loadedTasks, setLoadedTasks] = useState(tasks || []);
 
   // const sortedTasks = tasks?.sort((a, b) => {
   //   return a.status === 'completed' && b.status === 'pending' ? 1 : -1;
@@ -263,25 +252,6 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
                         <CalendarClock className="h-4 w-4 text-teal-900" />{' '}
                         <span>Once</span>
                       </Badge> */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="rounded-md p-2 focus:outline-none">
-                              <AlarmClock className="h-5 w-5 text-indigo-800" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="center"
-                            side="top"
-                            className="w-48 bg-primary text-black"
-                          >
-                            <DropdownMenuItem>Daily</DropdownMenuItem>
-                            <DropdownMenuItem>Weekdays</DropdownMenuItem>
-                            <DropdownMenuItem>Weekly</DropdownMenuItem>
-                            <DropdownMenuItem>Monthly</DropdownMenuItem>
-                            <DropdownMenuItem>Yearly</DropdownMenuItem>
-                            <DropdownMenuItem>Customize</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </div>
                     </div>
                   </div>

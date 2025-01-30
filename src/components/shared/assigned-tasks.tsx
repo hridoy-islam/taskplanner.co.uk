@@ -31,6 +31,17 @@ export default function AssignedTasks({ user }) {
       { skip: !user._id }
     );
 
+  const getAssignedTaskFn = TaskSlice.usePrefetch('fetchAssignedTasks');
+  useEffect(() => {
+    getAssignedTaskFn({
+      userId: user._id,
+      searchTerm: '',
+      sortOrder: 'desc',
+      page: 1,
+      limit: 15
+    });
+  }, []);
+
   useEffect(() => {
     refetch();
   }, [refetch]);
@@ -40,6 +51,10 @@ export default function AssignedTasks({ user }) {
       setTasks(data.data.result);
     }
   }, [data]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const handleRefetch = () => {
     if (!isFetching && isSuccess) {

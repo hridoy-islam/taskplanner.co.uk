@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { EyeOpenIcon } from '@radix-ui/react-icons';
-
+import seen from '@/assets/imges/home/logos/seen.svg';
+import delivered from '@/assets/imges/home/logos/delivered.svg';
 import {
   Sheet,
   SheetContent,
@@ -444,12 +444,8 @@ export default function TaskDetails({
                           >
                             <div>
                               {comment.content}
-                              <div className="flex flex-row justify-between p-1">
-                                <span className=" flex flex-row gap-2 text-xs opacity-70">
-                                  <EyeOpenIcon />
-                                  <p>2</p>
-                                </span>
-                                <span className="text-xs opacity-70">
+                              <div className="px -1 flex flex-row justify-end gap-2">
+                                <span className="text-[10px] opacity-70">
                                   {new Date(
                                     comment?.createdAt
                                   ).toLocaleDateString() ===
@@ -464,6 +460,11 @@ export default function TaskDetails({
                                         comment?.createdAt
                                       ).toLocaleDateString()}
                                 </span>
+                                <img
+                                  src={delivered}
+                                  alt="delivered"
+                                  className="h-3 w-3 "
+                                />
                               </div>
                             </div>
                           </Linkify>

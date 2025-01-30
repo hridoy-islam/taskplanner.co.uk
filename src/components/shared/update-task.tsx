@@ -6,6 +6,14 @@ import { useEffect } from 'react';
 import moment from 'moment';
 import { Textarea } from '../ui/textarea';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+
 const UpdateTask = ({
   task,
   isOpen,
@@ -54,6 +62,51 @@ const UpdateTask = ({
             {...register('dueDate', { required: true })}
             className="mb-4 "
           />
+
+          <Select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Schedule" />
+            </SelectTrigger>
+            <SelectContent className="w-full bg-primary text-black">
+              <SelectItem
+                value="daily"
+                className="hover:bg-black hover:text-white"
+              >
+                Daily
+              </SelectItem>
+              <SelectItem
+                value="weekdays"
+                className="hover:bg-black hover:text-white"
+              >
+                Weekdays
+              </SelectItem>
+              <SelectItem
+                value="weekly"
+                className="hover:bg-black hover:text-white"
+              >
+                Weekly
+              </SelectItem>
+              <SelectItem
+                value="monthly"
+                className="hover:bg-black hover:text-white"
+              >
+                Monthly
+              </SelectItem>
+              <SelectItem
+                value="yearly"
+                className="hover:bg-black hover:text-white"
+              >
+                Yearly
+              </SelectItem>
+              <SelectItem
+                value="custom"
+                className="hover:bg-black hover:text-white"
+              >
+                Customize
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
           <div className="mt-4 flex justify-end space-x-2">
             <Button variant="default" onClick={onClose}>
               Cancel
