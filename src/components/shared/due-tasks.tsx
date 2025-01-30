@@ -36,7 +36,7 @@ export default function DueTasks({ user }) {
       searchTerm: '',
       sortOrder: 'desc',
       page: 1,
-      limit: 15
+      limit: 5000
     });
   }, []);
   // Lazy fetch for infinite scroll
@@ -76,7 +76,7 @@ export default function DueTasks({ user }) {
         searchTerm,
         sortOrder,
         page,
-        limit: 15
+        limit: 5000
       });
     }
   }, [page]);

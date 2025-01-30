@@ -25,7 +25,7 @@ export default function CompletedTasks({ user }) {
         searchTerm,
         sortOrder,
         page,
-        limit: 15
+        limit: 5000
       },
       { skip: !user._id }
     );
@@ -37,7 +37,7 @@ export default function CompletedTasks({ user }) {
       searchTerm: '',
       sortOrder: 'desc',
       page: 1,
-      limit: 15
+      limit: 5000
     });
   }, []);
 

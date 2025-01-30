@@ -32,6 +32,7 @@ export function NotificationDropdown() {
   const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useSelector((state: any) => state.auth);
   const [playSound, setPlaySound] = useState(false);
+
   // Fetch notifications on component mount
   useEffect(() => {
     const loadNotifications = async (userId: string) => {
@@ -70,7 +71,7 @@ export function NotificationDropdown() {
         socket.off('notification');
       };
     }
-  }, [user?._id]);
+  }, []);
 
   const markAsRead = async (id: string) => {
     try {

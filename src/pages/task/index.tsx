@@ -42,7 +42,7 @@ export default function TaskPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(100);
+  const [entriesPerPage, setEntriesPerPage] = useState(5000);
   const [searchTerm, setSearchTerm] = useState('');
   const { register, handleSubmit, reset } = useForm();
 
@@ -97,10 +97,6 @@ export default function TaskPage() {
       // Extract the `result` array
     }
   }, [data]);
-
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
 
   // useEffect(() => {
   //   const intervalId = setInterval(() => {
