@@ -23,6 +23,8 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
+  Archive,
+  ArchiveRestore,
   Bell,
   MessageSquareIcon,
   MessageSquareText,
@@ -38,7 +40,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   DropdownMenu,
@@ -95,7 +97,7 @@ export default function GroupPage() {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   // const [notifications, setNotifications] = useState<Notification[]>([]);
   const [initialMembers, setInitialMembers] = useState<Member[]>([]);
-
+  const [archived, setArchive] = useState(false);
   const { user } = useSelector((state: any) => state.auth);
 
   const fetchMembers = async () => {
@@ -108,6 +110,7 @@ export default function GroupPage() {
       return [];
     }
   };
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadMembers = async () => {
@@ -355,7 +358,7 @@ export default function GroupPage() {
         </Button> */}
 
           <div className="flex flex-row  items-center justify-end gap-2">
-            <Button className="hover:bg-black hover:text-white">
+            {/* <Button className="hover:bg-black hover:text-white">
               <DropdownMenu>
                 <DropdownMenuTrigger>
                   {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
@@ -397,7 +400,7 @@ export default function GroupPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </Button>
+            </Button> */}
 
             <Button
               onClick={() => setIsGroupModalOpen(true)}
@@ -415,22 +418,19 @@ export default function GroupPage() {
             <ScrollArea className="h-[40rem] max-h-fit pr-2 ">
               <TableHeader className="sticky top-0 z-10 bg-white">
                 <TableRow>
-                  <TableHead>Name</TableHead>
                   <TableHead>Members</TableHead>
+                  <TableHead>Name</TableHead>
                   {/* <TableHead>G Type</TableHead> */}
-                  <TableHead>View</TableHead>
+                  <TableHead>Archive</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredGroups.map((group) => (
                   <TableRow
                     key={group.id}
-                    className="shadow hover:bg-slate-100"
+                    className="cursor-pointer border-none shadow hover:bg-slate-100"
                   >
-                    <TableCell className="font-semibold">
-                      <Link to={`${group?.id}`}>{group.name}</Link>
-                    </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => navigate(`${group?.id}`)}>
                       <div className="flex -space-x-2 overflow-hidden">
                         {group.members.slice(0, 3).map((member) => (
                           <TooltipProvider key={member.id}>
@@ -464,29 +464,35 @@ export default function GroupPage() {
                         )}
                       </div>
                     </TableCell>
-
-                    <TableCell>
-                      <Link to={`${group?.id}`}>
-                        <Button
-                          variant={`${group.unreadMessageCount === 0 ? 'ghost' : 'destructive'}`}
-                          size={'sm'}
-                          onClick={() => setSelectedGroup(group)}
+                    <div className="flex flex-row items-center justify-start">
+                      <TableCell
+                        onClick={() => navigate(`${group?.id}`)}
+                        className="flex flex-row items-center justify-start gap-2 font-semibold "
+                      >
+                        <div>{group.name}</div>
+                        <div
+                          className="hover:bg-none "
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent the row's onClick from firing
+                            // Add button-specific logic here
+                          }}
                         >
-                          <MessageSquareText className={`h-4 w-4`} />
-                          <sup className="ml-1 text-[10px]">
+                          <MessageSquareText className="h-4 w-4" />
+                          <span className="ml-1 text-[10px]">
                             {(group.unreadMessageCount ?? 0) > 0 ? (
                               <span>{group?.unreadMessageCount}</span>
                             ) : (
                               ''
                             )}
-                          </sup>
-                        </Button>
-                      </Link>
-                    </TableCell>
+                          </span>
+                        </div>
+                      </TableCell>
+                    </div>
+
                     <TableCell>
-                      <Trash
-                        className={`h-4 w-4 cursor-pointer text-red-900`}
-                      ></Trash>
+                      <Button>
+                        {archived ? <ArchiveRestore /> : <Archive />}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

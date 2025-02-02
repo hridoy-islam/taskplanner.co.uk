@@ -101,7 +101,7 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
                 }`}
               >
                 <div className=" flex w-full flex-col items-center justify-between gap-2 lg:flex-row ">
-                  <div className="flex w-full flex-row items-center justify-between">
+                  <div className="flex w-full flex-row items-center justify-between gap-2">
                     <div className="flex items-center justify-center gap-2">
                       <Checkbox
                         checked={task.status === 'completed'}
@@ -140,7 +140,9 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
                                 className="flex items-center gap-1 bg-green-100 text-black"
                               >
                                 <UserRoundCheck className="h-3 w-3" />
-                                {task?.author?.name}
+                                <span className="truncate">
+                                  {task?.author?.name}
+                                </span>
                               </Badge>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -161,7 +163,9 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
                                 className="flex items-center gap-1 bg-purple-100 text-black"
                               >
                                 <CircleUser className="h-3 w-3" />
-                                {task?.assigned?.name}
+                                <span className="truncate">
+                                  {task?.assigned?.name}
+                                </span>
                               </Badge>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -190,8 +194,14 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
                                   }
                                 }}
                               >
-                                <Calendar className="h-3 w-3" />
-                                {moment(task.dueDate).format('MMM Do YYYY')}
+                                <span className="truncate">
+                                  <div className="flex flex-row gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {moment(task.dueDate).format(
+                                      'MMM Do YYYY'
+                                    )}{' '}
+                                  </div>
+                                </span>
                               </Badge>
                             </TooltipTrigger>
                             <TooltipContent>

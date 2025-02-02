@@ -19,11 +19,12 @@ export default function ImportantPage() {
   const { toast } = useToast();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
+
   const { data, refetch, isLoading } = useFetchImportantTasksQuery({
     userId: user?._id,
     sortOrder: 'desc',
     page: 1,
-    limit: 15
+    limit: 5000
   });
 
   const getImportantTaskFn = TaskSlice.usePrefetch('fetchImportantTasks');

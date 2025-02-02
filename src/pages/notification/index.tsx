@@ -3,50 +3,19 @@ import { socket, setupSocket } from '../../lib/socket';
 import { useSelector } from 'react-redux';
 import axiosInstance from '../../lib/axios';
 import { useEffect, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { ArrowRight, Bell, CircleUser, UserRoundCheck } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import moment from 'moment';
 
 interface Notification {
   _id: string;
   message: string;
   isRead: boolean;
+  senderId?: string;
 }
 
-type Task = {
-  _id: string;
-  taskName: string;
-  dueDate: Date;
-  important: boolean;
-  author: {
-    name: string;
-  };
-  assigned: {
-    name: string;
-  };
-};
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { user } = useSelector((state: any) => state.auth);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [selectedNotification, setSelectedNotification] =
-    useState<Notification | null>(null); // State for selected notification
 
   // Fetch notifications on component mount
   useEffect(() => {
@@ -90,22 +59,6 @@ export default function NotificationsPage() {
     }
   };
 
-  const selectNotificationById = async (id: string) => {
-    try {
-      const { data } = await axiosInstance.get(`/notifications/${id}`);
-      console.log('Fetched notification details:', data.data.result); // Debugging
-      setSelectedNotification(data.data.result); // Adjust to match the API response structure
-    } catch (error) {
-      console.error('Error fetching notification details:', error);
-    }
-  };
-
-  const handleNotificationClick = (notification: Notification) => {
-    // setSelectedNotification(notification); // Set immediately for dialog
-    selectNotificationById(notification._id); // Fetch more details
-    markAsRead(notification._id); // Mark as read
-  };
-
   const calculateDuration = (updatedAt: string): string => {
     const currentTime = new Date();
     const updatedTime = new Date(updatedAt);
@@ -114,92 +67,60 @@ export default function NotificationsPage() {
     );
 
     if (durationInMinutes < 60) {
-      return `${durationInMinutes}m`;
+      return `${durationInMinutes}m `;
     } else if (durationInMinutes < 1440) {
       return `${Math.floor(durationInMinutes / 60)}h`;
     } else {
-      return `${Math.floor(durationInMinutes / 1440)}d`;
+      const days = Math.floor(durationInMinutes / 1440);
+      return days === 1 ? `${days}d` : `${days}d`;
     }
   };
-
-  console.log(handleNotificationClick);
   return (
-    <div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button size="icon" className="relative">
-            <Bell className="h-5 w-5 " />
-            {unreadCount > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute -right-2 -top-2 h-5 min-w-[20px] px-2"
-              >
-                {unreadCount}
-              </Badge>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="mr-4 w-80 bg-primary">
-          <DropdownMenuLabel className="font-normal">
-            <h2 className="text-center text-lg font-semibold text-black">
-              Notifications
-            </h2>
-          </DropdownMenuLabel>
-          <DropdownMenuGroup className="max-h-[300px] overflow-y-auto bg-primary">
-            {notifications.map((notification) => (
-              <DropdownMenuItem
-                className="hover:border-none hover:bg-transparent focus:border-none focus:bg-transparent"
-                key={notification._id}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <NotificationItem
-                  notification={notification}
-                  userImage={
-                    notification.senderId === user?._id
-                      ? { image: user?.image, name: user.name }
-                      : undefined
-                  }
-                  duration={calculateDuration(notification.updatedAt)} // Pass duration as prop
-                />
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuGroup>
-
-          <DropdownMenuItem className="hover:border-none hover:bg-transparent focus:border-none focus:bg-transparent">
-            <Link
-              to="notifications"
-              className="w-full text-black hover:bg-primary hover:underline"
+    <div className="container mx-auto mt-2">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">All Notifications</h1>
+      </div>
+      <div className="space-y-4">
+        {notifications.map((notification) => (
+          <div
+            key={notification._id}
+            onClick={() => markAsRead(notification._id)}
+            className="overflow-hidden "
+          >
+            <div
+              className={`flex h-auto  w-full cursor-pointer flex-row items-center justify-between space-x-6 rounded-sm border border-gray-200 px-2 py-2  ${notification.isRead ? 'bg-primary' : 'bg-blue-200'}`}
             >
-              View all notifications
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+              {/* <Icon className="mt-1 h-5 w-5 text-background" /> */}
+              <div className="flex   items-center gap-2 space-x-2">
+                {notification.senderId === user?._id ? (
+                  // If notification.senderId matches user._id, show the user's image and name
+                  <Avatar className="h-8 w-8 bg-black p-2">
+                    <AvatarImage src={user?.image} alt="Profile picture" />
+                    <AvatarFallback>
+                      {user?.name
+                        ?.split(' ')
+                        .map((n) => n[0])
+                        .join('') || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  // If not, show a default placeholder avatar
+                  <div className="h-8 w-8 rounded-full bg-black p-2" />
+                )}
 
-      <Dialog
-        open={!!selectedNotification}
-        onOpenChange={() => setSelectedNotification(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Notification Details</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            {selectedNotification ? (
-              <>
-                <p className="text-lg font-semibold">
-                  {selectedNotification.message}
+                <p className="whitespace-normal text-wrap break-words break-all  text-sm font-medium leading-none text-black">
+                  {notification.message}
                 </p>
-                <p className="mt-2 text-sm text-gray-500">
-                  {calculateDuration(selectedNotification.updatedAt)} ago
+              </div>
+              <div>
+                <p className="text-sm font-medium leading-none text-black">
+                  {moment(notification?.updatedAt).fromNow()}
                 </p>
-              </>
-            ) : (
-              <p>Loading notification details...</p>
-            )}
+              </div>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        ))}
+      </div>
     </div>
   );
 }

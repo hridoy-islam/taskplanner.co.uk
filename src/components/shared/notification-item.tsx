@@ -47,7 +47,7 @@ export function NotificationItem({ notification, userImage, duration }) {
             </AvatarFallback>
           </Avatar>
         ) : (
-          <div className="h-8 w-8 rounded-full bg-gray-700 p-4" />
+          <div className="h-8 w-8 rounded-full bg-black p-5" />
         )}
         <p className="text-sm font-medium leading-none text-black">
           {notification.message.length > 60

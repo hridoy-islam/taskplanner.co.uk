@@ -5,6 +5,7 @@ import authReducer from './features/authSlice';
 import profileReducer from './features/profileSlice';
 
 import { TaskSlice } from './features/taskSlice';
+import userSlice from './features/userSlice';
 const persistConfig = {
   key: 'taskplanner',
   storage
@@ -13,6 +14,7 @@ const persistConfig = {
 const rootReducer = combineReducers({
   auth: authReducer,
   profile: profileReducer,
+  users: userSlice,
   [TaskSlice.reducerPath]: TaskSlice.reducer
 });
 
@@ -36,8 +38,11 @@ const store = configureStore({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST'] // Ignore persist related actions to avoid serializability issues
       }
-    }).concat(TaskSlice.middleware) // Add RTK Query middleware
+    }).concat(TaskSlice.middleware),
+  devTools: true // Add RTK Query middleware
 });
+
+export type RootState = ReturnType<typeof store.getState>;
 
 export type AppDispatch = typeof store.dispatch;
 

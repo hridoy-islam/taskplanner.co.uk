@@ -6,8 +6,9 @@ import { ChevronsLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import UserList from './user-list';
 import { Input } from '../ui/input';
-import { useSelector } from 'react-redux';
-import axiosInstance from '../../lib/axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchCompanyUsers } from '@/redux/features/userSlice';
+import { AppDispatch, RootState } from '@/redux/store';
 
 type SidebarProps = {
   className?: string;
@@ -18,7 +19,7 @@ export default function Sidebar({ className }: SidebarProps) {
   const [status, setStatus] = useState(false);
   const [team, setTeams] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const { user } = useSelector((state: any) => state.auth);
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const handleToggle = () => {
     setStatus(true);
@@ -26,19 +27,59 @@ export default function Sidebar({ className }: SidebarProps) {
     setTimeout(() => setStatus(false), 500);
   };
 
-  const fetchUsers = async () => {
-    try {
-      const response = await axiosInstance.get(`/users/company/${user?._id}`);
+  // Get the users state from the Redux store
+  const { users, loading, error } = useSelector(
+    (state: RootState) => state.users
+  );
 
-      setTeams(response.data.data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
+  // Dispatch function
+  const dispatch = useDispatch<AppDispatch>();
+
+  // const fetchUsers = async () => {
+  //   try {
+  //     const response = await axiosInstance.get(`/users/company/${user?._id}`);
+
+  //     setTeams(response.data.data);
+  //   } catch (error) {
+  //     console.error('Error fetching users:', error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchUsers(); // Fetch users on component mount
+  // }, []);
+
+  // const { data, isLoading , isFetching, refetch ,error} = useFetchUsersQuery({
+  //   userId: user?._id,
+
+  // })
 
   useEffect(() => {
-    fetchUsers(); // Fetch users on component mount
-  }, []);
+    const fetchData = async () => {
+      try {
+        if (user?._id) {
+          await dispatch(fetchCompanyUsers(user._id));
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+    fetchData();
+  }, [user, dispatch]);
+  useEffect(() => {
+    if (users && Array.isArray(users)) {
+      setTeams(users);
+    }
+  }, [users]);
+
+  // useEffect(() => {
+  //   if(data){
+  //     setTeams(data)
+  //   }
+
+  //   console.log("Users Data:", data);
+
+  // }, [data]);
 
   const filteredNavItems = navItems.filter((item) =>
     item.roles.includes(user?.role)

@@ -6,7 +6,8 @@ import { useToast } from '../ui/use-toast';
 import { Input } from '../ui/input';
 import {
   TaskSlice,
-  useFetchCompletedTasksQuery
+  useFetchCompletedTasksQuery,
+  useUpdateTaskMutation
 } from '@/redux/features/taskSlice';
 import Loader from './loader';
 import notask from '@/assets/imges/home/notask.png';
@@ -17,18 +18,18 @@ export default function CompletedTasks({ user }) {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [updateTask] = useUpdateTaskMutation();
 
-  const { data, refetch, isLoading, isFetching, isSuccess } =
-    useFetchCompletedTasksQuery(
-      {
-        userId: user._id,
-        searchTerm,
-        sortOrder,
-        page,
-        limit: 5000
-      },
-      { skip: !user._id }
-    );
+  const { data, refetch, isLoading } = useFetchCompletedTasksQuery(
+    {
+      userId: user._id,
+      searchTerm,
+      sortOrder,
+      page,
+      limit: 5000
+    },
+    { pollingInterval: 10000, refetchOnFocus: true, refetchOnReconnect: true }
+  );
 
   const getCompletedTaskFn = TaskSlice.usePrefetch('fetchCompletedTasks');
   useEffect(() => {
@@ -51,14 +52,6 @@ export default function CompletedTasks({ user }) {
     }
   }, [data]);
 
-  const handleRefetch = () => {
-    if (!isFetching && isSuccess) {
-      refetch(); // Only refetch if the query is not already in progress and has been successful
-    } else {
-      console.log('Query is already in progress or has not been started yet.');
-    }
-  };
-
   const handleMarkAsImportant = async (taskId) => {
     const taskToToggle = tasks.find((task) => task._id === taskId);
     if (!taskToToggle) return;
@@ -72,27 +65,14 @@ export default function CompletedTasks({ user }) {
     );
 
     try {
-      // Update server
-      const response = await axiosInstance.patch(`/task/${taskId}`, {
-        important: !taskToToggle.important
-      });
-
-      if (response.data.success) {
-        // Update RTK Query cache
-        TaskSlice.util.updateQueryData(
-          'fetchCompletedTasks',
-          { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
-          (draft) => {
-            const task = draft?.data?.result?.find((t) => t._id === taskId);
-            if (task) {
-              task.important = !task.important;
-            }
-          }
-        );
-        toast({ title: 'Task Updated', description: 'Thank You' });
-      } else {
-        throw new Error('Failed to update task');
-      }
+      await updateTask({
+        taskId,
+        updates: {
+          important: !taskToToggle.important
+        }
+      }).unwrap();
+      refetch();
+      toast({ title: 'Task Updated', description: 'Thank You' });
     } catch (error) {
       // Revert optimistic update on error
       setTasks(previousTasks);

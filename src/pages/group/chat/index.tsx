@@ -705,6 +705,8 @@ export default function GroupChat() {
     };
   }, []);
 
+  console.log(user);
+
   return (
     <div className="mx-auto flex h-full max-w-full  ">
       {/* Sidebar with group members */}
@@ -900,7 +902,7 @@ export default function GroupChat() {
                       className={`inline-block max-w-prose ${
                         comment.authorId._id === user?._id
                           ? 'bg-[#151261] text-white'
-                          : 'bg-gray-200'
+                          : 'bg-[#DCFCE7]'
                       } rounded-lg p-3`}
                       style={{
                         wordWrap: 'break-word',
@@ -1021,11 +1023,13 @@ export default function GroupChat() {
                                       comment?.createdAt
                                     ).toLocaleDateString()}
                               </span>
-                              <img
-                                src={delivered}
-                                alt="delivered"
-                                className="h-3 w-3 "
-                              />
+                              {user?._id && (
+                                <img
+                                  src={delivered}
+                                  alt="delivered"
+                                  className="h-3 w-3 "
+                                />
+                              )}
                             </div>
                           </Linkify>
                         )}

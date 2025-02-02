@@ -7,6 +7,7 @@ import axiosInstance from '../../lib/axios';
 
 export default function UserList({ user, filteredUsers }) {
   const [companyData, setCompanyData] = useState<any>();
+
   const fetchUserData = async () => {
     try {
       const response = await axiosInstance.get(`/users/${user?._id}`);

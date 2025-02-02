@@ -329,14 +329,14 @@ export default function TaskDetails({
               return (
                 <div
                   key={comment._id}
-                  className={`flex ${
+                  className={`flex  w-full flex-row ${
                     comment.authorId._id === user?._id
                       ? 'justify-end'
                       : 'justify-start'
                   }`}
                 >
                   <div
-                    className={`flex max-w-80 xl:max-w-60 ${
+                    className={`flex  max-w-80 flex-col items-end justify-end xl:max-w-60 ${
                       comment.authorId._id === user?._id
                         ? 'flex-row-reverse'
                         : 'flex-row'
@@ -347,31 +347,18 @@ export default function TaskDetails({
                       overflowWrap: 'break-word'
                     }}
                   >
-                    <Avatar
-                      className={`h-8 w-8  ${
-                        comment.authorId._id === user?._id && 'ml-1'
-                      } ${socketConnected && 'border border-gray-800'}`}
-                    >
-                      <AvatarFallback className="text-xs">
-                        {comment?.authorId.name
-                          ?.split(' ')
-                          .map((n) => n[0])
-                          .join('') || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-
                     <div
-                      className={`max-w-[90%] ${
+                      className={` max-w-[90%] ${
                         comment.authorId._id === user?._id ? 'mr-2' : 'ml-2'
                       }`}
                     >
                       <div
-                        className={`inline-block max-w-prose rounded-lg p-2 ${
+                        className={`flex max-w-prose flex-col rounded-lg  ${
                           isFile
                             ? 'border border-gray-300'
                             : comment.authorId._id === user?._id
                               ? 'bg-[#002055] p-2 text-white'
-                              : 'bg-gray-200 p-2'
+                              : 'bg-[#DCFCE7] p-2'
                         }`}
                         style={{
                           wordWrap: 'break-word',
@@ -379,12 +366,15 @@ export default function TaskDetails({
                           overflowWrap: 'break-word'
                         }}
                       >
+                        <span className="inline-block items-center overflow-hidden text-ellipsis whitespace-nowrap pb-1 text-xs md:text-xs md:font-semibold">
+                          {comment?.authorId?.name}
+                        </span>
                         {isFile ? (
                           <div
                             className={`flex items-center space-x-2 rounded-lg  p-2 ${
                               comment.authorId._id === user?._id
-                                ? 'bg-blue-500/15 p-2 '
-                                : 'bg-gray-200/15 p-2'
+                                ? 'bg-blue-500/15 '
+                                : 'bg-gray-200/15 '
                             }`}
                           >
                             {parsedContent.mimeType?.startsWith('image/') ? (

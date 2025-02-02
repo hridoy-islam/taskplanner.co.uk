@@ -3,7 +3,7 @@ import PageHead from '@/components/shared/page-head';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../../lib/axios';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import TaskList from '@/components/shared/task-list';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
@@ -13,20 +13,11 @@ import { useForm } from 'react-hook-form';
 import notask from '@/assets/imges/home/notask.png';
 import {
   TaskSlice,
-  useFetchTasksForBothUsersQuery
+  useFetchTasksForBothUsersQuery,
+  useUpdateTaskMutation
 } from '@/redux/features/taskSlice';
 import Loader from '@/components/shared/loader';
-import InfiniteScroll from 'react-infinite-scroll-component';
 
-import DynamicPagination from '@/components/shared/DynamicPagination';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 
 export default function TaskPage() {
@@ -41,7 +32,7 @@ export default function TaskPage() {
   const [sortBy, setSortBy] = useState<'name' | 'unread' | 'recent'>('unread');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+
   const [entriesPerPage, setEntriesPerPage] = useState(5000);
   const [searchTerm, setSearchTerm] = useState('');
   const { register, handleSubmit, reset } = useForm();
@@ -51,6 +42,7 @@ export default function TaskPage() {
     setUserDetail(response.data.data);
   };
 
+  const [updateTask] = useUpdateTaskMutation();
   // const fetchTasks = useCallback(
   //   async (page, entriesPerPage, searchTerm = '', sortOrder = 'desc') => {
   //     try {
@@ -67,14 +59,19 @@ export default function TaskPage() {
   //   [id]
   // );
 
-  const { data, error, isLoading, refetch } = useFetchTasksForBothUsersQuery({
-    authorId: user?._id,
-    assignedId: id,
-    searchTerm,
-    sortOrder,
-    page: currentPage,
-    limit: entriesPerPage
-  });
+  const { data, isLoading, refetch } = useFetchTasksForBothUsersQuery(
+    {
+      authorId: user?._id,
+      assignedId: id,
+      page: currentPage,
+      limit: entriesPerPage
+    },
+    {
+      pollingInterval: 10000,
+      refetchOnFocus: true,
+      refetchOnReconnect: true
+    }
+  );
 
   const getTasksForBothUsersFn = TaskSlice.usePrefetch(
     'fetchTasksForBothUsers'
@@ -83,8 +80,6 @@ export default function TaskPage() {
     getTasksForBothUsersFn({
       authorId: user?._id,
       assignedId: id,
-      searchTerm,
-      sortOrder,
       page: currentPage,
       limit: entriesPerPage
     });
@@ -94,62 +89,70 @@ export default function TaskPage() {
     if (data?.data?.result) {
       setTasks(data.data.result);
       fetchUserDetails();
-      // Extract the `result` array
     }
   }, [data]);
 
-  // useEffect(() => {
-  //   const intervalId = setInterval(() => {
-  //     refetch(); // Automatically refetch the data every 30 seconds
-  //   }, 30000); // 30 seconds
-
-  //   return () => {
-  //     clearInterval(intervalId); // Cleanup the interval on unmount
-  //   };
-  // }, [refetch]);
-
   const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-    setCurrentPage(1); // Reset to first page when searching
+    const searchTerm = event.target.value.toLowerCase();
+    setSearchTerm(searchTerm);
+    if (data?.data?.result) {
+      const filteredTasks = data.data.result.filter(
+        (task) =>
+          task.taskName.toLowerCase().includes(searchTerm) ||
+          (task.description &&
+            task.description.toLowerCase().includes(searchTerm))
+      );
+
+      setTasks(filteredTasks);
+    }
   };
 
-  // const handleEntriesPerPageChange = (event) => {
-  //   setEntriesPerPage(Number(event.target.value));
-  //   setCurrentPage(1); // Reset to first page when changing entries per page
-  // };
+  // const handleMarkAsImportant = async (taskId) => {
+  //   const taskToToggle = tasks.find((task) => task._id === taskId);
+  //   if (!taskToToggle) return;
 
-  // const handleSortToggle = () => {
-  //   const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-  //   setSortOrder(newSortOrder);
-  //   fetchTasks(currentPage, entriesPerPage, searchTerm, newSortOrder); // Fetch with the new sort order
-  // };
+  //   // Optimistically update UI
+  //   const previousTasks = [...tasks];
+  //   setTasks((prevTasks) =>
+  //     prevTasks.map((task) =>
+  //       task._id === taskId ? { ...task, important: !task.important } : task
+  //     )
+  //   );
 
-  const filteredGroups = tasks
-    .filter((task) =>
-      task?.taskName?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === 'name') {
-        return sortOrder === 'asc'
-          ? a.taskName.localeCompare(b.taskName)
-          : b.taskName.localeCompare(a.taskName);
-      } else if (sortBy === 'unread') {
-        return sortOrder === 'asc'
-          ? (b.unreadMessageCount || 0) - (a.unreadMessageCount || 0)
-          : (a.unreadMessageCount || 0) - (b.unreadMessageCount || 0);
-      } else if (sortBy === 'recent') {
-        return sortOrder === 'asc'
-          ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-      return 0;
-    });
+  //   try {
+  //     // Update server
+  //     const response = await axiosInstance.patch(`/task/${taskId}`, {
+  //       important: !taskToToggle.important
+  //     });
+
+  //     if (response.data.success) {
+  //       // Update RTK Query cache
+  //       TaskSlice.util.updateQueryData(
+  //         'fetchTasksForBothUsers',
+  //         { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
+  //         (draft) => {
+  //           const task = draft?.data?.result?.find((t) => t._id === taskId);
+  //           if (task) {
+  //             task.important = !task.important;
+  //           }
+  //         }
+  //       );
+  //       toast({ title: 'Task Updated', description: 'Thank You' });
+  //     } else {
+  //       throw new Error('Failed to update task');
+  //     }
+  //   } catch (error) {
+  //     // Revert optimistic update on error
+  //     setTasks(previousTasks);
+  //     toast({ variant: 'destructive', title: 'Something Went Wrong!' });
+  //   }
+  // };
 
   const handleMarkAsImportant = async (taskId) => {
     const taskToToggle = tasks.find((task) => task._id === taskId);
     if (!taskToToggle) return;
 
-    // Optimistically update UI
+    // Optimistic update
     const previousTasks = [...tasks];
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
@@ -158,27 +161,16 @@ export default function TaskPage() {
     );
 
     try {
-      // Update server
-      const response = await axiosInstance.patch(`/task/${taskId}`, {
-        important: !taskToToggle.important
-      });
-
-      if (response.data.success) {
-        // Update RTK Query cache
-        TaskSlice.util.updateQueryData(
-          'fetchTasksForBothUsers',
-          { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
-          (draft) => {
-            const task = draft?.data?.result?.find((t) => t._id === taskId);
-            if (task) {
-              task.important = !task.important;
-            }
-          }
-        );
-        toast({ title: 'Task Updated', description: 'Thank You' });
-      } else {
-        throw new Error('Failed to update task');
-      }
+      await updateTask({
+        taskId,
+        updates: {
+          important: !taskToToggle.important,
+          authorId: user?._id,
+          assignedId: id
+        }
+      }).unwrap();
+      refetch();
+      toast({ title: 'Task Updated', description: 'Thank You' });
     } catch (error) {
       // Revert optimistic update on error
       setTasks(previousTasks);
@@ -202,41 +194,20 @@ export default function TaskPage() {
         : task
     );
     setTasks(updatedTasks.filter((task) => task.status !== 'completed')); // Hide completed tasks
-
     try {
-      // Update server
-      const response = await axiosInstance.patch(`/task/${taskId}`, {
-        status: taskToToggle.status === 'completed' ? 'pending' : 'completed'
-      });
-
-      if (response.data.success) {
-        // Update RTK Query cache
-        TaskSlice.util.updateQueryData(
-          'fetchTasksForBothUsers',
-          { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
-          (draft) => {
-            const task = draft?.data?.result?.find((t) => t._id === taskId);
-            if (task) {
-              task.status =
-                task.status === 'completed' ? 'pending' : 'completed';
-            }
-          }
-        );
-        toast({
-          title: 'Task Updated',
-          description: 'Thank You'
-        });
-      } else {
-        throw new Error('Failed to update task');
-      }
+      await updateTask({
+        taskId,
+        updates: {
+          // important: !taskToToggle.important,
+          status: taskToToggle.status === 'completed' ? 'pending' : 'completed'
+        }
+      }).unwrap();
+      refetch();
+      toast({ title: 'Task Updated', description: 'Thank You' });
     } catch (error) {
       // Revert optimistic update on error
-      setTasks(previousTasks); // Restore previous state
-      console.error('Error toggling task completion:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Something Went Wrong!'
-      });
+      setTasks(previousTasks);
+      toast({ variant: 'destructive', title: 'Something Went Wrong!' });
     }
   };
 
@@ -288,50 +259,6 @@ export default function TaskPage() {
             value={searchTerm}
             onChange={handleSearch}
           />
-          {/* <Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex min-w-fit flex-row ">
-                {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSortBy('name');
-                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                  }}
-                >
-                  Name
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSortBy('unread');
-                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                  }}
-                  className="hover:bg-black hover:text-white"
-                >
-                  New Message
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSortBy('recent');
-                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                  }}
-                >
-                  Date Created
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </Button> */}
-
-          {/* <div>
-          <DynamicPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </div> */}
         </div>
       </div>
       {isLoading ? (
@@ -341,7 +268,7 @@ export default function TaskPage() {
       ) : (
         <div className=" ">
           <TaskList
-            tasks={filteredGroups}
+            tasks={tasks}
             onMarkAsImportant={handleMarkAsImportant}
             onToggleTaskCompletion={handleToggleTaskCompletion}
           />

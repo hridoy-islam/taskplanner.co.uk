@@ -158,7 +158,7 @@ export function NotificationDropdown() {
           {/* <DropdownMenuSeparator /> */}
           <DropdownMenuItem className="hover:border-none hover:bg-transparent focus:border-none focus:bg-transparent">
             <Link
-              to="notifications"
+              to="/dashboard/notifications"
               className="w-full text-black hover:bg-primary hover:underline"
             >
               View all notifications
