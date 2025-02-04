@@ -42,14 +42,10 @@ import {
 } from '@/components/ui/tooltip';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+
+import { Switch } from '@/components/ui/switch';
+import { toast } from '@/components/ui/use-toast';
+import { Select } from '@/components/ui/select';
 
 interface Member {
   id: number;
@@ -73,6 +69,7 @@ interface Group {
   unreadMessageCount?: number; // Add this line
   status: string; // Add this line
   createdAt: Date; // Add this line
+  isArchived: boolean;
 }
 
 // interface Notification {
@@ -97,7 +94,6 @@ export default function GroupPage() {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   // const [notifications, setNotifications] = useState<Notification[]>([]);
   const [initialMembers, setInitialMembers] = useState<Member[]>([]);
-  const [archived, setArchive] = useState(false);
   const { user } = useSelector((state: any) => state.auth);
 
   const fetchMembers = async () => {
@@ -145,6 +141,7 @@ export default function GroupPage() {
           name: group.groupName,
           status: group.status,
           createdAt: group.createdAt,
+          isArchived: group.isArchived,
           members: group.members.map((member: any) => ({
             id: member._id,
             name: initialMembers.find((m) => m.id === member._id)?.name,
@@ -207,6 +204,7 @@ export default function GroupPage() {
             name: groupData.groupName,
             status: groupData.status,
             createdAt: new Date(),
+            isArchived: false,
             members: [
               {
                 id: user?._id,
@@ -322,16 +320,34 @@ export default function GroupPage() {
       return 0;
     });
 
-  // const paginatedGroups = filteredGroups.slice(
-  //   (currentPage - 1) * pageSize,
-  //   currentPage * pageSize
-  // );
+  const handleGroupStatusChange = async (id, checked) => {
+    try {
+      const updatedIsArchived = !checked;
 
-  // const pageCount = Math.ceil(filteredGroups.length / pageSize);
+      const response = await axiosInstance.patch(`/group/single/${id}`, {
+        isArchived: updatedIsArchived
+      });
 
-  // useEffect(() => {
-  //   // setCurrentPage(1);
-  // }, [searchTerm, sortBy, sortOrder]);
+      // Handle success
+      if (response.status === 200) {
+        toast({
+          title: 'Group status updated successfully',
+          className: 'bg-green-500 border-none text-white'
+        });
+
+        // Refresh the group list to reflect the updated state
+        fetchGroups();
+      } else {
+        throw new Error('Failed to update group status');
+      }
+    } catch (error) {
+      console.error('Error updating group status:', error);
+      toast({
+        title: 'Failed to update group status',
+        className: 'bg-red-500 border-none text-white'
+      });
+    }
+  };
 
   return (
     <div className="container mx-auto h-full overflow-auto p-4">
@@ -358,50 +374,6 @@ export default function GroupPage() {
         </Button> */}
 
           <div className="flex flex-row  items-center justify-end gap-2">
-            {/* <Button className="hover:bg-black hover:text-white">
-              <DropdownMenu>
-                <DropdownMenuTrigger>
-                  {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy('unread');
-                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                    }}
-                  >
-                    New Message
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy('name');
-                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                    }}
-                  >
-                    Name
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy('members');
-                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                    }}
-                  >
-                    Member Count
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy('recent');
-                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                    }}
-                  >
-                    Date Created
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </Button> */}
-
             <Button
               onClick={() => setIsGroupModalOpen(true)}
               className="hover:bg-black hover:text-white"
@@ -420,8 +392,7 @@ export default function GroupPage() {
                 <TableRow>
                   <TableHead>Members</TableHead>
                   <TableHead>Name</TableHead>
-                  {/* <TableHead>G Type</TableHead> */}
-                  <TableHead>Archive</TableHead>
+                  {/* <TableHead>Archive</TableHead> */}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -488,11 +459,46 @@ export default function GroupPage() {
                         </div>
                       </TableCell>
                     </div>
-
                     <TableCell>
-                      <Button>
-                        {archived ? <ArchiveRestore /> : <Archive />}
-                      </Button>
+                      {/* <Switch
+                      
+                       checked={group.isArchived}
+                        onChange={(checked)  => handleGroupStatusChange(group.id, checked)}
+
+                      /> */}
+
+                      {/* <select
+                              value={group.isArchived ? 'archived' : 'active'}
+                              onChange={async (e) => {
+                                const updatedStatus = e.target.value === 'archived';
+                                try {
+                                  const response = await axiosInstance.patch(
+                                    `/group/single/${group.id}`,
+                                    {
+                                      isArchived: updatedStatus,
+                                    }
+                                  );
+                                  if (response.status === 200) {
+                                    toast({
+                                      title: 'Group status updated successfully',
+                                      className: 'bg-green-500 border-none text-white',
+                                    });
+                                    fetchGroups();
+                                  } else {
+                                    throw new Error('Failed to update group status');
+                                  }
+                                } catch (error) {
+                                  console.error('Error updating group status:', error);
+                                  toast({
+                                    title: 'Failed to update group status',
+                                    className: 'bg-red-500 border-none text-white',
+                                  });
+                                }
+                              }}
+                            >
+                              <option value="active">Active</option>
+                              <option value="archived">Archived</option>
+                            </select> */}
                     </TableCell>
                   </TableRow>
                 ))}

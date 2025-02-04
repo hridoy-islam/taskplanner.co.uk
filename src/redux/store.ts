@@ -39,7 +39,7 @@ const store = configureStore({
         ignoredActions: ['persist/PERSIST'] // Ignore persist related actions to avoid serializability issues
       }
     }).concat(TaskSlice.middleware),
-  devTools: true // Add RTK Query middleware
+  devTools: true
 });
 
 export type RootState = ReturnType<typeof store.getState>;

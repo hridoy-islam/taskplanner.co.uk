@@ -43,7 +43,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useFetchPlannerMonthQuery,
-  useFetchPlannerWeekQuery
+  useFetchPlannerWeekQuery,
+  useFetchPlannerDayQuery
 } from '@/redux/features/taskSlice';
 
 type Task = {
@@ -73,39 +74,38 @@ export default function TaskPlanner() {
   const year = moment(currentDate).format('YYYY');
   const month = moment(currentDate).format('MM');
   const week = moment(currentDate).isoWeek();
-  const fetchTasks = async () => {
-    try {
-      // if (calendarView === 'month') {
-      //   const response = await axiosInstance(
-      //     `/task/planner/${year}/${month}/${user._id}`
-      //   );
-      //   setTasks(response.data.data);
-      // }
-      // if (calendarView === 'week') {
-      //   const response = await axiosInstance(
-      //     `/task/planner/week/${year}/${week}/${user._id}`
-      //   );
-      //   setTasks(response.data.data);
-      // }
-      if (calendarView === 'day') {
-        const formattedDate = currentDate.toISOString().split('T')[0];
-        const response = await axiosInstance(
-          `/task/planner/day/${formattedDate}/${user._id}`
-        );
-        setTasks(response.data.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch tasks:', error);
-    }
-  };
+  const day = moment(currentDate.toISOString().split('T')[0]);
 
-  const filteredTasks = (tasks || []).filter((task) =>
-    task.taskName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // const fetchTasks = async () => {
+  //   try {
+  // //     // if (calendarView === 'month') {
+  // //     //   const response = await axiosInstance(
+  // //     //     `/task/planner/${year}/${month}/${user._id}`
+  // //     //   );
+  // //     //   setTasks(response.data.data);
+  // //     // }
+  // //     // if (calendarView === 'week') {
+  // //     //   const response = await axiosInstance(
+  // //     //     `/task/planner/week/${year}/${week}/${user._id}`
+  // //     //   );
+  // //     //   setTasks(response.data.data);
+  // //     // }
 
-  useEffect(() => {
-    fetchTasks();
-  }, [currentDate]);
+  //     if (calendarView === 'day') {
+  //       const formattedDate = moment(currentDate.toISOString().split('T')[0]);
+  //       const response = await axiosInstance(
+  //         `/task/planner/day/${formattedDate}/${user._id}`
+  //       );
+  //       setTasks(response.data.data);
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to fetch tasks:', error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchTasks();
+  // }, [currentDate]);
 
   const {
     data: monthTasks,
@@ -113,11 +113,18 @@ export default function TaskPlanner() {
     isError: isMonthError
   } = useFetchPlannerMonthQuery({ year, month, userId: user._id });
 
-  // const {
-  //   data: weekTasks,
-  //   isLoading: isWeekLoading,
-  //   isError: isWeekError
-  // } = useFetchPlannerWeekQuery({ year, week, userId: user._id });
+  const {
+    data: weekTasks,
+    isLoading: isWeekLoading,
+    isError: isWeekError,
+    refetch
+  } = useFetchPlannerWeekQuery({ year, week, userId: user._id });
+
+  const {
+    data: dayTasks,
+    isLoading: isDayLoading,
+    isError: isDayError
+  } = useFetchPlannerDayQuery({ day, userId: user._id });
 
   useEffect(() => {
     const fetchTasks = () => {
@@ -125,15 +132,13 @@ export default function TaskPlanner() {
         if (calendarView === 'month') {
           if (isMonthError) throw new Error('Failed to fetch month tasks');
           setTasks(monthTasks?.data || []);
+        } else if (calendarView === 'week') {
+          if (isWeekError) throw new Error('Failed to fetch week tasks');
+          setTasks(weekTasks?.data || []);
+        } else if (calendarView === 'day') {
+          if (isDayError) throw new Error('Failed to fetch day tasks');
+          setTasks(dayTasks?.data || []);
         }
-        // else if (calendarView === 'week') {
-        //   if (isWeekError) throw new Error('Failed to fetch week tasks');
-        //   setTasks(weekTasks?.data || []);
-        // }
-        // else if (calendarView === 'day') {
-        //   if (isDayError) throw new Error('Failed to fetch day tasks');
-        //   setTasks(dayTasks?.data || []);
-        // }
       } catch (error) {
         console.error(error);
         setTasks([]); // Fallback to an empty array in case of errors
@@ -144,12 +149,16 @@ export default function TaskPlanner() {
   }, [
     calendarView,
     isMonthError,
-    monthTasks
-    // weekTasks,
-    // dayTasks,
-    // isWeekError,
-    // isDayError
+    monthTasks,
+    weekTasks,
+    dayTasks,
+    isWeekError,
+    isDayError
   ]);
+
+  const filteredTasks = (tasks || []).filter((task) =>
+    task.taskName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const renderHeader = () => {
     let dateDisplay;
@@ -217,6 +226,11 @@ export default function TaskPlanner() {
     } else {
       setCurrentDate(addDays(currentDate, -1));
     }
+  };
+
+  const onDateClick = (day: Date) => {
+    setSelectedDate(day);
+    setCurrentDate(day);
   };
 
   const renderCells = () => {
@@ -298,7 +312,7 @@ export default function TaskPlanner() {
       days.push(
         <div key={i} className="p-2 lg:border ">
           <div className="mb-2 font-semibold max-lg:hidden">
-            {format(day, 'EEE, MMM,YYY ')}
+            {format(day, 'EEE, MMM,yyyy ')}
           </div>
           <ScrollArea className=" lg:h-40">
             {filteredTasks

@@ -127,9 +127,9 @@ export const TaskSlice = createApi({
       query: ({ year, week, userId }) => ({
         url: `/planner/week/${year}/${week}/${userId}`
       }),
-      serializeQueryArgs: ({ endpointName, queryArgs }) => {
-        return `${endpointName}-${queryArgs.year}-${queryArgs.week}-${queryArgs.userId}`;
-      },
+      // serializeQueryArgs: ({ endpointName, queryArgs }) => {
+      //   return `${endpointName}-${queryArgs.year}-${queryArgs.week}-${queryArgs.userId}`;
+      // },
       providesTags: (result, error, { userId }) => [
         { type: 'Task', id: `WEEK-${userId}` }
       ]
@@ -231,9 +231,9 @@ export const TaskSlice = createApi({
       }),
 
       // Adjusted to match the pattern in fetchAssignedTasks
-      // serializeQueryArgs: ({ endpointName, queryArgs }) => {
-      //   return `${endpointName}-${queryArgs.userId}-${queryArgs.searchTerm}-${queryArgs.sortOrder}`;
-      // },
+      serializeQueryArgs: ({ endpointName, queryArgs }) => {
+        return `${endpointName}-${queryArgs.userId}-${queryArgs.searchTerm}-${queryArgs.sortOrder}`;
+      },
 
       // Updated providesTags to match the pattern
       providesTags: (result, error, { userId }) => [
@@ -269,5 +269,6 @@ export const {
   useFetchCompletedTasksQuery,
   useFetchImportantTasksQuery,
   useFetchTodayTasksQuery,
-  useUpdateTaskMutation
+  useUpdateTaskMutation,
+  useLazyFetchPlannerWeekQuery
 } = TaskSlice;

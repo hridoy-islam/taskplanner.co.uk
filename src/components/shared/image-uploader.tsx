@@ -174,12 +174,18 @@ import { cn } from '@/lib/utils';
 import axiosInstance from '../../lib/axios'; // Adjust the path as necessary
 import axios from 'axios';
 
-export function ImageUploader({ open, onOpenChange, onUploadComplete }) {
+export function ImageUploader({
+  open,
+  onOpenChange,
+  onUploadComplete,
+  taskId
+}) {
   const [dragActive, setDragActive] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [initialData, setInitialData] = useState<string | null>(null);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -229,19 +235,21 @@ export function ImageUploader({ open, onOpenChange, onUploadComplete }) {
 
       const formData = new FormData();
 
-      // formData.append('file_type', 'profile');
+      formData.append('entity_id', 'abc');
+      formData.append('file_type', 'document');
       formData.append('files[]', file);
 
       const response = await axios.post(
-        `https://core.qualitees.co.uk/api/files/upload`,
+        `https://core.qualitees.co.uk/api/documents`,
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'multipart/form-data',
+            'x-company-token': 'taskplanner-520480935547'
           },
           onUploadProgress: (progressEvent) => {
             const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
+              (progressEvent.loaded * 100) / progressEvent?.total
             );
             setUploadProgress(percentCompleted);
           }

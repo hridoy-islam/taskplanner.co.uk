@@ -23,8 +23,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import seen from '@/assets/imges/home/logos/seen.svg';
-import delivered from '@/assets/imges/home/logos/delivered.svg';
+
 import {
   Dialog,
   DialogContent,
@@ -112,6 +111,7 @@ export default function GroupChat() {
   const limit = 50;
   const [initialMembers, setInitialMembers] = useState<Member[]>([]);
   const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
+  const [document, setDocument] = useState<File | null>(null);
 
   const [groupMembers, setGroupMembers] = useState(
     initialMembers?.map((member) => ({
@@ -566,33 +566,33 @@ export default function GroupChat() {
     }
   };
   // useEffect with a trigger
-  useEffect(() => {
-    const ctxProvider = ctxProviderRef.current;
-    if (!ctxProvider) return;
+  // useEffect(() => {
+  //   const ctxProvider = ctxProviderRef.current;
+  //   if (!ctxProvider) return;
 
-    const handleChangeEvent = async (e: UC.EventMap['change']) => {
-      setFiles(
-        e.detail.allEntries
-          .filter((f) => f.status === 'success')
-          .map((f) => f as OutputFileEntry<'success'>)
-      );
-    };
+  //   const handleChangeEvent = async (e: UC.EventMap['change']) => {
+  //     setFiles(
+  //       e.detail.allEntries
+  //         .filter((f) => f.status === 'success')
+  //         .map((f) => f as OutputFileEntry<'success'>)
+  //     );
+  //   };
 
-    // Add the event listener
-    ctxProvider.addEventListener('change', handleChangeEvent);
+  //   // Add the event listener
+  //   ctxProvider.addEventListener('change', handleChangeEvent);
 
-    // Cleanup function to remove the event listener
-    return () => {
-      ctxProvider.removeEventListener('change', handleChangeEvent);
-    };
-  }, [ctxProviderRef.current]); // Removed files as a dependency
+  //   // Cleanup function to remove the event listener
+  //   return () => {
+  //     ctxProvider.removeEventListener('change', handleChangeEvent);
+  //   };
+  // }, [ctxProviderRef.current]); // Removed files as a dependency
 
   // Add a trigger to watch file updates
-  useEffect(() => {
-    if (files.length === 0) {
-      // Perform any action here if needed after files are reset
-    }
-  }, [files]);
+  // useEffect(() => {
+  //   if (files.length === 0) {
+  //     // Perform any action here if needed after files are reset
+  //   }
+  // }, [files]);
 
   // Function to handle file submission
   const handleFileSubmit = async () => {
@@ -690,22 +690,20 @@ export default function GroupChat() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isSideGroupVisible, setIsSideGroupVisible] = useState(false);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      // If the click is outside the button, act like ArrowLeft (hide the sidebar)
-      if (buttonRef.current && !buttonRef.current.contains(event.target)) {
-        setIsSidebarVisible(false);
-      }
-    };
+  // useEffect(() => {
+  //   const handleClickOutside = (event) => {
+  //     // If the click is outside the button, act like ArrowLeft (hide the sidebar)
+  //     if (buttonRef.current && !buttonRef.current.contains(event.target)) {
+  //       setIsSidebarVisible(false);
+  //     }
+  //   };
 
-    document.addEventListener('mousedown', handleClickOutside);
+  //   document.addEventListener('mousedown', handleClickOutside);
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  console.log(user);
+  //   return () => {
+  //     document.removeEventListener('mousedown', handleClickOutside);
+  //   };
+  // }, []);
 
   return (
     <div className="mx-auto flex h-full max-w-full  ">
@@ -1023,13 +1021,13 @@ export default function GroupChat() {
                                       comment?.createdAt
                                     ).toLocaleDateString()}
                               </span>
-                              {user?._id && (
+                              {/* {user?._id && (
                                 <img
                                   src={delivered}
                                   alt="delivered"
                                   className="h-3 w-3 "
                                 />
-                              )}
+                              )} */}
                             </div>
                           </Linkify>
                         )}

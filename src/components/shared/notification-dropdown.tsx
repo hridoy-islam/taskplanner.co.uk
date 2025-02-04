@@ -39,7 +39,6 @@ export function NotificationDropdown() {
       try {
         const { data } = await axiosInstance.get(`/notifications/${userId}`);
         setNotifications(data.data.result); // Set the fetched notifications in state
-        console.log(data.data.result);
         // Calculate unread count
         const unread = data.data.result.filter(
           (n: Notification) => !n.isRead

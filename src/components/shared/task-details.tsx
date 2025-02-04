@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import seen from '@/assets/imges/home/logos/seen.svg';
-import delivered from '@/assets/imges/home/logos/delivered.svg';
+// import seen from '@/assets/imges/home/logos/seen.svg';
+// import delivered from '@/assets/imges/home/logos/delivered.svg';
 import {
   Sheet,
   SheetContent,
@@ -34,6 +34,7 @@ import {
   Paperclip
 } from 'lucide-react';
 import { ImageUploader } from '@/components/shared/image-uploader';
+import axios from 'axios';
 
 UC.defineComponents(UC);
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
@@ -56,6 +57,7 @@ export default function TaskDetails({
 }: TaskDetailsProps) {
   const [typing, setTyping] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
+  const [document, setDocument] = useState<any[]>([]);
   const { register, handleSubmit, reset } = useForm();
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useSelector((state: any) => state.auth);
@@ -228,21 +230,70 @@ export default function TaskDetails({
     }
   };
 
+  // const fetchData = async ()=>{
+  //   try{
+  //     const response = await axios.get(`https://core.qualitees.co.uk/api/documents?where=entity_id,${task?._id}&exclude=file_type,document`,{
+  //       headers:{
+  //         'x-company-token':'taskplanner-520480935547'
+  //       },
+  //     })
+  //     console.log(response?.data)
+  //   }catch(error){
+  //     console.error("error Fetching Document",error)
+  //   }
+  // }
+
+  // useEffect(() => {
+  //   if (task?._id) {
+  //     fetchData();
+  //   }
+  // }, [task?._id]);
+
   const handleFileSubmit = async () => {
-    if (files.length === 0) return;
+    // if (files.length === 0) return;
 
-    for (const file of files) {
-      const stringyFiedContent = JSON.stringify(file?.fileInfo);
-      const data = {
-        content: stringyFiedContent,
-        taskId: task?._id,
-        authorId: user?._id,
-        isFile: true
-      };
-      await handleCommentSubmit(data);
+    try {
+      for (const file of files) {
+        const fileContent = file?.id;
+        console.log('File Content:', fileContent);
+        const data = {
+          content: fileContent,
+          taskId: task?._id,
+          authorId: user?._id,
+          isFile: true
+        };
+
+        const response = await axiosInstance.post('/comment', data);
+        if (!response.data.success) {
+          console.error('Failed to add file comment:', response.data.message);
+          continue;
+        }
+
+        const newComment = {
+          authorId: {
+            id: user?._id,
+            name: user?.name
+          },
+          content: fileContent,
+          isFile: true,
+          taskId: task?._id,
+          id:
+            response?.data?.data?._id || Math.random().toString(36).substring(7)
+        };
+
+        console.log('New Comment:', newComment);
+
+        setComments((prevComments) => [...prevComments, newComment]);
+        setDisplayedComments((prevComments) => [...prevComments, newComment]);
+
+        socket.emit('new message', response);
+        console.log('newcomment', newComment);
+      }
+    } catch (error) {
+      console.error('Error submitting file comment:', error);
+    } finally {
+      setFiles([]);
     }
-
-    setFiles([]);
   };
 
   const typingHandler = () => {
@@ -296,7 +347,6 @@ export default function TaskDetails({
   if (isLoading) {
     return <div>Loading...</div>;
   }
-
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="flex h-full w-full flex-col p-0 md:w-[540px]">
@@ -435,7 +485,7 @@ export default function TaskDetails({
                             <div>
                               {comment.content}
                               <div className="px -1 flex flex-row justify-end gap-2">
-                                <span className="text-[10px] opacity-70">
+                                {/* <span className="text-[10px] opacity-70">
                                   {new Date(
                                     comment?.createdAt
                                   ).toLocaleDateString() ===
@@ -449,12 +499,12 @@ export default function TaskDetails({
                                     : new Date(
                                         comment?.createdAt
                                       ).toLocaleDateString()}
-                                </span>
-                                <img
+                                </span> */}
+                                {/* <img
                                   src={delivered}
                                   alt="delivered"
                                   className="h-3 w-3 "
-                                />
+                                /> */}
                               </div>
                             </div>
                           </Linkify>
@@ -519,20 +569,9 @@ export default function TaskDetails({
                 <Paperclip className="mr-2 h-4 w-4" /> Upload
               </Button>
 
-              {files?.length > 0 ? (
-                <Button
-                  onClick={handleFileSubmit}
-                  type="submit"
-                  className="w-full"
-                  variant={'outline'}
-                >
-                  {`Finish (${files?.length})`}
-                </Button>
-              ) : (
-                <Button type="submit" className="w-full" variant={'outline'}>
-                  Submit
-                </Button>
-              )}
+              <Button type="submit" className="w-full" variant={'outline'}>
+                Submit
+              </Button>
             </div>
           </form>
           <ImageUploader
@@ -540,8 +579,8 @@ export default function TaskDetails({
             onOpenChange={setIsImageUploaderOpen}
             multiple={false}
             onUploadComplete={(uploadedFiles) => {
-              console.log('Uploaded files:', uploadedFiles);
               setFiles(uploadedFiles);
+              handleSubmit(handleFileSubmit());
             }}
             className="uc-light"
           />

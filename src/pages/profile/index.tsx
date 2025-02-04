@@ -21,6 +21,7 @@ import axiosInstance from '../../lib/axios';
 import { ImageUploader } from '@/components/shared/image-uploader';
 
 import { useToast } from '@/components/ui/use-toast';
+import { OutputFileEntry } from '@uploadcare/react-uploader';
 
 const profileFormSchema = z.object({
   name: z.string().nonempty('Name is required'),
@@ -80,7 +81,13 @@ export default function ProfilePage() {
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
-      await axiosInstance.patch(`/users/${userId}`, data);
+      // Add the uploaded image file ID to the profile data if available
+      const updatedData = {
+        ...data,
+        image: files.length > 0 ? files[0].data.id : user?.image
+      };
+
+      await axiosInstance.patch(`/users/${userId}`, updatedData);
       toast({
         title: 'Profile Updated',
         description: 'Thank You'
