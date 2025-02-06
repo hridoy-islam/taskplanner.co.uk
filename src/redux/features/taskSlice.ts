@@ -127,9 +127,9 @@ export const TaskSlice = createApi({
       query: ({ year, week, userId }) => ({
         url: `/planner/week/${year}/${week}/${userId}`
       }),
-      // serializeQueryArgs: ({ endpointName, queryArgs }) => {
-      //   return `${endpointName}-${queryArgs.year}-${queryArgs.week}-${queryArgs.userId}`;
-      // },
+      serializeQueryArgs: ({ endpointName, queryArgs }) => {
+        return `${endpointName}-${queryArgs.year}-${queryArgs.week}-${queryArgs.userId}`;
+      },
       providesTags: (result, error, { userId }) => [
         { type: 'Task', id: `WEEK-${userId}` }
       ]
@@ -251,7 +251,10 @@ export const TaskSlice = createApi({
       invalidatesTags: (result, error, { updates, taskId }) => [
         { type: 'Task', id: 'LIST' },
         { type: 'Task', id: taskId },
-        { type: 'Task', id: `BOTH-${updates.authorId}-${updates.assignedId}` }
+        { type: 'Task', id: `BOTH-${updates.authorId}-${updates.assignedId}` },
+        { type: 'Task', id: `WEEK-${updates.userId}` },
+        { type: 'Task', id: `DAY-${updates.userId}` },
+        { type: 'Task', id: `MONTH-${updates.userId}` },
       ]
     })
   })

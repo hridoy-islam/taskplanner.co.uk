@@ -53,19 +53,29 @@ export default function Sidebar({ className }: SidebarProps) {
   //   userId: user?._id,
 
   // })
+  const fetchData = async () => {
+    try {
+      if (user?._id) {
+        await dispatch(fetchCompanyUsers(user._id));
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (user?._id) {
-          await dispatch(fetchCompanyUsers(user._id));
-        }
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
+    
     fetchData();
+    const interval = setInterval(() => {
+      fetchData();
+    }, 10000); // Polling interval of 10 seconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+ 
   }, [user, dispatch]);
+
+  
   useEffect(() => {
     if (users && Array.isArray(users)) {
       setTeams(users);

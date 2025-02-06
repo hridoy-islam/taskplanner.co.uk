@@ -109,20 +109,21 @@ export default function TaskPlanner() {
 
   const {
     data: monthTasks,
-    isLoading: isMonthLoading,
     isError: isMonthError
-  } = useFetchPlannerMonthQuery({ year, month, userId: user._id });
+  } = useFetchPlannerMonthQuery({ year, month, userId: user._id },{
+    pollingInterval:10000,
+    
+  });
 
   const {
     data: weekTasks,
-    isLoading: isWeekLoading,
+    refetch,
     isError: isWeekError,
-    refetch
-  } = useFetchPlannerWeekQuery({ year, week, userId: user._id });
+  } = useFetchPlannerWeekQuery({ year, week, userId: user._id },{    pollingInterval:10000,
+  });
 
   const {
     data: dayTasks,
-    isLoading: isDayLoading,
     isError: isDayError
   } = useFetchPlannerDayQuery({ day, userId: user._id });
 
@@ -141,7 +142,7 @@ export default function TaskPlanner() {
         }
       } catch (error) {
         console.error(error);
-        setTasks([]); // Fallback to an empty array in case of errors
+        setTasks([]); 
       }
     };
 
@@ -155,6 +156,14 @@ export default function TaskPlanner() {
     isWeekError,
     isDayError
   ]);
+
+
+
+  useEffect(() => {
+    if (calendarView === 'week') {
+      refetch();
+    }
+  }, [weekTasks]); 
 
   const filteredTasks = (tasks || []).filter((task) =>
     task.taskName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -262,7 +271,7 @@ export default function TaskPlanner() {
             }
           >
             <span className="float-right">{formattedDate}</span>
-            <ScrollArea className="mt-2 lg:h-16 ">
+            <ScrollArea className=" mt-2 h-12 ">
               {filteredTasks
                 .filter((task) => isSameDay(task.dueDate, cloneDay))
                 .slice(0, 3)
@@ -320,10 +329,14 @@ export default function TaskPlanner() {
               .map((task) => (
                 <div
                   key={task._id}
-                  className={`mb-2 rounded p-2 max-lg:hidden ${task?.important ? 'bg-orange-400' : 'bg-green-400'} cursor-pointer`}
-                  onClick={() => setSelectedTask(task)}
+                  className={`mb-1 rounded p-1 text-xs font-semibold  max-lg:hidden ${task?.important ? 'bg-orange-400' : 'bg-green-400'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log(task)
+                    setSelectedTask(task);
+                  }}
                 >
-                  <div className="text-xs font-semibold">{task.taskName}</div>
+                  {task.taskName}
                 </div>
               ))}
           </ScrollArea>
@@ -404,7 +417,6 @@ export default function TaskPlanner() {
                   <Clock className="mr-1 h-4 w-4" />
                   <span className="text-sm">
                     {format(new Date(task.dueDate), 'EEE, MMM d, yyyy')}{' '}
-                    {/* Convert dueDate to Date object */}
                   </span>
                 </div>
               </CardContent>
@@ -498,7 +510,7 @@ export default function TaskPlanner() {
                 className="flex items-center gap-1 bg-indigo-600"
               >
                 <UserRoundCheck className="h-3 w-3" />
-                {selectedTask?.author.name}
+                {selectedTask?.author?.name}
               </Badge>
               <Badge variant="outline" className={'bg-black'}>
                 <ArrowRight className="h-3 w-3 " />

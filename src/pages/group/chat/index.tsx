@@ -729,7 +729,7 @@ export default function GroupChat() {
           isSidebarVisible ? 'block' : 'hidden', // Control visibility on small screens
           'md:block'
         )}
-        // style={{ display: isSideGroupVisible ?   "hidden": "block" }}
+      // style={{ display: isSideGroupVisible ?   "hidden": "block" }}
       >
         {/* Sidebar content */}
         <div className="flex w-full items-start justify-between gap-2">
@@ -889,19 +889,17 @@ export default function GroupChat() {
               return (
                 <div
                   key={comment._id}
-                  className={`mb-4 flex w-full flex-row ${
-                    comment.authorId._id === user?._id
+                  className={`mb-4 flex w-full flex-row ${comment.authorId._id === user?._id
                       ? 'justify-end'
                       : 'justify-start'
-                  }`}
+                    }`}
                 >
                   <div className="flex flex-col items-end justify-end">
                     <div
-                      className={`inline-block max-w-prose ${
-                        comment.authorId._id === user?._id
+                      className={`inline-block max-w-prose ${comment.authorId._id === user?._id
                           ? 'bg-[#151261] text-white'
                           : 'bg-[#DCFCE7]'
-                      } rounded-lg p-3`}
+                        } rounded-lg p-3`}
                       style={{
                         wordWrap: 'break-word',
                         whiteSpace: 'pre-wrap',
@@ -942,11 +940,10 @@ export default function GroupChat() {
                       <div className="max-w-full">
                         {isFile ? (
                           <div
-                            className={`flex items-center space-x-2 rounded-lg p-2 ${
-                              comment.authorId._id === user?._id
+                            className={`flex items-center space-x-2 rounded-lg p-2 ${comment.authorId._id === user?._id
                                 ? 'bg-blue-500/15'
                                 : 'bg-gray-200/15'
-                            }`}
+                              }`}
                           >
                             {/* Display File (Image or Non-Image) */}
                             {parsedContent.mimeType?.startsWith('image/') ? (
@@ -1010,16 +1007,16 @@ export default function GroupChat() {
                                 {new Date(
                                   comment?.createdAt
                                 ).toLocaleDateString() ===
-                                new Date().toLocaleDateString()
+                                  new Date().toLocaleDateString()
                                   ? new Date(
-                                      comment?.createdAt
-                                    ).toLocaleTimeString([], {
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })
+                                    comment?.createdAt
+                                  ).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })
                                   : new Date(
-                                      comment?.createdAt
-                                    ).toLocaleDateString()}
+                                    comment?.createdAt
+                                  ).toLocaleDateString()}
                               </span>
                               {/* {user?._id && (
                                 <img
@@ -1050,7 +1047,7 @@ export default function GroupChat() {
             <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
           </div>
         )}
-        <div className="border-t border-gray-300 p-4">
+        <div className=" p-4">
           {isAccessible && (
             <form
               onSubmit={handleSubmit(handleCommentSubmit)}
@@ -1069,63 +1066,51 @@ export default function GroupChat() {
                   </Button>
                 </div>
               )}
-              <div className="flex space-x-2">
-                <Textarea
-                  id="comment"
-                  {...register('content', { required: true })}
-                  placeholder="Type your comment here..."
-                  rows={1}
-                  className="flex-1 resize-none"
-                  onKeyDown={handleKeyDown}
-                />
-                <div className="flex max-w-full flex-col-reverse items-center gap-1">
-                  {/* <uc-config
-                    ctx-name="my-uploader-3"
-                    pubkey="48a797785d228ebb9033"
-                    sourceList="local, url, camera, dropbox"
-                    multiple="false"
-                  ></uc-config>
 
-                  <uc-file-uploader-regular
-                    class="uc-light"
-                    ctx-name="my-uploader-3"
-                  ></uc-file-uploader-regular>
-
-                  <uc-upload-ctx-provider
-                    ctx-name="my-uploader-3"
-                    ref={ctxProviderRef}
-                  ></uc-upload-ctx-provider> */}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="default"
-                    onClick={() => setIsImageUploaderOpen(true)}
-                  >
-                    <Paperclip className="mr-2 h-4 w-4" /> Upload
-                  </Button>
-
-                  {files.length > 0 ? (
+              {groupDetails?.status !== 'archived' && (
+                <div className={`flex items-center space-x-2`}>
+                  <Textarea
+                    id="comment"
+                    {...register('content', { required: true })}
+                    placeholder="Type your comment here..."
+                    rows={1}
+                    className="flex-1 resize-none"
+                    onKeyDown={handleKeyDown}
+                  />
+                  <div className="flex max-w-full flex-col-reverse items-center gap-1">
+                    {/* File uploader logic (currently commented out) */}
                     <Button
-                      className="w-full"
                       type="button"
                       variant="outline"
                       size="default"
-                      // onClick={() => fileInputRef.current?.click()}
-                      onClick={handleFileSubmit}
-                    ></Button>
-                  ) : (
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={isSubmitting}
+                      onClick={() => setIsImageUploaderOpen(true)}
                     >
-                      <Send className=" h-4 w-4" />
-                      Send
+                      <Paperclip className="mr-2 h-4 w-4" /> Upload
                     </Button>
-                  )}
+
+                    {files.length > 0 ? (
+                      <Button
+                        className="w-full"
+                        type="button"
+                        variant="outline"
+                        size="default"
+                        // onClick={() => fileInputRef.current?.click()}
+                        onClick={handleFileSubmit}
+                      ></Button>
+                    ) : (
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isSubmitting}
+                      >
+                        <Send className=" h-4 w-4" />
+                        Send
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
+
             </form>
           )}
           <ImageUploader
@@ -1140,6 +1125,7 @@ export default function GroupChat() {
           />
         </div>
       </div>
+
       <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1190,6 +1176,7 @@ export default function GroupChat() {
               </ScrollArea>
             </div>
           </div>
+
           {selectedMember2 !== null && (
             <DialogFooter>
               {/* clear selected member */}

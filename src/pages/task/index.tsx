@@ -280,7 +280,7 @@ export default function TaskPage() {
         </div>
       )}
 
-      <div className="relative mt-2 rounded-xl bg-white p-4 shadow ">
+      <div className="relative mt-2 rounded-xl bg-white p-3 shadow ">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="flex items-center justify-center space-x-2"
@@ -288,7 +288,7 @@ export default function TaskPage() {
           <Textarea
             {...register('taskName', { required: true })}
             placeholder="Add a task"
-            className="flex-1 resize-none"
+            className="flex-1 resize-none h-[40px]"
           />
           <Button type="submit" variant={'outline'}>
             <CornerDownLeft className="mr-2 h-4 w-4" />

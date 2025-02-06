@@ -28,7 +28,7 @@ export default function UserList({ user, filteredUsers }) {
   }, []);
 
   return (
-    <ScrollArea className="h-full max-h-[320px] overflow-auto">
+    <ScrollArea className="h-full max-h-[220px] overflow-auto">
       <Link to={`/dashboard/task/${user?._id}`}>
         <Button variant="ghost" className="mb-2 w-full justify-start">
           <img
