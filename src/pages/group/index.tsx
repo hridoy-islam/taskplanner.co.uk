@@ -17,6 +17,13 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 
 import axiosInstance from '../../lib/axios';
 import { Label } from '@/components/ui/label';
@@ -45,7 +52,6 @@ import { useSelector } from 'react-redux';
 
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
-import { Select } from '@/components/ui/select';
 
 interface Member {
   id: number;
@@ -320,34 +326,7 @@ export default function GroupPage() {
       return 0;
     });
 
-  const handleGroupStatusChange = async (id, checked) => {
-    try {
-      const updatedIsArchived = !checked;
 
-      const response = await axiosInstance.patch(`/group/single/${id}`, {
-        isArchived: updatedIsArchived
-      });
-
-      // Handle success
-      if (response.status === 200) {
-        toast({
-          title: 'Group status updated successfully',
-          className: 'bg-green-500 border-none text-white'
-        });
-
-        // Refresh the group list to reflect the updated state
-        fetchGroups();
-      } else {
-        throw new Error('Failed to update group status');
-      }
-    } catch (error) {
-      console.error('Error updating group status:', error);
-      toast({
-        title: 'Failed to update group status',
-        className: 'bg-red-500 border-none text-white'
-      });
-    }
-  };
 
   return (
     <div className="container mx-auto h-full overflow-auto p-4">
@@ -390,9 +369,9 @@ export default function GroupPage() {
             <ScrollArea className="h-[40rem] max-h-fit pr-2 ">
               <TableHeader className="sticky top-0 z-10 bg-white">
                 <TableRow>
-                  <TableHead>Members</TableHead>
+                  <TableHead className='max-md:hidden'>Members</TableHead>
                   <TableHead>Name</TableHead>
-                  {/* <TableHead>Archive</TableHead> */}
+                  <TableHead>Archive</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -401,7 +380,7 @@ export default function GroupPage() {
                     key={group.id}
                     className="cursor-pointer border-none shadow hover:bg-slate-100"
                   >
-                    <TableCell onClick={() => navigate(`${group?.id}`)}>
+                    <TableCell onClick={() => navigate(`${group?.id}`)} className='max-md:hidden'>
                       <div className="flex -space-x-2 overflow-hidden">
                         {group.members.slice(0, 3).map((member) => (
                           <TooltipProvider key={member.id}>
@@ -427,7 +406,7 @@ export default function GroupPage() {
                           </TooltipProvider>
                         ))}
                         {group.members.length > 3 && (
-                          <Avatar className="inline-block border-2 border-background">
+                          <Avatar className="inline-block border-2 border-background ">
                             <AvatarFallback>
                               +{group.members.length - 3}
                             </AvatarFallback>
@@ -467,38 +446,41 @@ export default function GroupPage() {
 
                       /> */}
 
-                      {/* <select
-                              value={group.isArchived ? 'archived' : 'active'}
-                              onChange={async (e) => {
-                                const updatedStatus = e.target.value === 'archived';
-                                try {
-                                  const response = await axiosInstance.patch(
-                                    `/group/single/${group.id}`,
-                                    {
-                                      isArchived: updatedStatus,
-                                    }
-                                  );
-                                  if (response.status === 200) {
-                                    toast({
-                                      title: 'Group status updated successfully',
-                                      className: 'bg-green-500 border-none text-white',
-                                    });
-                                    fetchGroups();
-                                  } else {
-                                    throw new Error('Failed to update group status');
-                                  }
-                                } catch (error) {
-                                  console.error('Error updating group status:', error);
-                                  toast({
-                                    title: 'Failed to update group status',
-                                    className: 'bg-red-500 border-none text-white',
-                                  });
-                                }
-                              }}
-                            >
-                              <option value="active">Active</option>
-                              <option value="archived">Archived</option>
-                            </select> */}
+                      <select
+                        value={group.status || 'active'}
+                        onChange={async (e) => {
+                          const updatedStatus = e.target.value;
+                          try {
+                            const response = await axiosInstance.patch(
+                              `/group/single/${group.id}`,
+                              {
+                                status: updatedStatus,
+                              }
+                            );
+                            if (response.status === 200) {
+                              toast({
+                                title: 'Group status updated successfully',
+                                className: 'bg-green-500 border-none text-white',
+                              });
+                              fetchGroups();
+                            } else {
+                              throw new Error('Failed to update group status');
+                            }
+                          } catch (error) {
+                            console.error('Error updating group status:', error);
+                            toast({
+                              title: 'Failed to update group status',
+                              className: 'bg-red-500 border-none text-white',
+                            });
+                          }
+                        }}
+
+                        className='border-2 border-gray-600 px-2 py-1 rounded-lg'
+                      >
+                        <option value="active">Active</option>
+                        <option value="archived">Archived</option>
+                      </select>
+
                     </TableCell>
                   </TableRow>
                 ))}

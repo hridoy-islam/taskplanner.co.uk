@@ -48,6 +48,7 @@ import {
   Archive,
   Star
 } from 'lucide-react';
+import axiosInstance from "@/lib/axios"
 
 interface Note {
   id: number;
@@ -62,6 +63,32 @@ interface User {
   email: string;
 }
 
+
+
+
+// useEffect(() => {
+//   async function fetchNotes() {
+//     try {
+//       console.log("Fetching notes..."); 
+
+//       const response = await axiosInstance.get("/notes/");
+//       console.log("Response:", response); 
+
+//       if (Array.isArray(response.data?.data?.result)) {
+//         setNotes(response.data?.data?.result);
+//         console.log("Notes state:", notes); // Log the state *after* setting it
+//       } else {
+//         console.error("Data is not an array:", response.data); // Handle unexpected data
+//         setNotes([]);
+//       }
+//     } catch (error) {
+//       console.error("Error fetching notes:", error);
+//       setNotes([]);
+//     }
+//   }
+
+//   fetchNotes();
+// }, []);
 const initialNotes: Note[] = [
   {
     id: 1,
@@ -110,6 +137,30 @@ export default function NotesPage() {
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [taskName, setTaskName] = useState("");
+
+
+  useEffect(() => {
+    async function fetchNotes() {
+      try {
+        const response = await axiosInstance.get("/notes");
+        if (Array.isArray(response.data)) {
+          setNotes(response.data);
+        } else {
+          console.error("Fetched notes are not an array:", response.data);
+          setNotes([]); 
+        }
+      } catch (error) {
+        console.error("Error fetching notes:", error);
+        setNotes([]); 
+      }
+    }
+  
+    fetchNotes();
+  }, []);
+  
+  
 
   const filteredNotes = notes.filter(
     (note) =>
@@ -126,20 +177,35 @@ export default function NotesPage() {
       user.email.toLowerCase().includes(userSearchTerm.toLowerCase())
   );
 
-  const addNewNote = () => {
-    const newNote = {
-      id: notes.length + 1,
-      title: 'New Note',
-      content: '',
-      date: new Date().toLocaleString('en-US', {
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true
-      }),
-      tags: []
-    };
-    setNotes([newNote, ...notes]);
-    setSelectedNote(newNote);
+  const addNewNote = async() => {
+    try {
+      const newNoteData = {
+        title: taskName,
+        content: "",
+        date: new Date().toLocaleString("en-US", {
+          hour: "numeric",
+          minute: "numeric",
+          hour12: true,
+        }),
+        tags: [],
+      };
+  
+      const response = await axiosInstance.post("/notes/", newNoteData);
+  
+      if (response.status === 201) {
+        const createdNote = response.data;
+  
+        setNotes([createdNote, ...notes]);
+        setSelectedNote(createdNote);
+  
+        setIsDialogOpen(false);
+        setTaskName("");
+      } else {
+        console.error("Failed to create note");
+      }
+    } catch (error) {
+      console.error("Error creating note:", error);
+    }
   };
 
   const addTag = (tag: string) => {
@@ -211,12 +277,24 @@ export default function NotesPage() {
     }
   };
 
-  const handleNoteAction = (action: string) => {
+  const handleNoteAction = async (action: string) => {
     if (selectedNote) {
       console.log(
         `Performing action: ${action} on note: ${selectedNote.title}`
       );
-      // Implement actual actions here
+      if (action === "delete") {
+        try {
+          // Send DELETE request to API
+          await axiosInstance.delete(`/note/${selectedNote.id}`);
+
+          setNotes((prevNotes) => prevNotes.filter((note) => note.id !== selectedNote.id));
+
+          setSelectedNote(null);
+          console.log("Note deleted successfully!");
+        } catch (error) {
+          console.error("Error deleting note:", error);
+        }
+      }
     }
   };
 
@@ -232,11 +310,25 @@ export default function NotesPage() {
           <Button
             variant="ghost"
             className="w-full justify-start text-gray-700 hover:bg-gray-300"
-            onClick={addNewNote}
+            onClick={() => setIsDialogOpen(true)}
           >
             <PlusCircle className="mr-2 h-4 w-4" />
             New Note
           </Button>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent>
+              <DialogTitle>Enter Note Name</DialogTitle>
+              <Input
+                value={taskName}
+                onChange={(e) => setTaskName(e.target.value)}
+                placeholder="Task Name"
+              />
+              <DialogFooter>
+                <Button onClick={addNewNote}>Create Note</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
         <div className="px-4 pb-4">
           <div className="relative">

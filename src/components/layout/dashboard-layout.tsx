@@ -41,7 +41,7 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        <main className="relative mx-2 my-3 mr-2 flex-1 overflow-y-hidden rounded-xl  border border-gray-300 bg-gray-100 focus:outline-none md:mx-0 md:my-4 md:mr-4 ">
+        <main className="relative mx-2 my-3 mr-2 flex-1 overflow-y-hidden rounded-xl  border border-gray-300 bg-gray-100 focus:outline-none md:mx-0 md:mr-4 ">
           {children}
         </main>
         <Toaster />
