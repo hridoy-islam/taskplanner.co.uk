@@ -77,7 +77,6 @@ export default function ProfilePage() {
 
     fetchProfileData();
   }, [userId]);
-  console.log(userId);
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {

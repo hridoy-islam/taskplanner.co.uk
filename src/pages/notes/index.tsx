@@ -49,6 +49,7 @@ import {
   Star
 } from 'lucide-react';
 import axiosInstance from "@/lib/axios"
+import { useParams } from 'react-router-dom';
 
 interface Note {
   id: number;
@@ -66,29 +67,9 @@ interface User {
 
 
 
-// useEffect(() => {
-//   async function fetchNotes() {
-//     try {
-//       console.log("Fetching notes..."); 
 
-//       const response = await axiosInstance.get("/notes/");
-//       console.log("Response:", response); 
 
-//       if (Array.isArray(response.data?.data?.result)) {
-//         setNotes(response.data?.data?.result);
-//         console.log("Notes state:", notes); // Log the state *after* setting it
-//       } else {
-//         console.error("Data is not an array:", response.data); // Handle unexpected data
-//         setNotes([]);
-//       }
-//     } catch (error) {
-//       console.error("Error fetching notes:", error);
-//       setNotes([]);
-//     }
-//   }
 
-//   fetchNotes();
-// }, []);
 const initialNotes: Note[] = [
   {
     id: 1,
@@ -96,18 +77,7 @@ const initialNotes: Note[] = [
     content: 'This is your first note!',
     tags: ['Personal']
   },
-  {
-    id: 2,
-    title: 'Shopping List',
-    content: 'Milk, Eggs, Bread',
-    tags: ['To-Do']
-  },
-  {
-    id: 3,
-    title: 'Project Ideas',
-    content: 'AI-powered note taking app',
-    tags: ['Ideas', 'Work']
-  }
+
 ];
 
 const initialTags = [
@@ -128,7 +98,7 @@ const demoUsers: User[] = [
 ];
 
 export default function NotesPage() {
-  const [notes, setNotes] = useState<Note[]>(initialNotes);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(notes[0]);
   const [searchTerm, setSearchTerm] = useState('');
   const [tags, setTags] = useState(initialTags);
@@ -139,26 +109,50 @@ export default function NotesPage() {
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [taskName, setTaskName] = useState("");
+  const {userId} = useParams();
 
-
-  useEffect(() => {
-    async function fetchNotes() {
-      try {
-        const response = await axiosInstance.get("/notes");
-        if (Array.isArray(response.data)) {
-          setNotes(response.data);
-        } else {
-          console.error("Fetched notes are not an array:", response.data);
-          setNotes([]); 
+ useEffect(() => {
+  async function fetchNotes() {
+    try {
+      const response = await axiosInstance.get(`/notes/${userId}`);
+      const notesData = response.data?.data?.result;
+      if (Array.isArray(notesData)) {
+        setNotes(notesData);
+        if (notesData.length > 0) {
+          setSelectedNote(notesData[0]);
         }
-      } catch (error) {
-        console.error("Error fetching notes:", error);
-        setNotes([]); 
+      } else {
+        console.error("Unexpected response format", response.data);
+        setNotes([]); // Ensure it's always an array
       }
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+      setNotes([]); // Handle error by resetting to an empty array
     }
+  }
+  fetchNotes();
+}, []);
+
+
+
+  // useEffect(() => {
+  //   async function fetchNotes() {
+  //     try {
+  //       const response = await axiosInstance.get("/notes");
+  //       if (Array.isArray(response.data)) {
+  //         setNotes(response.data);
+  //       } else {
+  //         console.error("Fetched notes are not an array:", response.data);
+  //         setNotes([]); 
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching notes:", error);
+  //       setNotes([]); 
+  //     }
+  //   }
   
-    fetchNotes();
-  }, []);
+  //   fetchNotes();
+  // }, []);
   
   
 
@@ -177,31 +171,21 @@ export default function NotesPage() {
       user.email.toLowerCase().includes(userSearchTerm.toLowerCase())
   );
 
-  const addNewNote = async() => {
+  const addNewNote = async () => {
     try {
-      const newNoteData = {
-        title: taskName,
-        content: "",
-        date: new Date().toLocaleString("en-US", {
-          hour: "numeric",
-          minute: "numeric",
-          hour12: true,
-        }),
+      
+      const newNoteData = { 
+        title: taskName, 
+        content: "", 
         tags: [],
+        userId: userId  
       };
   
       const response = await axiosInstance.post("/notes/", newNoteData);
   
       if (response.status === 201) {
-        const createdNote = response.data;
-  
-        setNotes([createdNote, ...notes]);
-        setSelectedNote(createdNote);
-  
         setIsDialogOpen(false);
         setTaskName("");
-      } else {
-        console.error("Failed to create note");
       }
     } catch (error) {
       console.error("Error creating note:", error);
@@ -355,14 +339,14 @@ export default function NotesPage() {
               <h3 className="truncate font-semibold">{note.title}</h3>
               <p className="truncate text-sm text-gray-600">{note.content}</p>
               <div className="mt-1 flex flex-wrap gap-1">
-                {note.tags.map((tag) => (
+                {/* {note.tags.map((tag) => (
                   <span
                     key={tag}
                     className="rounded bg-gray-300 px-1 text-xs text-gray-700"
                   >
                     {tag}
                   </span>
-                ))}
+                ))} */}
               </div>
             </div>
           ))}
@@ -450,7 +434,7 @@ export default function NotesPage() {
             </header>
             <main className="flex-1 bg-white p-6">
               <div className="mb-4 flex flex-wrap gap-2">
-                {selectedNote.tags.map((tag) => (
+                {/* {selectedNote.tags.map((tag) => (
                   <span
                     key={tag}
                     className="flex items-center rounded-full bg-gray-200 px-2 py-1 text-sm text-gray-700"
@@ -463,7 +447,7 @@ export default function NotesPage() {
                       ×
                     </button>
                   </span>
-                ))}
+                ))} */}
               </div>
               <textarea
                 className="h-[calc(100%-2rem)] w-full resize-none border-none focus:outline-none"
@@ -540,7 +524,7 @@ export default function NotesPage() {
             </TabsContent>
             <TabsContent value="tags">
               <ScrollArea className="h-[200px]">
-                {tags.map((tag) => (
+                {/* {tags.map((tag) => (
                   <div key={tag} className="mb-2 flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -557,7 +541,7 @@ export default function NotesPage() {
                       {tag}
                     </label>
                   </div>
-                ))}
+                ))} */}
               </ScrollArea>
             </TabsContent>
           </Tabs>
@@ -590,7 +574,7 @@ export default function NotesPage() {
               <Button onClick={addNewTag}>Add</Button>
             </div>
             <ScrollArea className="h-[200px]">
-              {tags.map((tag) => (
+              {/* {tags.map((tag) => (
                 <div
                   key={tag}
                   className="flex items-center justify-between py-2"
@@ -604,7 +588,7 @@ export default function NotesPage() {
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-              ))}
+              ))} */}
             </ScrollArea>
           </div>
         </DialogContent>
