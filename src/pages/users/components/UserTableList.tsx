@@ -20,6 +20,7 @@ import { fetchUserProfile } from '@/redux/features/profileSlice';
 import { AppDispatch } from '@/redux/store';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card } from '@/components/ui/card';
 
 export default function UserTableList({ refreshKey }) {
   const { user } = useSelector((state: any) => state.auth);
@@ -27,7 +28,7 @@ export default function UserTableList({ refreshKey }) {
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(100);
+  const [entriesPerPage, setEntriesPerPage] = useState(500);
   const [searchTerm, setSearchTerm] = useState('');
   const [companies, setCompanies] = useState([]);
   const { profileData } = useSelector((state: any) => state.profile);
@@ -41,7 +42,8 @@ export default function UserTableList({ refreshKey }) {
           endpoint = `/users?role=user&company=${user._id}&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}`;
         } else if (user.role === 'creator') {
           dispatch(fetchUserProfile(user?._id));
-          endpoint = `/users?role=user&company=${profileData.company}&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}`;
+          
+          endpoint = `/users?role=user&company=${profileData.company._id}&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}`;
         } else {
           endpoint = `/users?role=user&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}`;
         }
@@ -140,25 +142,26 @@ export default function UserTableList({ refreshKey }) {
   };
 
   return (
-    <>
-      <div className="mb-6 flex gap-10">
+    <div className="flex h-[calc(82vh-7rem)] flex-col overflow-hidden px-2 bg-transparent">
+      <div className="mb-8 flex gap-8">
         <Input
           type="text"
           placeholder="Search..."
           value={searchTerm}
           onChange={handleSearch}
+          
         />
-        <div>
+        {/* <div>
           <DynamicPagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
-        </div>
+        </div> */}
       </div>
-      <ScrollArea className="h-[calc(80vh-220px)] rounded-md md:h-[calc(80dvh-80px)]">
+      <div className="h-full  -mt-6 overflow-y-auto rounded-md ">
         <Table>
-          <TableHeader>
+          <TableHeader >
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
@@ -173,7 +176,7 @@ export default function UserTableList({ refreshKey }) {
                 user.role === 'creator') && <TableHead>User Status</TableHead>}
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody className='overflow-y-auto'>
             {users.map((stuff: any) => (
               <TableRow key={stuff._id}>
                 <TableCell>{stuff?.name}</TableCell>
@@ -229,7 +232,7 @@ export default function UserTableList({ refreshKey }) {
             ))}
           </TableBody>
         </Table>
-      </ScrollArea>
-    </>
+      </div>
+      </div>
   );
 }

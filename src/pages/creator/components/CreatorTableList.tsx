@@ -135,23 +135,23 @@ export default function CreatorTableList({ refreshKey }) {
   };
 
   return (
-    <>
-      <div className="mb-6 flex gap-10">
+    <div className='flex h-[calc(82vh-7rem)] flex-col overflow-hidden px-2 bg-transparent'>
+      <div className="mb-6 flex gap-8">
         <Input
           type="text"
           placeholder="Search..."
           value={searchTerm}
           onChange={handleSearch}
         />
-        <div>
+        {/* <div>
           <DynamicPagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
-        </div>
+        </div> */}
       </div>
-      <ScrollArea className="h-[calc(80vh-220px)] rounded-md md:h-[calc(80dvh-80px)]">
+      <div className="h-full  -mt-6 overflow-y-auto rounded-md">
         <Table>
           <TableHeader>
             <TableRow>
@@ -167,7 +167,7 @@ export default function CreatorTableList({ refreshKey }) {
                 user.role === 'company') && <TableHead>User Status</TableHead>}
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody className='overflow-y-auto'>
             {users.map((creator: any) => (
               <TableRow key={creator._id}>
                 <TableCell>{creator?.name}</TableCell>
@@ -222,7 +222,7 @@ export default function CreatorTableList({ refreshKey }) {
             ))}
           </TableBody>
         </Table>
-      </ScrollArea>
-    </>
+      </div>
+    </div>
   );
 }

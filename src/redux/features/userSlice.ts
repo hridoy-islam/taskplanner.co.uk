@@ -14,19 +14,24 @@ const initialState: UserState = {
 };
 
 export const fetchCompanyUsers = createAsyncThunk(
-  'users/fetchCompanyUsers',
-  async (userId: string) => {
+  'users/fetchCompanyUsers',  
+  async (userId: string, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(
         `${import.meta.env.VITE_API_URL}/users/company/${userId}`
       );
 
-      return response.data.data;
+      console.log("Fetched company users:", response.data);
+
+      return response.data.data;  
     } catch (error: any) {
-      return error.response?.data || error.message;
+      console.error('Error fetching company users:', error);
+      
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
+
 export const fetchUsers = createAsyncThunk(
   'users/fetchUsers',
   async (userId: string) => {

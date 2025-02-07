@@ -28,9 +28,12 @@ export default function Sidebar({ className }: SidebarProps) {
   };
 
   // Get the users state from the Redux store
-  const { users, loading, error } = useSelector(
+  const { users } = useSelector(
     (state: RootState) => state.users
   );
+
+  
+
 
   // Dispatch function
   const dispatch = useDispatch<AppDispatch>();
@@ -53,6 +56,7 @@ export default function Sidebar({ className }: SidebarProps) {
   //   userId: user?._id,
 
   // })
+
   const fetchData = async () => {
     try {
       if (user?._id) {
@@ -62,6 +66,11 @@ export default function Sidebar({ className }: SidebarProps) {
       console.error('Error fetching users:', error);
     }
   };
+
+  
+  
+
+
 
   useEffect(() => {
     
@@ -81,6 +90,8 @@ export default function Sidebar({ className }: SidebarProps) {
       setTeams(users);
     }
   }, [users]);
+
+  
 
   // useEffect(() => {
   //   if(data){
