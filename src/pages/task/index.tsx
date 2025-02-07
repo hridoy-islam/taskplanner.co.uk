@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CornerDownLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import notask from '@/assets/imges/home/notask.png';
+
 import {
   TaskSlice,
   useFetchTasksForBothUsersQuery,
@@ -272,11 +272,7 @@ export default function TaskPage() {
             onMarkAsImportant={handleMarkAsImportant}
             onToggleTaskCompletion={handleToggleTaskCompletion}
           />
-          {tasks.length === 0 && (
-            <div className="mt-36 flex flex-col items-center justify-center">
-              <img src={notask} alt="No Task" />
-            </div>
-          )}
+          
         </div>
       )}
 
