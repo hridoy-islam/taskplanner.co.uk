@@ -21,7 +21,6 @@ export const fetchCompanyUsers = createAsyncThunk(
         `${import.meta.env.VITE_API_URL}/users/company/${userId}`
       );
 
-      console.log("Fetched company users:", response.data);
 
       return response.data.data;  
     } catch (error: any) {

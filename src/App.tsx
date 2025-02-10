@@ -13,6 +13,7 @@ export default function App() {
       <PersistGate loading={null} persistor={persistor}>
         <AppProvider>
           <AppRouter />
+         
         </AppProvider>
       </PersistGate>
     </Provider>
