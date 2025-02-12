@@ -6,6 +6,8 @@ import profileReducer from './features/profileSlice';
 
 import { TaskSlice } from './features/taskSlice';
 import userSlice from './features/userSlice';
+import { NoteSlice } from './features/noteSlice';
+import { TagSlice } from './features/tagSlice';
 const persistConfig = {
   key: 'taskplanner',
   storage
@@ -15,7 +17,9 @@ const rootReducer = combineReducers({
   auth: authReducer,
   profile: profileReducer,
   users: userSlice,
-  [TaskSlice.reducerPath]: TaskSlice.reducer
+  [TaskSlice.reducerPath]: TaskSlice.reducer,
+  [NoteSlice.reducerPath]: NoteSlice.reducer,
+  [TagSlice.reducerPath]: TagSlice.reducer
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -38,7 +42,10 @@ const store = configureStore({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST'] // Ignore persist related actions to avoid serializability issues
       }
-    }).concat(TaskSlice.middleware),
+    })
+      .concat(TaskSlice.middleware)
+      .concat(NoteSlice.middleware)
+      .concat(TagSlice.middleware),
   devTools: true
 });
 

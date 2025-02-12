@@ -11,7 +11,6 @@ import {
 import { Input } from '../ui/input';
 
 import Loader from './loader';
-import notask from '@/assets/imges/home/notask.png';
 
 export default function AssignedTasks({ user }) {
   const { toast } = useToast();
@@ -131,11 +130,6 @@ export default function AssignedTasks({ user }) {
             onMarkAsImportant={handleMarkAsImportant}
             onToggleTaskCompletion={handleToggleTaskCompletion}
           />
-          {tasks.length === 0 && (
-            <div className="mt-36 flex flex-col items-center justify-center">
-              <img src={notask} alt="No Task" />
-            </div>
-          )}
         </CardContent>
       )}
     </Card>

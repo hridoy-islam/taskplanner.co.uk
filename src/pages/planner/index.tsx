@@ -107,25 +107,26 @@ export default function TaskPlanner() {
   //   fetchTasks();
   // }, [currentDate]);
 
-  const {
-    data: monthTasks,
-    isError: isMonthError
-  } = useFetchPlannerMonthQuery({ year, month, userId: user._id },{
-    pollingInterval:10000,
-    
-  });
+  const { data: monthTasks, isError: isMonthError } = useFetchPlannerMonthQuery(
+    { year, month, userId: user._id },
+    {
+      pollingInterval: 10000
+    }
+  );
 
   const {
     data: weekTasks,
     refetch,
-    isError: isWeekError,
-  } = useFetchPlannerWeekQuery({ year, week, userId: user._id },{    pollingInterval:10000,
-  });
+    isError: isWeekError
+  } = useFetchPlannerWeekQuery(
+    { year, week, userId: user._id },
+    { pollingInterval: 10000 }
+  );
 
-  const {
-    data: dayTasks,
-    isError: isDayError
-  } = useFetchPlannerDayQuery({ day, userId: user._id });
+  const { data: dayTasks, isError: isDayError } = useFetchPlannerDayQuery({
+    day,
+    userId: user._id
+  });
 
   useEffect(() => {
     const fetchTasks = () => {
@@ -142,7 +143,7 @@ export default function TaskPlanner() {
         }
       } catch (error) {
         console.error(error);
-        setTasks([]); 
+        setTasks([]);
       }
     };
 
@@ -157,13 +158,11 @@ export default function TaskPlanner() {
     isDayError
   ]);
 
-
-
   useEffect(() => {
     if (calendarView === 'week') {
       refetch();
     }
-  }, [weekTasks]); 
+  }, [weekTasks]);
 
   const filteredTasks = (tasks || []).filter((task) =>
     task.taskName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -332,7 +331,7 @@ export default function TaskPlanner() {
                   className={`mb-1 rounded p-1 text-xs font-semibold  max-lg:hidden ${task?.important ? 'bg-orange-400' : 'bg-green-400'}`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log(task)
+                    console.log(task);
                     setSelectedTask(task);
                   }}
                 >
@@ -443,7 +442,7 @@ export default function TaskPlanner() {
             </TabsList>
           </Tabs>
           <div className="flex w-full flex-row items-center  justify-between gap-4 max-md:hidden">
-            <Button
+            {/* <Button
               variant="outline"
               onClick={() => {
                 const today = new Date();
@@ -453,7 +452,7 @@ export default function TaskPlanner() {
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               Today
-            </Button>
+            </Button> */}
             <Popover>
               <PopoverTrigger>
                 <Button variant="outline">

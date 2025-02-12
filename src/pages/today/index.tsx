@@ -10,7 +10,6 @@ import { TaskSlice, useFetchTodayTasksQuery } from '@/redux/features/taskSlice';
 import { CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
-import notask from '@/assets/imges/home/notask.png';
 import Loader from '@/components/shared/loader';
 
 export default function TodayPage() {
@@ -172,18 +171,11 @@ export default function TodayPage() {
         <Loader />
       ) : (
         <CardContent className="flex-1 overflow-y-auto px-4 scrollbar-hide">
-          {tasks.length === 0 ? (
-            <div className="mt-36 flex flex-col items-center justify-center">
-              <img src={notask} alt="No Task" />
-            </div>
-          ) : (
-            <TaskList
-              tasks={tasks}
-              onMarkAsImportant={handleMarkAsImportant}
-              onToggleTaskCompletion={handleToggleTaskCompletion}
-              fetchTasks={handleRefetch}
-            />
-          )}
+          <TaskList
+            tasks={tasks}
+            onMarkAsImportant={handleMarkAsImportant}
+            onToggleTaskCompletion={handleToggleTaskCompletion}
+          />
         </CardContent>
       )}
     </div>

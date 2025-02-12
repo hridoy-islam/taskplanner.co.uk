@@ -28,12 +28,7 @@ export default function Sidebar({ className }: SidebarProps) {
   };
 
   // Get the users state from the Redux store
-  const { users } = useSelector(
-    (state: RootState) => state.users
-  );
-
-  
-
+  const { users } = useSelector((state: RootState) => state.users);
 
   // Dispatch function
   const dispatch = useDispatch<AppDispatch>();
@@ -67,13 +62,7 @@ export default function Sidebar({ className }: SidebarProps) {
     }
   };
 
-  
-  
-
-
-
   useEffect(() => {
-    
     fetchData();
     const interval = setInterval(() => {
       fetchData();
@@ -81,17 +70,13 @@ export default function Sidebar({ className }: SidebarProps) {
 
     // Cleanup interval on component unmount
     return () => clearInterval(interval);
- 
   }, [user, dispatch]);
 
-  
   useEffect(() => {
     if (users && Array.isArray(users)) {
       setTeams(users);
     }
   }, [users]);
-
-  
 
   // useEffect(() => {
   //   if(data){
@@ -113,7 +98,7 @@ export default function Sidebar({ className }: SidebarProps) {
   return (
     <nav
       className={cn(
-        `relative z-10 hidden h-screen flex-none  px-3 md:block overflow-y-auto`,
+        `relative z-10 hidden h-screen flex-none  overflow-y-auto px-3 md:block`,
         status && 'duration-500',
         !isMinimized ? 'w-72' : 'w-[80px]',
         className

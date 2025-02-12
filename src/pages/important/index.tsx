@@ -11,7 +11,6 @@ import {
 } from '@/redux/features/taskSlice';
 import { CardContent } from '@/components/ui/card';
 import Loader from '@/components/shared/loader';
-import notask from '@/assets/imges/home/notask.png';
 
 export default function ImportantPage() {
   const { user } = useSelector((state: any) => state.auth);
@@ -164,11 +163,6 @@ export default function ImportantPage() {
             onMarkAsImportant={handleMarkAsImportant}
             onToggleTaskCompletion={handleToggleTaskCompletion}
           />
-          {tasks.length === 0 && (
-            <div className="mt-36 flex flex-col items-center justify-center">
-              <img src={notask} alt="No Task" />
-            </div>
-          )}
         </CardContent>
       )}
     </div>
