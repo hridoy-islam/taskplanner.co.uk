@@ -50,6 +50,20 @@ export const NoteSlice = createApi({
         return [{ type: 'Note', id: `LIST-${userId}` }];
       }
     }),
+    fetchShareNotes: builder.query({
+      query: (userId: string) => ({
+        url: `/sharednote/${userId}`,
+        method: 'GET'
+      }),
+
+      serializeQueryArgs: ({ endpointName, queryArgs }) => {
+        return `${endpointName}/${queryArgs}`;
+      },
+
+      providesTags: (result, error, userId) => {
+        return [{ type: 'Note', id: `LIST-${userId}` }];
+      }
+    }),
 
     addNewNote: builder.mutation({
       query: (addNewNoteData) => ({
@@ -89,5 +103,6 @@ export const {
   useAddNewNoteMutation,
   useFetchNotesQuery,
   useUpdateNoteMutation,
-  useDeleteNoteMutation
+  useDeleteNoteMutation,
+  useFetchShareNotesQuery
 } = NoteSlice;

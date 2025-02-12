@@ -273,11 +273,11 @@ export default function TaskPlanner() {
             <ScrollArea className=" mt-2 h-12 ">
               {filteredTasks
                 .filter((task) => isSameDay(task.dueDate, cloneDay))
-                .slice(0, 3)
+                // .slice(0, 3)
                 .map((task) => (
                   <div
                     key={task._id}
-                    className={`mb-1 rounded p-1 text-xs font-semibold  max-lg:hidden ${task?.important ? 'bg-orange-400' : 'bg-green-400'}`}
+                    className={`mb-1 w-[85%] truncate rounded p-1 text-xs font-semibold  max-lg:hidden ${task?.important ? 'bg-orange-400' : 'bg-green-400'}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedTask(task);
@@ -286,7 +286,7 @@ export default function TaskPlanner() {
                     {task.taskName}
                   </div>
                 ))}
-              {filteredTasks.filter((task) => isSameDay(task.dueDate, cloneDay))
+              {/* {filteredTasks.filter((task) => isSameDay(task.dueDate, cloneDay))
                 .length > 3 && (
                 <div className="text-xs font-semibold text-gray-500">
                   +
@@ -295,7 +295,7 @@ export default function TaskPlanner() {
                   ).length - 3}{' '}
                   more
                 </div>
-              )}
+              )} */}
             </ScrollArea>
           </div>
         );

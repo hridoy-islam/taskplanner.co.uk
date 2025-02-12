@@ -48,22 +48,26 @@ export const TaskSlice = createApi({
     fetchDueTasks: builder.query<any, DueTaskQueryParams>({
       query: ({
         userId,
-        searchTerm = '',
+
         sortOrder = 'desc',
         page,
         limit
       }) => ({
         url: `/duetasks/${userId}`,
         params: {
-          searchTerm,
           sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
           page,
           limit,
           status: 'pending'
         }
       }),
+      // serializeQueryArgs: ({ endpointName, queryArgs }) => {
+      //   return `${endpointName}-${queryArgs.userId}?sort=${queryArgs.sortOrder}&page=${queryArgs.page}&limit=${queryArgs.limit}`;
+      // },
+
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
-        return `${endpointName}-${queryArgs.userId}?sort=${queryArgs.sortOrder}&page=${queryArgs.page}&limit=${queryArgs.limit}`;
+        const { userId, sortOrder, page, limit } = queryArgs;
+        return `${endpointName}-${userId}-${sortOrder}-${page}-${limit}`;
       },
       providesTags: (result, error, { userId }) => [
         { type: 'Task', id: `LIST-${userId}` }

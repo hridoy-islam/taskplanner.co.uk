@@ -49,6 +49,7 @@ import {
   useAddNewNoteMutation,
   useDeleteNoteMutation,
   useFetchNotesQuery,
+  useFetchShareNotesQuery,
   useUpdateNoteMutation
 } from '@/redux/features/noteSlice';
 import {
@@ -66,7 +67,7 @@ import {
   UnknownAction
 } from '@reduxjs/toolkit';
 import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/redux/store';
+import { AppDispatch, RootState } from '@/redux/store';
 
 interface Note {
   id: number;
@@ -75,6 +76,7 @@ interface Note {
   tags: string[];
   favorite: boolean;
   isArchive: boolean;
+  sharedWith: string[];
 }
 
 interface Tag {
@@ -98,12 +100,13 @@ const demoUsers: User[] = [
 
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
+  const [sharedNotes, setSharedNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(notes[0]);
   const [searchTerm, setSearchTerm] = useState('');
   const [tagSearchTerm, setTagSearchTerm] = useState('');
   const [tags, setTags] = useState([]);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [shareRecipients, setShareRecipients] = useState<User[]>([]);
+  const [shareRecipients, setShareRecipients] = useState<any[]>([]);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -112,8 +115,54 @@ export default function NotesPage() {
   const { user } = useSelector((state: any) => state.auth);
   const [openUpdate, setOpenUpdate] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const { users } = useSelector((state: RootState) => state.users);
+  const [sharedWith, setSharedWith] = useState<any[]>([]);
   const dispatch = useDispatch<AppDispatch>();
+
+  // useEffect(() => {
+  //   if (user && Array.isArray(user)) {
+  //     setShareRecipients(user);
+  //   }
+  // }, []);
+
+  const [addNewNoteData] = useAddNewNoteMutation();
+  const [addNewTagData] = useAddNewTagMutation();
+  const { data: noteData = [] } = useFetchNotesQuery(user._id, {
+    pollingInterval: 10000,
+    skip: !user?._id
+  });
+  const { data: sharedNoteData = [] } = useFetchShareNotesQuery(user._id, {
+    pollingInterval: 10000,
+    skip: !user?._id
+  });
+
+  const { data: tagsData = [] } = useFetchTagsQuery(user?._id, {
+    pollingInterval: 10000,
+    skip: !user?._id
+  });
+
+  const getNotesFn = NoteSlice.usePrefetch('fetchNotes');
+  const getTagsFn = TagSlice.usePrefetch('fetchTags');
+  const getShareNotesFn = NoteSlice.usePrefetch('fetchShareNotes');
+
+  const [deleteNote] = useDeleteNoteMutation();
+  const [updateNote] = useUpdateNoteMutation();
+
+  useEffect(() => {
+    getNotesFn;
+    getTagsFn;
+    getShareNotesFn;
+  }, []);
+
+  const openUpdateModal = (note) => {
+    setSelectedNote(note);
+    setOpenUpdate(true);
+  };
+
+  const closeUpdateModal = () => {
+    setOpenUpdate(false);
+    setSelectedNote(selectedNote);
+  };
 
   const fetchData = async () => {
     try {
@@ -127,64 +176,22 @@ export default function NotesPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => {
-      fetchData();
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [user, dispatch]);
-
-  // useEffect(() => {
-  //   if (user && Array.isArray(user)) {
-  //     setShareRecipients(user.colleagues);
-  //   }
-  // }, []);
-
-  const [addNewNoteData] = useAddNewNoteMutation();
-  const [addNewTagData] = useAddNewTagMutation();
-  const { data: noteData = [] } = useFetchNotesQuery(user._id, {
-    pollingInterval: 5000,
-    skip: !user?._id
-  });
-
-  const { data: tagsData = [] } = useFetchTagsQuery(user?._id, {
-    pollingInterval: 5000,
-    skip: !user?._id
-  });
-
-  const handleChange = (selectedOptions) => {
-    setShareRecipients(selectedOptions || []);
-  };
-
-  const getNotesFn = NoteSlice.usePrefetch('fetchNotes');
-  const getTagsFn = TagSlice.usePrefetch('fetchTags');
-
-  const [deleteNote] = useDeleteNoteMutation();
-  const [updateNote] = useUpdateNoteMutation();
-
-  useEffect(() => {
-    getNotesFn;
-    getTagsFn;
   }, []);
 
-  const openUpdateModal = (note) => {
-    setSelectedNote(note);
-    setOpenUpdate(true);
+  useEffect(() => {
+    if (users && Array.isArray(users) && shareRecipients.length === 0) {
+      console.log('Setting shareRecipients with fetched users:', users);
+
+      setShareRecipients(users); // This will only set users if shareRecipients is empty
+    }
+  }, [users]);
+
+  const handleChange = (selectedOptions) => {
+    setSharedWith(selectedOptions || []);
   };
 
-  const closeUpdateModal = () => {
-    setOpenUpdate(false);
-    setSelectedNote(selectedNote);
-  };
-
-  const filteredUsers = demoUsers.filter(
-    (user) =>
-      user.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(userSearchTerm.toLowerCase())
-  );
-
-  const userOptions = filteredUsers.map((user) => ({
-    value: user.id,
+  const userOptions = shareRecipients.map((user) => ({
+    value: user._id,
     label: `${user.name} (${user.email})`
   }));
 
@@ -229,6 +236,15 @@ export default function NotesPage() {
     }
   }, [noteData]);
 
+  useEffect(() => {
+    if (sharedNoteData.length > 0) {
+      setSharedNotes(sharedNoteData);
+      setSelectedNote(sharedNoteData[0]);
+    } else {
+      setSelectedNote(null);
+    }
+  }, [sharedNoteData]);
+
   const filteredTags = tags.filter((tag) =>
     tag?.name?.toLowerCase().includes(tagSearchTerm.toLowerCase())
   );
@@ -266,6 +282,14 @@ export default function NotesPage() {
   }, []);
 
   const filteredNotes = notes.filter(
+    (note) =>
+      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.tags.some((tag) =>
+        tag.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+  );
+  const filterSharedNotes = sharedNoteData.filter(
     (note) =>
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -400,11 +424,52 @@ export default function NotesPage() {
     setIsShareDialogOpen(true);
   };
 
-  const handleShare = () => {
-    console.log(`Sharing note: ${selectedNote?.title} with:`, shareRecipients);
-    setIsShareDialogOpen(false);
-    setShareRecipients([]);
+  // const handleShare = () => {
+  //   console.log(`Sharing note: ${selectedNote?.title} with:`, sharedWith);
+  //   setIsShareDialogOpen(false);
+  //   setShareRecipients([]);
+  // };
+
+  const handleShare = async () => {
+    // Prepare the data to be sent to the backend
+    const data = {
+      noteId: selectedNote?._id, // The note's ID
+      updatedData: {
+        sharedWith: sharedWith.map((recipient) => recipient.value) // Extract the value (ID) of each recipient
+      }
+    };
+
+    try {
+      const updatedNote = await updateNote(data);
+
+      // On success, update the local state with the updated sharedWith field
+      setNotes((prevNotes: any) =>
+        prevNotes.map((note) =>
+          note._id === selectedNote?._id
+            ? { ...note, sharedWith: updatedNote?.sharedWith } // Update the sharedWith field locally with the response
+            : note
+        )
+      );
+
+      setSelectedNote((prevNote) => ({
+        ...prevNote!,
+        sharedWith: updatedNote.sharedWith // Update the selected note's sharedWith field
+      }));
+
+      setIsShareDialogOpen(false);
+      setSharedWith(updatedNote.sharedWith);
+
+      toast({ title: 'Note shared successfully!' });
+    } catch (error) {
+      console.error('Error sharing note:', error);
+      // Handle error (e.g., show error message)
+      toast({ title: 'Failed to share note', variant: 'destructive' });
+    }
   };
+
+  useEffect(() => {
+    console.log('sharedWith updated: ', sharedWith);
+  }, [sharedWith]);
 
   const toggleRecipient = (user: User) => {
     setShareRecipients((prev) =>
@@ -703,25 +768,30 @@ export default function NotesPage() {
             {/* Shared Notes Tab */}
             <TabsContent value="shared-notes">
               <div className="flex flex-col gap-2 overflow-y-auto p-2">
-                {/* {sharedNotes.map((note) => (
+                {filterSharedNotes.map((note) => (
                   <div
                     key={note.id}
-                    className="cursor-pointer rounded-md border border-gray-200 p-4 hover:bg-gray-400 bg-gray-100"
+                    className="cursor-pointer rounded-md border border-gray-200 bg-gray-100 p-4 hover:bg-gray-400"
                     onClick={() => setSelectedNote(note)}
                   >
                     <h3 className="truncate font-semibold">{note.title}</h3>
                     <p className="w-full truncate text-sm text-gray-600">
-                      {note.content.length > 40 ? note.content.substring(0, 40) + '...' : note.content}
+                      {note.content.length > 40
+                        ? note.content.substring(0, 40) + '...'
+                        : note.content}
                     </p>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {note.tags.map((tag) => (
-                        <span key={tag._id} className="rounded bg-gray-300 px-1 text-xs text-gray-700">
+                        <span
+                          key={tag._id}
+                          className="rounded bg-gray-300 px-1 text-xs text-gray-700"
+                        >
                           {tag.name}
                         </span>
                       ))}
                     </div>
                   </div>
-                ))} */}
+                ))}
               </div>
             </TabsContent>
           </Tabs>
@@ -952,7 +1022,7 @@ export default function NotesPage() {
                     >
                       <input
                         type="checkbox"
-                        id={`user-${user.id}`}
+                        id={`user-${user._id}`}
                         checked={shareRecipients.some((r) => r.id === user.id)}
                         onChange={() => toggleRecipient(user)}
                         className="rounded text-blue-600 focus:ring-blue-500"
@@ -966,11 +1036,38 @@ export default function NotesPage() {
                 <Select
                   options={userOptions}
                   isMulti
-                  value={shareRecipients}
+                  value={sharedWith}
                   onChange={handleChange}
                   className="w-full"
                   placeholder="Select users..."
                 />
+                <ScrollArea className="h-[200px]">
+                  {(selectedNote?.sharedWith || []).map((userId) => {
+                    // Find the user from userOptions based on the userId
+                    const user = userOptions.find(
+                      (user) => user.value === userId
+                    );
+
+                    // If user exists, render their name and email
+                    if (user) {
+                      return (
+                        <div
+                          key={user.value}
+                          className="mb-2 flex items-center space-x-2"
+                        >
+                          <label
+                            htmlFor={`user-${user.value}`}
+                            className="flex-1"
+                          >
+                            {user.label}{' '}
+                            {/* Assuming label is in the format of "name (email)" */}
+                          </label>
+                        </div>
+                      );
+                    }
+                    return null; // Return null if no user is found
+                  })}
+                </ScrollArea>
               </div>
             </TabsContent>
             {/* <TabsContent value="tags">
@@ -1046,22 +1143,4 @@ export default function NotesPage() {
       </Dialog>
     </div>
   );
-}
-function dispatch(
-  arg0: AsyncThunkAction<
-    any,
-    string,
-    {
-      state?: unknown;
-      dispatch?: ThunkDispatch<unknown, unknown, UnknownAction>;
-      extra?: unknown;
-      rejectValue?: unknown;
-      serializedErrorType?: unknown;
-      pendingMeta?: unknown;
-      fulfilledMeta?: unknown;
-      rejectedMeta?: unknown;
-    }
-  >
-) {
-  throw new Error('Function not implemented.');
 }
