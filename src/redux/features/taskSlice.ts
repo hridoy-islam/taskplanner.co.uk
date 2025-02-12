@@ -48,22 +48,57 @@ export const TaskSlice = createApi({
     fetchDueTasks: builder.query<any, DueTaskQueryParams>({
       query: ({
         userId,
-        searchTerm = '',
+
         sortOrder = 'desc',
         page,
         limit
       }) => ({
         url: `/duetasks/${userId}`,
         params: {
-          searchTerm,
           sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
           page,
-          limit
+          limit,
+          status: 'pending'
         }
       }),
+      // serializeQueryArgs: ({ endpointName, queryArgs }) => {
+      //   return `${endpointName}-${queryArgs.userId}?sort=${queryArgs.sortOrder}&page=${queryArgs.page}&limit=${queryArgs.limit}`;
+      // },
 
+      serializeQueryArgs: ({ endpointName, queryArgs }) => {
+        const { userId, sortOrder, page, limit } = queryArgs;
+        return `${endpointName}-${userId}-${sortOrder}-${page}-${limit}`;
+      },
       providesTags: (result, error, { userId }) => [
         { type: 'Task', id: `LIST-${userId}` }
+      ]
+    }),
+    fetchTasksForBothUsers: builder.query({
+      query: ({
+        authorId,
+        assignedId,
+        sortOrder = 'desc',
+        page = 1,
+        limit
+      }) => ({
+        url: `/getbothuser/${authorId}/${assignedId}`,
+        params: {
+          sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
+          page,
+          limit,
+          status: 'pending'
+        }
+      }),
+      // serializeQueryArgs: ({ endpointName, queryArgs }) => {
+      //   return `${endpointName}-${queryArgs.authorId}/${queryArgs.assignedId}?sort=${queryArgs.sortOrder}&page=${queryArgs.page}&limit=${queryArgs.limit}`;
+      // },
+      serializeQueryArgs: ({ endpointName, queryArgs }) => {
+        const { authorId, assignedId, sortOrder, page, limit } = queryArgs;
+        return `${endpointName}-${authorId}-${assignedId}-${sortOrder}-${page}-${limit}`;
+      },
+
+      providesTags: (result, error, { authorId, assignedId }) => [
+        { type: 'Task', id: `BOTH-${authorId}-${assignedId}` }
       ]
     }),
 
@@ -86,29 +121,6 @@ export const TaskSlice = createApi({
 
       providesTags: (result, error, { userId }) => [
         { type: 'Task', id: `LIST-${userId}` }
-      ]
-    }),
-
-    fetchTasksForBothUsers: builder.query({
-      query: ({
-        authorId,
-        assignedId,
-
-        sortOrder = 'desc',
-        page = 1,
-        limit
-      }) => ({
-        url: `/getbothuser/${authorId}/${assignedId}`,
-        params: {
-          sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
-          page,
-          limit,
-          status: 'pending'
-        }
-      }),
-
-      providesTags: (result, error, { authorId, assignedId }) => [
-        { type: 'Task', id: `BOTH-${authorId}-${assignedId}` }
       ]
     }),
 
@@ -254,8 +266,18 @@ export const TaskSlice = createApi({
         { type: 'Task', id: `BOTH-${updates.authorId}-${updates.assignedId}` },
         { type: 'Task', id: `WEEK-${updates.userId}` },
         { type: 'Task', id: `DAY-${updates.userId}` },
-        { type: 'Task', id: `MONTH-${updates.userId}` },
+        { type: 'Task', id: `MONTH-${updates.userId}` }
       ]
+    }),
+
+    createTask: builder.mutation({
+      query: (data) => ({
+        url: '',
+        method: 'POST',
+        body: data
+      }),
+
+      invalidatesTags: [{ type: 'Task', id: 'LIST' }]
     })
   })
 });
@@ -263,6 +285,7 @@ export const TaskSlice = createApi({
 export const {
   useFetchDueTasksQuery,
   useLazyFetchDueTasksQuery,
+  useCreateTaskMutation,
   useFetchAssignedTasksQuery,
   useFetchTasksForBothUsersQuery,
   useFetchPlannerMonthQuery,

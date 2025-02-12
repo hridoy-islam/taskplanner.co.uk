@@ -10,7 +10,6 @@ import {
   useUpdateTaskMutation
 } from '@/redux/features/taskSlice';
 import Loader from './loader';
-import notask from '@/assets/imges/home/notask.png';
 
 export default function CompletedTasks({ user }) {
   const { toast } = useToast();
@@ -159,11 +158,6 @@ export default function CompletedTasks({ user }) {
             onMarkAsImportant={handleMarkAsImportant}
             onToggleTaskCompletion={handleToggleTaskCompletion}
           />
-          {tasks.length === 0 && (
-            <div className="mt-36 flex flex-col items-center justify-center">
-              <img src={notask} alt="No Task" />
-            </div>
-          )}
         </CardContent>
       )}
     </Card>

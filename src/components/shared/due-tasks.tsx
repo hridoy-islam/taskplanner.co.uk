@@ -39,6 +39,10 @@ export default function DueTasks({ user }) {
     });
   }, []);
 
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
   // Update tasks when data changes
   useEffect(() => {
     if (data?.data?.result) {
@@ -64,7 +68,7 @@ export default function DueTasks({ user }) {
         updates: {
           important: !taskToToggle.important
         }
-      }).unwrap();
+      });
       refetch();
       toast({ title: 'Task Updated', description: 'Thank You' });
     } catch (error) {

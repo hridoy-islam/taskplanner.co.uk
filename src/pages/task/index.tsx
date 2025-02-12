@@ -10,26 +10,27 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CornerDownLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-
 import {
   TaskSlice,
+  useCreateTaskMutation,
   useFetchTasksForBothUsersQuery,
   useUpdateTaskMutation
 } from '@/redux/features/taskSlice';
 import Loader from '@/components/shared/loader';
 
 import { Textarea } from '@/components/ui/textarea';
+import { fetchUsers } from '@/redux/features/userSlice';
 
 export default function TaskPage() {
   const { id } = useParams();
   const { user } = useSelector((state: any) => state.auth);
   const { toast } = useToast();
   const [page, setPage] = useState(1);
+  const dispatch = useDispatch();
 
   const [userDetail, setUserDetail] = useState<any>();
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState<any[]>([]);
-  const [sortBy, setSortBy] = useState<'name' | 'unread' | 'recent'>('unread');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -42,6 +43,7 @@ export default function TaskPage() {
     setUserDetail(response.data.data);
   };
 
+  const [createTask] = useCreateTaskMutation();
   const [updateTask] = useUpdateTaskMutation();
   // const fetchTasks = useCallback(
   //   async (page, entriesPerPage, searchTerm = '', sortOrder = 'desc') => {
@@ -63,11 +65,12 @@ export default function TaskPage() {
     {
       authorId: user?._id,
       assignedId: id,
-      page: currentPage,
+      page: page,
+      sortOrder: sortOrder,
       limit: entriesPerPage
     },
     {
-      pollingInterval: 10000,
+      pollingInterval: 5000,
       refetchOnFocus: true,
       refetchOnReconnect: true
     }
@@ -80,6 +83,7 @@ export default function TaskPage() {
     getTasksForBothUsersFn({
       authorId: user?._id,
       assignedId: id,
+      sortOrder: 'desc',
       page: currentPage,
       limit: entriesPerPage
     });
@@ -91,6 +95,10 @@ export default function TaskPage() {
       fetchUserDetails();
     }
   }, [data]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const handleSearch = (event) => {
     const searchTerm = event.target.value.toLowerCase();
@@ -211,29 +219,68 @@ export default function TaskPage() {
     }
   };
 
+  // const onSubmit = async (data) => {
+  //   if (loading) return;
+  //   setLoading(true);
+  //   data.author = user?._id;
+  //   data.assigned = id;
+
+  //   try {
+  //     // await axiosInstance.post(`/task`, data);
+  //     await createTask(data)
+  //     reset();
+  //     refetch();
+  //     toast({
+  //       title: 'Task Added',
+  //       description: 'Thank You'
+  //     });
+
+  //   } catch (error) {
+  //     toast({
+  //       variant: 'destructive',
+  //       title: 'An error occurred while adding the task.'
+  //     });
+  //   } finally {
+  //     setLoading(false); // Reset loading state
+  //   }
+  // };
+
   const onSubmit = async (data) => {
     if (loading) return;
     setLoading(true);
-    data.author = user?._id;
-    data.assigned = id;
+
+    // Ensure user and assigned ID are available before proceeding
+    if (!user?._id || !id) {
+      toast({
+        variant: 'destructive',
+        title: 'User information is missing!'
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
-      const response = await axiosInstance.post(`/task`, data);
-      console.log(response);
-      if (response.data.success) {
-        reset();
-        refetch();
-        toast({
-          title: 'Task Added',
-          description: 'Thank You'
-        });
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Something Went Wrong!'
-        });
-      }
+      // Make the API call to create the task
+      const response = await createTask({
+        taskName: data.taskName,
+        description: data.description || '',
+        author: user?._id,
+        assigned: id
+      }).unwrap();
+
+      // Update state only if API call succeeds
+      setTasks((prevTasks) => [response.data, ...prevTasks]);
+
+      // Reset the form
+      reset();
+
+      // Show success toast
+      toast({
+        title: 'Task Added',
+        description: 'Thank You'
+      });
     } catch (error) {
+      // Show error toast
       toast({
         variant: 'destructive',
         title: 'An error occurred while adding the task.'
@@ -272,19 +319,26 @@ export default function TaskPage() {
             onMarkAsImportant={handleMarkAsImportant}
             onToggleTaskCompletion={handleToggleTaskCompletion}
           />
-          
         </div>
       )}
 
       <div className="relative mt-2 rounded-xl bg-white p-3 shadow ">
         <form
+          id="taskForm"
           onSubmit={handleSubmit(onSubmit)}
           className="flex items-center justify-center space-x-2"
         >
           <Textarea
             {...register('taskName', { required: true })}
             placeholder="Add a task"
-            className="flex-1 resize-none h-[40px]"
+            className="h-[40px] flex-1 resize-none"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const form = e.currentTarget.closest('form');
+                form?.requestSubmit();
+              }
+            }}
           />
           <Button type="submit" variant={'outline'}>
             <CornerDownLeft className="mr-2 h-4 w-4" />

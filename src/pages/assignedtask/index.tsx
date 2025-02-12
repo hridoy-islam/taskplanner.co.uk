@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import DynamicPagination from '@/components/shared/DynamicPagination';
 import { useFetchAssignedTasksQuery } from '@/redux/features/taskSlice';
 import { TaskSlice } from '@/redux/features/taskSlice';
-import notask from '@/assets/imges/home/notask.png';
 
 import {
   DropdownMenu,
@@ -242,11 +241,11 @@ export default function AssignedTaskPage() {
           onChange={handleSearch}
           className="flex-1"
         />
-        <DynamicPagination
+        {/* <DynamicPagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-        />
+        /> */}
       </div>
 
       {/* Content Section */}
@@ -265,7 +264,6 @@ export default function AssignedTaskPage() {
               tasks={tasks}
               onMarkAsImportant={handleMarkAsImportant}
               onToggleTaskCompletion={handleToggleTaskCompletion}
-              fetchTasks={refetch}
             />
           )}
         </div>
