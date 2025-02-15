@@ -281,11 +281,13 @@ export default function TaskPage() {
       });
     } catch (error) {
       // Show error toast
-      console.log(error);
-      toast({
-        variant: 'destructive',
-        title: 'An error occurred while adding the task.'
-      });
+      // console.log(error);
+      // toast({
+      //   variant: 'destructive',
+      //   title: 'An error occurred while adding the task.'
+      // });
+
+      reset()
     } finally {
       setLoading(false); // Reset loading state
     }
