@@ -93,7 +93,7 @@ export const TaskSlice = createApi({
       }),
 
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
-        return `${endpointName}?${queryArgs.authorId}-${queryArgs.assignedId}+${queryArgs.sortOrder}+${queryArgs.page}+${queryArgs.limit}`;
+        return `${endpointName}/${queryArgs.authorId}-${queryArgs.assignedId}+${queryArgs.sortOrder}+${queryArgs.page}+${queryArgs.limit}`;
       },
 
       // serializeQueryArgs: ({ endpointName, queryArgs }) => {
