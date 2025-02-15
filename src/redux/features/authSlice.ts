@@ -37,6 +37,7 @@ interface GoogleUserCredentials {
 
 interface AuthState {
   user: any | null;
+  refreshToken: any | null;
   token: any | null;
   loading: boolean;
   error: any | null;
@@ -46,7 +47,8 @@ const initialState: AuthState = {
   user: null,
   token: null,
   loading: false,
-  error: null
+  error: null,
+  refreshToken: null
 };
 
 interface RegisterCredentials {
@@ -107,6 +109,10 @@ export const loginUser = createAsyncThunk<UserResponse, UserCredentials>(
     localStorage.setItem(
       'taskplanner',
       JSON.stringify(response.data.accessToken)
+    );
+    localStorage.setItem(
+      'taskplannerRefresh',
+      JSON.stringify(response.data.refreshToken)
     );
     return response;
   }
@@ -197,6 +203,7 @@ export const changePassword = createAsyncThunk<
 
 export const logout = createAsyncThunk<void>('user/logout', async () => {
   localStorage.removeItem('taskplanner');
+  localStorage.removeItem('taskplannerRefresh');
 });
 
 const authSlice = createSlice({
@@ -214,10 +221,12 @@ const authSlice = createSlice({
         state.user = null;
         state.error = null;
         state.token = null;
+        state.refreshToken = null;
       })
       .addCase(loginUser.fulfilled, (state, action: any) => {
         state.loading = false;
         state.token = action.payload.data.accessToken;
+        state.refreshToken = action.payload.data.refreshToken;
         const decodedUser = jwtDecode(action.payload.data.accessToken);
         state.user = decodedUser;
         state.error = null;
@@ -227,6 +236,7 @@ const authSlice = createSlice({
         state.user = null;
         state.error = 'Please Check Your Login Credentials';
         state.token = null;
+        state.refreshToken = null;
       })
       .addCase(authWithFbORGoogle.pending, (state) => {
         state.loading = true;
@@ -252,6 +262,7 @@ const authSlice = createSlice({
         state.user = null; // Clear user state on logout
         state.error = null;
         state.token = null;
+        state.refreshToken = null;
       });
   }
 });

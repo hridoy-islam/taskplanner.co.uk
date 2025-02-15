@@ -320,9 +320,9 @@ export default function TaskPlanner() {
       days.push(
         <div key={i} className="p-2 lg:border ">
           <div className="mb-2 font-semibold max-lg:hidden">
-            {format(day, 'EEE, MMM,yyyy ')}
+            {format(day, 'EEE,MMM d,yyyy ')}
           </div>
-          <ScrollArea className=" lg:h-40">
+          <ScrollArea className=" lg:h-80">
             {filteredTasks
               .filter((task) => isSameDay(task.dueDate, day))
               .map((task) => (

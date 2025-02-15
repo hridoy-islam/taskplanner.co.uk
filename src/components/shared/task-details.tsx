@@ -26,6 +26,8 @@ import { FileUploaderRegular } from '@uploadcare/react-uploader';
 import '@uploadcare/react-uploader/core.css';
 import * as UC from '@uploadcare/file-uploader';
 import { OutputFileEntry } from '@uploadcare/file-uploader';
+import delivered from '@/assets/imges/home/logos/delivered.svg';
+import seen from '@/assets/imges/home/logos/seen.svg';
 import {
   ArrowUp,
   ArrowUpRightFromSquare,
@@ -124,6 +126,12 @@ export default function TaskDetails({
   }, [fetchComments, task._id]);
 
   useEffect(() => {
+    if (files.length > 0) {
+      handleFileSubmit();
+    }
+  }, [files]);
+
+  useEffect(() => {
     const messageReceivedHandler = async (newMessageReceived) => {
       const response = newMessageReceived?.data?.data;
       const newComment = {
@@ -189,6 +197,8 @@ export default function TaskDetails({
   }, [files, ctxProviderRef.current]);
 
   const handleCommentSubmit = async (data) => {
+    console.log(data);
+
     if (!data.content) {
       console.error(data, 'Content is required to submit a comment.');
       return;
@@ -230,71 +240,74 @@ export default function TaskDetails({
     }
   };
 
-  // const fetchData = async ()=>{
-  //   try{
-  //     const response = await axios.get(`https://core.qualitees.co.uk/api/documents?where=entity_id,${task?._id}&exclude=file_type,document`,{
-  //       headers:{
-  //         'x-company-token':'taskplanner-520480935547'
-  //       },
-  //     })
-  //     console.log(response?.data)
-  //   }catch(error){
-  //     console.error("error Fetching Document",error)
-  //   }
-  // }
-
-  // useEffect(() => {
-  //   if (task?._id) {
-  //     fetchData();
-  //   }
-  // }, [task?._id]);
-
-  const handleFileSubmit = async () => {
-    // if (files.length === 0) return;
-
+  const fetchData = async () => {
     try {
-      for (const file of files) {
-        const fileContent = file?.id;
-        console.log('File Content:', fileContent);
-        const data = {
-          content: fileContent,
-          taskId: task?._id,
-          authorId: user?._id,
-          isFile: true
-        };
-
-        const response = await axiosInstance.post('/comment', data);
-        if (!response.data.success) {
-          console.error('Failed to add file comment:', response.data.message);
-          continue;
+      const response = await axios.get(
+        `https://core.qualitees.co.uk/api/documents?where=entity_id,${task?._id}&exclude=file_type,document`,
+        {
+          headers: {
+            'x-company-token': 'taskplanner-520480935547'
+          }
         }
-
-        const newComment = {
-          authorId: {
-            id: user?._id,
-            name: user?.name
-          },
-          content: fileContent,
-          isFile: true,
-          taskId: task?._id,
-          id:
-            response?.data?.data?._id || Math.random().toString(36).substring(7)
-        };
-
-        console.log('New Comment:', newComment);
-
-        setComments((prevComments) => [...prevComments, newComment]);
-        setDisplayedComments((prevComments) => [...prevComments, newComment]);
-
-        socket.emit('new message', response);
-        console.log('newcomment', newComment);
-      }
+      );
+      console.log(response?.data);
     } catch (error) {
-      console.error('Error submitting file comment:', error);
-    } finally {
-      setFiles([]);
+      console.error('error Fetching Document', error);
     }
   };
+
+  useEffect(() => {
+    if (task?._id) {
+      fetchData();
+    }
+  }, [task?._id]);
+
+  // const handleFileSubmit = async () => {
+  //   try {
+  //     for (const file of files) {
+  //       const fileId = file?.id;
+  //       const fileUrl = file?.file_url;
+
+  //       console.log('File ID:', fileId);
+  //       console.log('File URL:', fileUrl);
+
+  //       const data = {
+  //         content: fileId,
+  //         authorId: user?._id,
+  //         isFile: true
+  //       };
+
+  //       // const response = await axiosInstance.post('/comment', data);
+  //       if (!response.data.success) {
+  //         console.error('Failed to add file comment:', response.data.message);
+  //         continue;
+  //       }
+
+  //       const newComment = {
+  //         authorId: {
+  //           id: user?.id,
+  //           name: user?.name
+  //         },
+  //         content: fileId, // Store file ID
+  //         isFile: true,
+  //         taskId: task?._id,
+  //         id:
+  //           response?.data?.data?._id || Math.random().toString(36).substring(7)
+  //       };
+
+  //       console.log('New Comment:', newComment);
+
+  //       setComments((prevComments) => [...prevComments, newComment]);
+  //       setDisplayedComments((prevComments) => [...prevComments, newComment]);
+
+  //       socket.emit('new message', response);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error submitting file comment:', error);
+  //   } finally {
+  //     setFiles([]);
+  //   }
+  // };
 
   const typingHandler = () => {
     if (!socketConnected) return;
@@ -328,6 +341,8 @@ export default function TaskDetails({
     }
     return 0;
   };
+
+  const saveFileToDb = async () => {};
 
   const applyScrollPosition = (scrollPosition) => {
     if (commentsEndRef.current) {
@@ -403,7 +418,7 @@ export default function TaskDetails({
                       }`}
                     >
                       <div
-                        className={`flex max-w-prose flex-col rounded-lg  ${
+                        className={`flex min-w-[150px] flex-col rounded-lg  ${
                           isFile
                             ? 'border border-gray-300'
                             : comment.authorId._id === user?._id
@@ -482,33 +497,75 @@ export default function TaskDetails({
                               </a>
                             )}
                           >
-                            <div>
+                            <div className="text-xs">
                               {comment.content}
-                              <div className="px -1 flex flex-row justify-end gap-2">
-                                {/* <span className="text-[10px] opacity-70">
-                                  {new Date(
-                                    comment?.createdAt
-                                  ).toLocaleDateString() ===
-                                  new Date().toLocaleDateString()
-                                    ? new Date(
-                                        comment?.createdAt
-                                      ).toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })
-                                    : new Date(
-                                        comment?.createdAt
-                                      ).toLocaleDateString()}
-                                </span> */}
-                                {/* <img
-                                  src={delivered}
-                                  alt="delivered"
-                                  className="h-3 w-3 "
-                                /> */}
-                              </div>
+                              {/* <div className="px -1 flex flex-row justify-end gap-2">
+                                <span className="text-[10px] opacity-70">
+                                  {
+                                    moment(comment?.createdAt).isSame(
+                                      moment(),
+                                      'day'
+                                    )
+                                      ? moment(comment?.createdAt).format(
+                                          'hh:mm A'
+                                        ) // If today, show time
+                                      : moment(comment?.createdAt).format(
+                                          'DD/MM/YYYY'
+                                        ) // Otherwise, show date
+                                  }
+                                </span>
+                                {comment.authorId._id === user?._id && (
+                                  <img
+                                    src={
+                                      comment.seenBy?.length > 1
+                                        ? seen
+                                        : delivered
+                                    }
+                                    alt={
+                                      comment.seenBy?.length > 1
+                                        ? 'seen'
+                                        : 'delivered'
+                                    }
+                                    className="h-3 w-3"
+                                  />
+                                )}
+                              </div> */}
                             </div>
                           </Linkify>
                         )}
+                      </div>
+                      <div className="flex flex-row items-center justify-between gap-2  p-1">
+                        <div className="flex flex-row items-center gap-1">
+                          {comment.authorId._id === user?._id && (
+                            <p className="text-xs text-gray-500">
+                              {comment.seenBy?.length > 1
+                                ? 'Seen'
+                                : 'Delivered'}
+                            </p>
+                          )}
+
+                          {comment.authorId._id === user?._id && (
+                            <img
+                              src={
+                                comment.seenBy?.length > 1 ? seen : delivered
+                              }
+                              alt={
+                                comment.seenBy?.length > 1
+                                  ? 'seen'
+                                  : 'delivered'
+                              }
+                              className="h-2.5 w-2.5"
+                            />
+                          )}
+                        </div>
+
+                        <span className="text-[10px] opacity-70">
+                          {
+                            moment(comment?.createdAt).isSame(moment(), 'day')
+                              ? moment(comment?.createdAt).format('hh:mm A') // If today, show time
+                              : moment(comment?.createdAt).format('DD/MM/YYYY') // Otherwise, show date
+                          }
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -579,8 +636,11 @@ export default function TaskDetails({
             onOpenChange={setIsImageUploaderOpen}
             multiple={false}
             onUploadComplete={(uploadedFiles) => {
-              setFiles(uploadedFiles);
-              handleSubmit(handleFileSubmit());
+              // if (uploadedFiles?.file_url) {
+
+              handleCommentSubmit({ content: uploadedFiles.data.file_url });
+              console.log('hi', uploadedFiles.data.file_url);
+              // }
             }}
             className="uc-light"
           />

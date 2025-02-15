@@ -235,30 +235,31 @@ export function ImageUploader({
 
       const formData = new FormData();
 
-      // formData.append('entity_id', 'abc');
-      // formData.append('file_type', 'document');
-      // formData.append('files[]', file);
+      formData.append('entity_id', 'abc');
+      formData.append('file_type', 'document');
+      formData.append('files[]', file);
 
-      // const response = await axios.post(
-      //   `https://core.qualitees.co.uk/api/documents`,
-      //   formData,
-      //   {
-      //     headers: {
-      //       'Content-Type': 'multipart/form-data',
-      //       'x-company-token': 'taskplanner-520480935547'
-      //     },
-      //     onUploadProgress: (progressEvent) => {
-      //       const percentCompleted = Math.round(
-      //         (progressEvent.loaded * 100) / progressEvent?.total
-      //       );
-      //       setUploadProgress(percentCompleted);
-      //     }
-      //   }
-      // );
+      const response = await axios.post(
+        `https://core.qualitees.co.uk/api/documents`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'x-company-token': 'taskplanner-520480935547'
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent?.total
+            );
+            setUploadProgress(percentCompleted);
+          }
+        }
+      );
 
-      // if (response.status === 200) {
-      //   onUploadComplete(response.data);
-      // }
+      if (response.status === 201) {
+        onUploadComplete(response.data);
+        console.log('imgdata', response.data);
+      }
     } catch (error) {
       console.error('Error uploading image:', error);
     } finally {

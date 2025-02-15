@@ -2,12 +2,11 @@ import { Card, CardContent } from '../ui/card';
 import { useEffect, useState } from 'react';
 import TaskList from './task-list';
 import { useToast } from '../ui/use-toast';
-import notask from '@/assets/imges/home/notask.png';
 import { Input } from '../ui/input';
 import Loader from '@/components/shared/loader';
 import { useFetchDueTasksQuery } from '@/redux/features/taskSlice';
 import { TaskSlice, useUpdateTaskMutation } from '@/redux/features/taskSlice';
-import axiosInstance from '@/lib/axios';
+
 export default function DueTasks({ user }) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,7 +19,7 @@ export default function DueTasks({ user }) {
   const { isLoading, data, refetch } = useFetchDueTasksQuery(
     {
       userId: user._id,
-      searchTerm,
+
       sortOrder,
       page,
       limit: 5000
@@ -32,7 +31,7 @@ export default function DueTasks({ user }) {
   useEffect(() => {
     getDueTaskFn({
       userId: user._id,
-      searchTerm: '',
+
       sortOrder: 'desc',
       page: 1,
       limit: 5000
@@ -132,11 +131,6 @@ export default function DueTasks({ user }) {
             onMarkAsImportant={handleMarkAsImportant}
             onToggleTaskCompletion={handleToggleTaskCompletion}
           />
-          {tasks.length === 0 && (
-            <div className="mt-36 flex flex-col items-center justify-center">
-              <img src={notask} alt="No Task" />
-            </div>
-          )}
         </CardContent>
       )}
     </Card>

@@ -38,7 +38,8 @@ import {
   X,
   Trash,
   Archive,
-  Star
+  Star,
+  Pen
 } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 import { useSelector } from 'react-redux';
@@ -57,15 +58,13 @@ import {
   useAddNewTagMutation,
   useFetchTagsQuery
 } from '@/redux/features/tagSlice';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import pen from 'lucide-react';
 
 import Select from 'react-select';
-import makeAnimated from 'react-select/animated';
 import { fetchCompanyUsers } from '@/redux/features/userSlice';
-import {
-  AsyncThunkAction,
-  ThunkDispatch,
-  UnknownAction
-} from '@reduxjs/toolkit';
+
 import { useDispatch } from 'react-redux';
 import { AppDispatch, RootState } from '@/redux/store';
 
@@ -101,7 +100,7 @@ const demoUsers: User[] = [
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [sharedNotes, setSharedNotes] = useState<Note[]>([]);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(notes[0]);
+  const [selectedNote, setSelectedNote] = useState<Note | null>();
   const [searchTerm, setSearchTerm] = useState('');
   const [tagSearchTerm, setTagSearchTerm] = useState('');
   const [tags, setTags] = useState([]);
@@ -117,6 +116,8 @@ export default function NotesPage() {
   const [loading, setLoading] = useState(false);
   const { users } = useSelector((state: RootState) => state.users);
   const [sharedWith, setSharedWith] = useState<any[]>([]);
+  const [selectedTab, setSelectedTab] = useState('my-notes');
+
   const dispatch = useDispatch<AppDispatch>();
 
   // useEffect(() => {
@@ -192,7 +193,7 @@ export default function NotesPage() {
 
   const userOptions = shareRecipients.map((user) => ({
     value: user._id,
-    label: `${user.name} (${user.email})`
+    label: `${user.name} (${user.email}) `
   }));
 
   // useEffect(() => {
@@ -228,9 +229,15 @@ export default function NotesPage() {
   // Filter tags based on search term
 
   useEffect(() => {
+    if (selectedTab !== 'my-notes') {
+      setSelectedNote(null);
+    }
+  }, [selectedTab]);
+
+  useEffect(() => {
     if (noteData.length > 0) {
       setNotes(noteData);
-      setSelectedNote(noteData[0]);
+      // setSelectedNote(noteData[0]);
     } else {
       setSelectedNote(null);
     }
@@ -239,7 +246,6 @@ export default function NotesPage() {
   useEffect(() => {
     if (sharedNoteData.length > 0) {
       setSharedNotes(sharedNoteData);
-      setSelectedNote(sharedNoteData[0]);
     } else {
       setSelectedNote(null);
     }
@@ -388,6 +394,41 @@ export default function NotesPage() {
     }
   };
 
+  const removeShareUser = async (userToRemove) => {
+    if (selectedNote) {
+      try {
+        // Remove the tag from the selectedNote
+        const updatedNote = {
+          ...selectedNote,
+          sharedWith: selectedNote.sharedWith.filter(
+            (sharedUser) => sharedUser !== userToRemove.value
+          )
+          //there sould be sharedWith
+        };
+
+        // Send the updated tags to the backend using a PATCH request
+        const response = await axiosInstance.patch(
+          `/notes/singlenote/${selectedNote._id}`, // Assuming the correct endpoint
+          { sharedWith: updatedNote.sharedWith }
+        );
+
+        if (response.status === 200) {
+          // Update the local state with the updated note
+          setNotes((prevNotes) =>
+            prevNotes.map((note) =>
+              note._id === selectedNote._id ? updatedNote : note
+            )
+          );
+          setSelectedNote(updatedNote); // Update the selected note
+          toast({ title: 'User removed successfully!' });
+        }
+      } catch (error) {
+        console.error('Error removing tag:', error);
+        toast({ title: 'Failed to remove user', variant: 'destructive' });
+      }
+    }
+  };
+
   const removeTag = async (tagToRemove: string) => {
     if (selectedNote) {
       try {
@@ -431,45 +472,64 @@ export default function NotesPage() {
   // };
 
   const handleShare = async () => {
+    if (!selectedNote) return;
+
+    // Ensure sharedWith is always an array before merging
+    const existingSharedWith = Array.isArray(selectedNote.sharedWith)
+      ? selectedNote.sharedWith
+      : [];
+    const newSharedWith = Array.isArray(sharedWith)
+      ? sharedWith.map((recipient) => recipient.value)
+      : [];
+
+    // Merge old and new sharedWith values (removing duplicates)
+    const updatedSharedWith = [
+      ...new Set([...existingSharedWith, ...newSharedWith])
+    ];
+
     // Prepare the data to be sent to the backend
     const data = {
-      noteId: selectedNote?._id, // The note's ID
-      updatedData: {
-        sharedWith: sharedWith.map((recipient) => recipient.value) // Extract the value (ID) of each recipient
-      }
+      noteId: selectedNote._id,
+      updatedData: { sharedWith: updatedSharedWith } // Merged list
     };
 
     try {
       const updatedNote = await updateNote(data);
 
-      // On success, update the local state with the updated sharedWith field
+      // Ensure updatedNote.sharedWith is an array before using spread
+      const updatedSharedList = Array.isArray(updatedNote?.sharedWith)
+        ? updatedNote.sharedWith
+        : [];
+
       setNotes((prevNotes: any) =>
         prevNotes.map((note) =>
-          note._id === selectedNote?._id
-            ? { ...note, sharedWith: updatedNote?.sharedWith } // Update the sharedWith field locally with the response
+          note._id === selectedNote._id
+            ? {
+                ...note,
+                sharedWith: [
+                  ...new Set([...existingSharedWith, ...updatedSharedList])
+                ]
+              }
             : note
         )
       );
 
       setSelectedNote((prevNote) => ({
         ...prevNote!,
-        sharedWith: updatedNote.sharedWith // Update the selected note's sharedWith field
+        sharedWith: [
+          ...new Set([...(prevNote?.sharedWith ?? []), ...updatedSharedList])
+        ]
       }));
 
       setIsShareDialogOpen(false);
-      setSharedWith(updatedNote.sharedWith);
+      setSharedWith(updatedSharedList);
 
       toast({ title: 'Note shared successfully!' });
     } catch (error) {
       console.error('Error sharing note:', error);
-      // Handle error (e.g., show error message)
       toast({ title: 'Failed to share note', variant: 'destructive' });
     }
   };
-
-  useEffect(() => {
-    console.log('sharedWith updated: ', sharedWith);
-  }, [sharedWith]);
 
   const toggleRecipient = (user: User) => {
     setShareRecipients((prev) =>
@@ -500,6 +560,7 @@ export default function NotesPage() {
     try {
       // Send DELETE request to API to remove the tag by its ID
       await axiosInstance.delete(`/tags/${tag._id}`);
+
       // console.log(tag._id)
 
       // Update local state after successful deletion
@@ -609,41 +670,41 @@ export default function NotesPage() {
         }
       }
 
-      if (action === 'archive') {
-        try {
-          // Toggle favorite status
-          const updatedNote = {
-            ...selectedNote,
-            isArchive: !selectedNote.isArchive
-          };
+      // if (action === 'archive') {
+      //   try {
+      //     // Toggle favorite status
+      //     const updatedNote = {
+      //       ...selectedNote,
+      //       isArchive: !selectedNote.isArchive
+      //     };
 
-          setLoading(true);
+      //     setLoading(true);
 
-          // Send the PATCH request
-          // await axiosInstance.patch(`/notes/singlenote/${selectedNote._id}`, updatedNote);
-          await updateNote({
-            noteId: selectedNote._id,
-            updatedData: updatedNote
-          });
-          // Update local state (notes list)
-          setNotes((prevNotes) =>
-            prevNotes.map((note) =>
-              note._id === selectedNote._id
-                ? { ...note, isArchive: updatedNote.isArchive }
-                : note
-            )
-          );
-          setSelectedNote(updatedNote);
-          // Show toast message
-          toast({
-            title: `Note ${updatedNote.isArchive ? 'added to' : 'removed from'} archive!`
-          });
-        } catch (error) {
-          console.error('Error Updating note:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
+      //     // Send the PATCH request
+      //     // await axiosInstance.patch(`/notes/singlenote/${selectedNote._id}`, updatedNote);
+      //     await updateNote({
+      //       noteId: selectedNote._id,
+      //       updatedData: updatedNote
+      //     });
+      //     // Update local state (notes list)
+      //     setNotes((prevNotes) =>
+      //       prevNotes.map((note) =>
+      //         note._id === selectedNote._id
+      //           ? { ...note, isArchive: updatedNote.isArchive }
+      //           : note
+      //       )
+      //     );
+      //     setSelectedNote(updatedNote);
+      //     // Show toast message
+      //     toast({
+      //       title: `Note ${updatedNote.isArchive ? 'added to' : 'removed from'} archive!`
+      //     });
+      //   } catch (error) {
+      //     console.error('Error Updating note:', error);
+      //   } finally {
+      //     setLoading(false);
+      //   }
+      // }
     }
   };
 
@@ -679,39 +740,41 @@ export default function NotesPage() {
             </DialogContent>
           </Dialog>
         </div>
-        <div className="flex flex-row items-center justify-between px-2">
-          <Button onClick={() => setIsTagManagementOpen(true)}>
-            <Hash className="mr-2 h-4 w-4" />
-            Manage Tags
-          </Button>
+        {selectedTab === 'my-notes' && (
+          <div className="flex flex-row items-center justify-between px-2">
+            <Button onClick={() => setIsTagManagementOpen(true)}>
+              <Hash className="mr-2 h-4 w-4" />
+              Manage Tags
+            </Button>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 ">
-                Filter
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 border-none bg-white p-0 text-black">
-              <div className="flex flex-col overflow-y-auto">
-                <div className="max-h-48 overflow-y-auto">
-                  {filteredTags.length > 0 ? (
-                    filteredTags.map((tag) => (
-                      <div
-                        key={tag._id}
-                        onClick={() => handleTagClick(tag.name)}
-                        className="cursor-pointer p-2 hover:bg-gray-200"
-                      >
-                        {tag.name}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-2 text-gray-500">No tags found.</div>
-                  )}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 ">
+                  Filter
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 border-none bg-white p-0 text-black">
+                <div className="flex flex-col overflow-y-auto">
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredTags.length > 0 ? (
+                      filteredTags.map((tag) => (
+                        <div
+                          key={tag._id}
+                          onClick={() => handleTagClick(tag.name)}
+                          className="cursor-pointer p-2 hover:bg-gray-200"
+                        >
+                          {tag.name}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-2 text-gray-500">No tags found.</div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
         <div className="p-2 ">
           <div className="relative">
             <Search
@@ -729,7 +792,12 @@ export default function NotesPage() {
         </div>
 
         <div className="p-2 ">
-          <Tabs defaultValue="my-notes" className="w-full ">
+          <Tabs
+            value={selectedTab}
+            defaultValue="my-notes"
+            onValueChange={setSelectedTab}
+            className="w-full "
+          >
             <TabsList className="grid w-full  grid-cols-2 ">
               <TabsTrigger value="my-notes">My Notes</TabsTrigger>
               <TabsTrigger value="shared-notes">Shared Notes</TabsTrigger>
@@ -767,7 +835,7 @@ export default function NotesPage() {
 
             {/* Shared Notes Tab */}
             <TabsContent value="shared-notes">
-              <div className="flex flex-col gap-2 overflow-y-auto p-2">
+              <div className="flex flex-col gap-2 overflow-y-auto ">
                 {filterSharedNotes.map((note) => (
                   <div
                     key={note.id}
@@ -780,183 +848,155 @@ export default function NotesPage() {
                         ? note.content.substring(0, 40) + '...'
                         : note.content}
                     </p>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {note.tags.map((tag) => (
-                        <span
-                          key={tag._id}
-                          className="rounded bg-gray-300 px-1 text-xs text-gray-700"
-                        >
-                          {tag.name}
-                        </span>
-                      ))}
-                    </div>
                   </div>
                 ))}
               </div>
             </TabsContent>
           </Tabs>
         </div>
-        {/* <div className="flex flex-col gap-2 overflow-y-auto p-2 ">
-          {filteredNotes.map((note) => (
-            <div
-              key={note.id}
-              className={`cursor-pointer rounded-md border border-gray-200 p-4  hover:bg-gray-400 ${note?.favorite === true ? 'bg-orange-200' : 'bg-white'}`}
-              onClick={() => setSelectedNote(note)}
-            >
-              <h3 className="truncate font-semibold">{note.title}</h3>
-              <p className="w-full truncate text-sm text-gray-600">
-                {note.content.length > 40
-                  ? note.content.substring(0, 40) + '...'
-                  : note.content}
-              </p>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {note.tags.map((tag) => (
-                  <span
-                    key={tag._id}
-                    className="rounded bg-gray-300 px-1 text-xs text-gray-700"
-                  >
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div> */}
       </div>
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col">
         {selectedNote ? (
           <>
-            <header className="flex items-center justify-between border-b border-gray-300 bg-gray-200 p-4">
+            <header className="flex  items-center justify-between border-b border-gray-300 bg-gray-200 p-4">
               <div
-                className="flex items-center"
+                className="flex items-center p-2"
                 onClick={() => {
-                  openUpdateModal(selectedNote);
+                  if (selectedTab === 'my-notes') {
+                    openUpdateModal(selectedNote);
+                  }
                 }}
               >
                 <h2 className="font-semibold">{selectedNote.title}</h2>
-                <ChevronDown className="ml-2 h-4 w-4 text-gray-600" />
+                {selectedTab === 'my-notes' && (
+                  <Pen className="ml-2 h-4 w-4 text-gray-600" />
+                )}
               </div>
-              <div className="flex items-center space-x-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 ">
-                      <Hash className="mr-2 h-4 w-4" />
-                      Add tag
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-48 border-none bg-white p-0 text-black">
-                    <div className="flex flex-col overflow-y-auto">
-                      {/* Search Input */}
-                      <input
-                        type="text"
-                        placeholder="Search tags..."
-                        value={tagSearchTerm}
-                        onChange={(e) => setTagSearchTerm(e.target.value)}
-                        className="border-b border-gray-200 p-2 focus:outline-none"
-                      />
+              {selectedTab === 'my-notes' && (
+                <div className="flex items-center space-x-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 ">
+                        <Hash className="mr-2 h-4 w-4" />
+                        Add tag
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 border-none bg-white p-0 text-black">
+                      <div className="flex flex-col overflow-y-auto">
+                        {/* Search Input */}
+                        <input
+                          type="text"
+                          placeholder="Search tags..."
+                          value={tagSearchTerm}
+                          onChange={(e) => setTagSearchTerm(e.target.value)}
+                          className="border-b border-gray-200 p-2 focus:outline-none"
+                        />
 
-                      {/* Tag List */}
-                      <div className="max-h-48 overflow-y-auto">
-                        {filteredTags.length > 0 ? (
-                          filteredTags.map((tag) => (
-                            <div
-                              key={tag._id}
-                              onClick={() => addTag(tag)}
-                              className="cursor-pointer p-2 hover:bg-gray-200"
-                            >
-                              {tag.name}
+                        {/* Tag List */}
+                        <div className="max-h-48 overflow-y-auto">
+                          {filteredTags.length > 0 ? (
+                            filteredTags.map((tag) => (
+                              <div
+                                key={tag._id}
+                                onClick={() => addTag(tag)}
+                                className="cursor-pointer p-2 hover:bg-gray-200"
+                              >
+                                {tag?.name}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-2 text-gray-500">
+                              No tags found.
                             </div>
-                          ))
-                        ) : (
-                          <div className="p-2 text-gray-500">
-                            No tags found.
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                    </PopoverContent>
+                  </Popover>
 
-                <Button
-                  onClick={() => handleNoteAction('update')}
-                  size="sm"
-                  className="h-8"
-                >
-                  Save
-                </Button>
+                  <Button
+                    onClick={() => handleNoteAction('update')}
+                    size="sm"
+                    className="h-8"
+                  >
+                    Save
+                  </Button>
 
-                <Button variant="ghost" size="icon" onClick={shareNote}>
-                  <Share2 className="h-4 w-4" />
-                </Button>
+                  <Button variant="ghost" size="icon" onClick={shareNote}>
+                    <Share2 className="h-4 w-4" />
+                  </Button>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {/* <DropdownMenuLabel>Options</DropdownMenuLabel>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {/* <DropdownMenuLabel>Options</DropdownMenuLabel>
                     <DropdownMenuSeparator /> */}
-                    {/* <DropdownMenuItem
+                      {/* <DropdownMenuItem
                       onClick={() => setIsTagManagementOpen(true)}
                     >
                       <Hash className="mr-2 h-4 w-4" />
                       Manage Tags
                     </DropdownMenuItem> */}
 
-                    <DropdownMenuItem
-                      onClick={() => handleNoteAction('delete')}
-                    >
-                      <Trash className="mr-2 h-4 w-4" />
-                      Delete Note
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
+                      <DropdownMenuItem
+                        onClick={() => handleNoteAction('delete')}
+                      >
+                        <Trash className="mr-2 h-4 w-4" />
+                        Delete Note
+                      </DropdownMenuItem>
+                      {/* <DropdownMenuItem
                       onClick={() => handleNoteAction('archive')}
                     >
                       <Archive className="mr-2 h-4 w-4" />
                       {selectedNote.isArchive
                         ? 'Unarchive Note'
                         : 'Archive Note'}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleNoteAction('favorite')}
-                    >
-                      <Star
-                        className={`mr-2 h-4 w-4  ${selectedNote.favorite === true ? 'text-orange-200' : ''}`}
-                      />
-                      <p
-                        className={` ${selectedNote.favorite === true ? 'text-orange-200' : ''}`}
+                    </DropdownMenuItem> */}
+                      <DropdownMenuItem
+                        onClick={() => handleNoteAction('favorite')}
                       >
-                        Favorite Note
-                      </p>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                        <Star
+                          className={`mr-2 h-4 w-4  ${selectedNote.favorite === true ? 'text-orange-200' : ''}`}
+                        />
+                        <p
+                          className={` ${selectedNote.favorite === true ? 'text-orange-200' : ''}`}
+                        >
+                          Favorite Note
+                        </p>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
             </header>
             <main className="flex-1 bg-white p-6">
-              <div className="mb-4 flex flex-wrap gap-2">
-                {selectedNote.tags.map((tag) => (
-                  <span
-                    key={tag._id}
-                    className="flex items-center rounded-full bg-gray-200 px-2 py-1 text-sm text-gray-700"
-                  >
-                    {tag.name}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      className="ml-1 text-gray-500 hover:text-gray-700"
+              {selectedTab === 'my-notes' && (
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {selectedNote.tags.map((tag) => (
+                    <span
+                      key={tag?._id}
+                      className="flex items-center rounded-full bg-gray-200 px-2 py-1 text-sm text-gray-700"
                     >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
+                      {tag?.name}
+                      <button
+                        onClick={() => removeTag(tag)}
+                        className="ml-1 text-gray-500 hover:text-gray-700"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
 
               <textarea
-                disabled={selectedNote.isArchive}
+                disabled={selectedTab !== 'my-notes' || selectedNote.isArchive}
                 className="h-[calc(100%-2rem)] w-full resize-none border-none bg-white focus:outline-none"
                 value={selectedNote.content}
                 onChange={(e) => {
@@ -1062,6 +1102,13 @@ export default function NotesPage() {
                             {user.label}{' '}
                             {/* Assuming label is in the format of "name (email)" */}
                           </label>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeShareUser(user)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
                       );
                     }

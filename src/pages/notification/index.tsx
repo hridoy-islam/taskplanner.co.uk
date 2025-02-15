@@ -22,7 +22,7 @@ export default function NotificationsPage() {
     const loadNotifications = async (userId: string) => {
       try {
         const { data } = await axiosInstance.get(`/notifications/${userId}`);
-        setNotifications(data.data.result); // Set the fetched notifications in state
+        setNotifications(data.data.result);
       } catch (error) {
         console.error('Error fetching notifications:', error);
       }
