@@ -282,13 +282,9 @@ export const TaskSlice = createApi({
         body: data
       }),
 
-      invalidatesTags: (result, error, { updates, taskId }) => [
-        { type: 'Task', id: 'LIST' },
-        { type: 'Task', id: taskId },
-        { type: 'Task', id: `BOTH-${updates.authorId}-${updates.assignedId}` },
-        { type: 'Task', id: `WEEK-${updates.userId}` },
-        { type: 'Task', id: `DAY-${updates.userId}` },
-        { type: 'Task', id: `MONTH-${updates.userId}` }
+      invalidatesTags:  [
+        { type: 'Task', id: 'LIST' }
+      
       ]
     })
   })
