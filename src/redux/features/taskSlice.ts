@@ -62,12 +62,12 @@ export const TaskSlice = createApi({
         }
       }),
       // serializeQueryArgs: ({ endpointName, queryArgs }) => {
-      //   return `${endpointName}-${queryArgs.userId}?sort=${queryArgs.sortOrder}&page=${queryArgs.page}&limit=${queryArgs.limit}`;
+      //   return `${endpointName}/${queryArgs.userId}?sort=${queryArgs.sortOrder}&page=${queryArgs.page}&limit=${queryArgs.limit}`;
       // },
 
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
         const { userId, sortOrder, page, limit } = queryArgs;
-        return `${endpointName}-${userId}-${sortOrder}-${page}-${limit}`;
+        return `${endpointName}/${userId}+${sortOrder}+${page}+${limit}`;
       },
       providesTags: (result, error, { userId }) => [
         { type: 'Task', id: `LIST-${userId}` }
@@ -76,6 +76,7 @@ export const TaskSlice = createApi({
     fetchTasksForBothUsers: builder.query({
       query: ({
         authorId,
+        searchTerm = '',
         assignedId,
         sortOrder = 'desc',
         page = 1,
@@ -85,17 +86,21 @@ export const TaskSlice = createApi({
         params: {
           sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
           page,
+          searchTerm,
           limit,
           status: 'pending'
         }
       }),
-      // serializeQueryArgs: ({ endpointName, queryArgs }) => {
-      //   return `${endpointName}-${queryArgs.authorId}/${queryArgs.assignedId}?sort=${queryArgs.sortOrder}&page=${queryArgs.page}&limit=${queryArgs.limit}`;
-      // },
+
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
-        const { authorId, assignedId, sortOrder, page, limit } = queryArgs;
-        return `${endpointName}-${authorId}-${assignedId}-${sortOrder}-${page}-${limit}`;
+        return `${endpointName}?${queryArgs.authorId}-${queryArgs.assignedId}+${queryArgs.sortOrder}+${queryArgs.page}+${queryArgs.limit}`;
       },
+
+      // serializeQueryArgs: ({ endpointName, queryArgs }) => {
+      //   const { authorId, assignedId, sortOrder, page, limit } = queryArgs || {};
+
+      //   return `${endpointName}/${authorId}/${assignedId}-${sortOrder}-${page}-${limit}`;
+      // },
 
       providesTags: (result, error, { authorId, assignedId }) => [
         { type: 'Task', id: `BOTH-${authorId}-${assignedId}` }
@@ -277,14 +282,20 @@ export const TaskSlice = createApi({
         body: data
       }),
 
-      invalidatesTags: [{ type: 'Task', id: 'LIST' }]
+      invalidatesTags: (result, error, { updates, taskId }) => [
+        { type: 'Task', id: 'LIST' },
+        { type: 'Task', id: taskId },
+        { type: 'Task', id: `BOTH-${updates.authorId}-${updates.assignedId}` },
+        { type: 'Task', id: `WEEK-${updates.userId}` },
+        { type: 'Task', id: `DAY-${updates.userId}` },
+        { type: 'Task', id: `MONTH-${updates.userId}` }
+      ]
     })
   })
 });
 
 export const {
   useFetchDueTasksQuery,
-  useLazyFetchDueTasksQuery,
   useCreateTaskMutation,
   useFetchAssignedTasksQuery,
   useFetchTasksForBothUsersQuery,

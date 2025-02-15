@@ -326,8 +326,6 @@ export default function GroupPage() {
       return 0;
     });
 
-
-
   return (
     <div className="container mx-auto h-full overflow-auto p-4">
       <h1 className="mb-4 text-2xl font-bold">Groups</h1>
@@ -369,7 +367,7 @@ export default function GroupPage() {
             <ScrollArea className="h-[40rem] max-h-fit pr-2 ">
               <TableHeader className="sticky top-0 z-10 bg-white">
                 <TableRow>
-                  <TableHead className='max-md:hidden'>Members</TableHead>
+                  <TableHead className="max-md:hidden">Members</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Archive</TableHead>
                 </TableRow>
@@ -378,9 +376,12 @@ export default function GroupPage() {
                 {filteredGroups.map((group) => (
                   <TableRow
                     key={group.id}
-                    className="cursor-pointer border-none shadow hover:bg-slate-100"
+                    className="cursor-pointer  items-center border-none shadow hover:bg-slate-100"
                   >
-                    <TableCell onClick={() => navigate(`${group?.id}`)} className='max-md:hidden'>
+                    <TableCell
+                      onClick={() => navigate(`${group?.id}`)}
+                      className="max-md:hidden"
+                    >
                       <div className="flex -space-x-2 overflow-hidden">
                         {group.members.slice(0, 3).map((member) => (
                           <TooltipProvider key={member.id}>
@@ -421,7 +422,7 @@ export default function GroupPage() {
                       >
                         <div>{group.name}</div>
                         <div
-                          className="hover:bg-none "
+                          className="flex flex-row hover:bg-none "
                           onClick={(e) => {
                             e.stopPropagation(); // Prevent the row's onClick from firing
                             // Add button-specific logic here
@@ -454,33 +455,34 @@ export default function GroupPage() {
                             const response = await axiosInstance.patch(
                               `/group/single/${group.id}`,
                               {
-                                status: updatedStatus,
+                                status: updatedStatus
                               }
                             );
                             if (response.status === 200) {
                               toast({
                                 title: 'Group status updated successfully',
-                                className: 'bg-green-500 border-none text-white',
+                                className: 'bg-green-500 border-none text-white'
                               });
                               fetchGroups();
                             } else {
                               throw new Error('Failed to update group status');
                             }
                           } catch (error) {
-                            console.error('Error updating group status:', error);
+                            console.error(
+                              'Error updating group status:',
+                              error
+                            );
                             toast({
                               title: 'Failed to update group status',
-                              className: 'bg-red-500 border-none text-white',
+                              className: 'bg-red-500 border-none text-white'
                             });
                           }
                         }}
-
-                        className='border-2 border-gray-600 px-2 py-1 rounded-lg'
+                        className="rounded-lg border-2 border-gray-600 px-2 py-1"
                       >
                         <option value="active">Active</option>
                         <option value="archived">Archived</option>
                       </select>
-
                     </TableCell>
                   </TableRow>
                 ))}

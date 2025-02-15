@@ -51,6 +51,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ImageUploader } from '@/components/shared/image-uploader';
 import { EyeOpenIcon } from '@radix-ui/react-icons';
+import delivered from '@/assets/imges/home/logos/delivered.svg';
+import seen from '@/assets/imges/home/logos/seen.svg';
 
 // Mock data
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
@@ -729,7 +731,7 @@ export default function GroupChat() {
           isSidebarVisible ? 'block' : 'hidden', // Control visibility on small screens
           'md:block'
         )}
-      // style={{ display: isSideGroupVisible ?   "hidden": "block" }}
+        // style={{ display: isSideGroupVisible ?   "hidden": "block" }}
       >
         {/* Sidebar content */}
         <div className="flex w-full items-start justify-between gap-2">
@@ -889,17 +891,19 @@ export default function GroupChat() {
               return (
                 <div
                   key={comment._id}
-                  className={`mb-4 flex w-full flex-row ${comment.authorId._id === user?._id
+                  className={`mb-4 flex w-full flex-row ${
+                    comment.authorId._id === user?._id
                       ? 'justify-end'
                       : 'justify-start'
-                    }`}
+                  }`}
                 >
                   <div className="flex flex-col items-end justify-end">
                     <div
-                      className={`inline-block max-w-prose ${comment.authorId._id === user?._id
+                      className={`inline-block max-w-prose ${
+                        comment.authorId._id === user?._id
                           ? 'bg-[#151261] text-white'
                           : 'bg-[#DCFCE7]'
-                        } rounded-lg p-3`}
+                      } rounded-lg p-3`}
                       style={{
                         wordWrap: 'break-word',
                         whiteSpace: 'pre-wrap',
@@ -940,10 +944,11 @@ export default function GroupChat() {
                       <div className="max-w-full">
                         {isFile ? (
                           <div
-                            className={`flex items-center space-x-2 rounded-lg p-2 ${comment.authorId._id === user?._id
+                            className={`flex items-center space-x-2 rounded-lg p-2 ${
+                              comment.authorId._id === user?._id
                                 ? 'bg-blue-500/15'
                                 : 'bg-gray-200/15'
-                              }`}
+                            }`}
                           >
                             {/* Display File (Image or Non-Image) */}
                             {parsedContent.mimeType?.startsWith('image/') ? (
@@ -1007,24 +1012,32 @@ export default function GroupChat() {
                                 {new Date(
                                   comment?.createdAt
                                 ).toLocaleDateString() ===
-                                  new Date().toLocaleDateString()
+                                new Date().toLocaleDateString()
                                   ? new Date(
-                                    comment?.createdAt
-                                  ).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })
+                                      comment?.createdAt
+                                    ).toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })
                                   : new Date(
-                                    comment?.createdAt
-                                  ).toLocaleDateString()}
+                                      comment?.createdAt
+                                    ).toLocaleDateString()}
                               </span>
-                              {/* {user?._id && (
+                              {comment.authorId._id === user?._id && (
                                 <img
-                                  src={delivered}
-                                  alt="delivered"
-                                  className="h-3 w-3 "
+                                  src={
+                                    comment.seenBy?.length > 1
+                                      ? seen
+                                      : delivered
+                                  }
+                                  alt={
+                                    comment.seenBy?.length > 1
+                                      ? 'seen'
+                                      : 'delivered'
+                                  }
+                                  className="h-3 w-3"
                                 />
-                              )} */}
+                              )}
                             </div>
                           </Linkify>
                         )}
@@ -1110,7 +1123,6 @@ export default function GroupChat() {
                   </div>
                 </div>
               )}
-
             </form>
           )}
           <ImageUploader

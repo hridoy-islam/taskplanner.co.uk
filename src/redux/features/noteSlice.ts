@@ -57,7 +57,7 @@ export const NoteSlice = createApi({
       }),
 
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
-        return `${endpointName}/${queryArgs}`;
+        return `${endpointName}-${queryArgs.userId}`;
       },
 
       providesTags: (result, error, userId) => {
