@@ -78,6 +78,8 @@ export default function ProfilePage() {
     fetchProfileData();
   }, [userId]);
 
+
+
   const onSubmit = async (data: ProfileFormValues) => {
     try {
       // Add the uploaded image file ID to the profile data if available
@@ -100,6 +102,7 @@ export default function ProfilePage() {
     }
   };
 
+ 
   return (
     <div className="space-y-4 p-4 md:p-8">
       <PageHead title="Profile Page" />
@@ -116,7 +119,7 @@ export default function ProfilePage() {
         >
           <div className="flex flex-col items-center space-y-4">
             <Avatar className="h-32 w-32">
-              <AvatarImage src={user?.image} alt="Profile picture" />
+              <AvatarImage src={profileData?.image} alt="Profile picture" />
               <AvatarFallback>
                 {user?.name
                   ?.split(' ')
@@ -220,15 +223,39 @@ export default function ProfilePage() {
           </Button>
         </form>
         <ImageUploader
-          open={isImageUploaderOpen}
-          onOpenChange={setIsImageUploaderOpen}
-          multiple={false}
-          onUploadComplete={(uploadedFiles) => {
-            console.log('Uploaded files:', uploadedFiles);
-            setFiles(uploadedFiles);
-          }}
-          className="uc-light"
-        />
+            open={isImageUploaderOpen}
+            onOpenChange={setIsImageUploaderOpen}
+            multiple={false}
+            onUploadComplete={ async (uploadedFiles) => {
+
+             if(uploadedFiles?.data?.file_url){
+              try {
+                const updatedData = {
+                  ...user,
+                  image: uploadedFiles.data.file_url, 
+                };
+        
+                // Send the  request to the backend
+                await axiosInstance.patch(`/users/${userId}`, updatedData);
+        
+                // Show success toast
+                toast({
+                  title: "Profile Updated",
+                  description: "Your profile image has been updated.",
+                });
+              } catch (error) {
+                // Show error toast
+                toast({
+                  title: "Error",
+                  description: "Failed to update profile image.",
+                  variant: "destructive",
+                });
+              }
+             }
+              
+            }}
+            className="uc-light"
+          />
       </Form>
     </div>
   );

@@ -489,48 +489,24 @@ export default function TaskDetails({
                                 href={decoratedHref}
                                 key={key}
                                 style={{
-                                  textDecoration: 'underline',
-                                  color: 'inherit'
+                                  textDecoration: '',
+                                  color: 'inherit',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  margin: '5px'
                                 }}
+                                target="_blank"
+                                rel="noopener noreferrer"
                               >
-                                {decoratedText}
+                                <div className="rounded-xs flex flex-row gap-2 bg-gray-800 p-2 shadow-xl">
+                                  <DownloadIcon className="h-4 w-4" />
+                                  Document
+                                </div>
                               </a>
                             )}
                           >
-                            <div className="text-xs">
-                              {comment.content}
-                              {/* <div className="px -1 flex flex-row justify-end gap-2">
-                                <span className="text-[10px] opacity-70">
-                                  {
-                                    moment(comment?.createdAt).isSame(
-                                      moment(),
-                                      'day'
-                                    )
-                                      ? moment(comment?.createdAt).format(
-                                          'hh:mm A'
-                                        ) // If today, show time
-                                      : moment(comment?.createdAt).format(
-                                          'DD/MM/YYYY'
-                                        ) // Otherwise, show date
-                                  }
-                                </span>
-                                {comment.authorId._id === user?._id && (
-                                  <img
-                                    src={
-                                      comment.seenBy?.length > 1
-                                        ? seen
-                                        : delivered
-                                    }
-                                    alt={
-                                      comment.seenBy?.length > 1
-                                        ? 'seen'
-                                        : 'delivered'
-                                    }
-                                    className="h-3 w-3"
-                                  />
-                                )}
-                              </div> */}
-                            </div>
+                            <div className="text-xs">{comment.content}</div>
                           </Linkify>
                         )}
                       </div>
@@ -639,7 +615,7 @@ export default function TaskDetails({
               // if (uploadedFiles?.file_url) {
 
               handleCommentSubmit({ content: uploadedFiles.data.file_url });
-              console.log('hi', uploadedFiles.data.file_url);
+
               // }
             }}
             className="uc-light"

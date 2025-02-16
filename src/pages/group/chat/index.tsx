@@ -53,7 +53,7 @@ import { ImageUploader } from '@/components/shared/image-uploader';
 import { EyeOpenIcon } from '@radix-ui/react-icons';
 import delivered from '@/assets/imges/home/logos/delivered.svg';
 import seen from '@/assets/imges/home/logos/seen.svg';
-
+import moment from 'moment';
 // Mock data
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
 let socket, selectedChatCompare;
@@ -899,7 +899,7 @@ export default function GroupChat() {
                 >
                   <div className="flex flex-col items-end justify-end">
                     <div
-                      className={`inline-block max-w-prose ${
+                      className={`inline-block min-w-[150px] ${
                         comment.authorId._id === user?._id
                           ? 'bg-[#151261] text-white'
                           : 'bg-[#DCFCE7]'
@@ -998,32 +998,48 @@ export default function GroupChat() {
                                 href={decoratedHref}
                                 key={key}
                                 style={{
-                                  textDecoration: 'underline',
-                                  color: 'inherit'
+                                  textDecoration: '',
+                                  color: 'inherit',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  margin:"5px"
                                 }}
+                                target="_blank"
+                                rel="noopener noreferrer"
                               >
-                                {decoratedText}
+                                <div className='flex flex-row gap-2 bg-gray-800 shadow-xl p-2 rounded-xs'>
+
+                                <DownloadIcon className="h-4 w-4" />
+                                Document
+                                </div>
                               </a>
                             )}
                           >
+                            <div className='text-xs break-word whitespace-pre-wrap'>
+
                             {comment.content}
-                            <div className="flex flex-row justify-end  gap-2 px-1">
-                              <span className="text-[10px] opacity-70">
-                                {new Date(
-                                  comment?.createdAt
-                                ).toLocaleDateString() ===
-                                new Date().toLocaleDateString()
-                                  ? new Date(
-                                      comment?.createdAt
-                                    ).toLocaleTimeString([], {
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })
-                                  : new Date(
-                                      comment?.createdAt
-                                    ).toLocaleDateString()}
-                              </span>
-                              {comment.authorId._id === user?._id && (
+                            </div>
+                          </Linkify>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-row w-full justify-between items-center gap-1">
+              
+                        {comment.authorId._id === user?._id && (
+                          <p className="text-xs text-gray-500">
+                            {comment.seenBy?.length > 1 ? 'Seen' : 'Delivered'}
+                          </p>
+                        )}
+                     
+                     
+                        <span className="text-[10px] opacity-70">
+                          {moment(comment?.createdAt).isSame(moment(), 'day')
+                            ? moment(comment?.createdAt).format('hh:mm A')
+                            : moment(comment?.createdAt).format('YYYY-MM-DD')}
+                        </span>
+                     
+                      {/* {comment.authorId._id === user?._id && (
                                 <img
                                   src={
                                     comment.seenBy?.length > 1
@@ -1037,11 +1053,7 @@ export default function GroupChat() {
                                   }
                                   className="h-3 w-3"
                                 />
-                              )}
-                            </div>
-                          </Linkify>
-                        )}
-                      </div>
+                              )} */}
                     </div>
                     <div className="flex w-full flex-row-reverse items-center justify-between py-1"></div>
                   </div>
@@ -1130,8 +1142,8 @@ export default function GroupChat() {
             onOpenChange={setIsImageUploaderOpen}
             multiple={false}
             onUploadComplete={(uploadedFiles) => {
-              console.log('Uploaded files:', uploadedFiles);
-              setFiles(uploadedFiles);
+              
+              handleCommentSubmit({ content: uploadedFiles.data.file_url })
             }}
             className="uc-light"
           />

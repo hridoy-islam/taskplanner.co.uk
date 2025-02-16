@@ -16,23 +16,43 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '@/redux/features/authSlice';
 import { AppDispatch } from '@/redux/store';
+import { useEffect, useState } from 'react';
+import axiosInstance from '../../lib/axios';
 
 export default function UserNav() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
   const { user } = useSelector((state: any) => state.auth);
+const [profileData, setProfileData] = useState(null);
+
+useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const response = await axiosInstance.get(`/users/${user?._id}`);
+        const data = response.data.data;
+        setProfileData(data);
+       
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+        
+      }
+    };
+
+    fetchProfileData();
+  }, []);
 
   const handleLogout = async () => {
     await dispatch(logout());
     navigate('/'); // Redirect to login after logout
   };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-14 w-14 rounded-full">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.image} alt="Profile picture" />
+            <AvatarImage src={profileData?.image} alt="Profile picture" />
             <AvatarFallback>
               {user?.name
                 ?.split(' ')
