@@ -30,18 +30,18 @@ export default function UserList({ user, filteredUsers }) {
     } // Fetch users on component mount
   }, []);
 
-console.log(profileData)
 
 
   return (
     <ScrollArea className="h-full max-h-[220px] overflow-auto ">
       <Link to={`/dashboard/task/${user?._id}`}>
         <Button variant="ghost" className="mb-2 w-full justify-start">
-          <img
-            src={profileData?.image}
-            alt={user?.name || 'User'}
-            className="mr-2 h-6 w-6 rounded-full"
-          />
+        <img
+  src={profileData?.image ? profileData?.image : 'https://github.com/shadcn.png'}
+  alt={user?.name || 'User'}
+  className="mr-2 h-6 w-6 rounded-full"
+/>
+
           <div className="flex flex-col ">
             <span className="text-left">{user?.name}</span>
             <span className="text-left text-xs text-gray-500">

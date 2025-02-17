@@ -42,12 +42,12 @@ export const NoteSlice = createApi({
         method: 'GET'
       }),
 
-      serializeQueryArgs: ({ endpointName, queryArgs }) => {
-        return `${endpointName}/${queryArgs}`;
-      },
+      // serializeQueryArgs: ({ endpointName, queryArgs }) => {
+      //   return `${endpointName}/${queryArgs}`;
+      // },
 
       providesTags: (result, error, userId) => {
-        return [{ type: 'Note', id: `LIST-${userId}` }];
+        return [{ type: 'Note', id: `LIST` }];
       }
     }),
     fetchShareNotes: builder.query({
@@ -56,12 +56,12 @@ export const NoteSlice = createApi({
         method: 'GET'
       }),
 
-      serializeQueryArgs: ({ endpointName, queryArgs }) => {
-        return `${endpointName}-${queryArgs.userId}`;
-      },
+      // serializeQueryArgs: ({ endpointName, queryArgs }) => {
+      //   return `${endpointName}-${queryArgs.userId}`;
+      // },
 
       providesTags: (result, error, userId) => {
-        return [{ type: 'Note', id: `LIST-${userId}` }];
+        return [{ type: 'Note', id: `LIST` }];
       }
     }),
 
@@ -72,7 +72,7 @@ export const NoteSlice = createApi({
         body: addNewNoteData
       }),
       invalidatesTags: (result, error, { userId }) => [
-        { type: 'Note', id: `LIST-${userId}` }
+        { type: 'Note', id: `LIST` }
       ]
     }),
 
@@ -83,7 +83,7 @@ export const NoteSlice = createApi({
         body: updatedData
       }),
       invalidatesTags: (result, error, { userId }) => [
-        { type: 'Note', id: `LIST-${userId}` }
+        { type: 'Note', id: `LIST` }
       ]
     }),
 
@@ -93,7 +93,7 @@ export const NoteSlice = createApi({
         method: 'DELETE'
       }),
       invalidatesTags: (result, error, { userId }) => [
-        { type: 'Note', id: `LIST-${userId}` }
+        { type: 'Note', id: `LIST` }
       ]
     })
   })

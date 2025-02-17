@@ -66,8 +66,8 @@ export const TaskSlice = createApi({
       // },
 
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
-        const { userId, sortOrder, page, limit } = queryArgs;
-        return `${endpointName}/${userId}+${sortOrder}+${page}+${limit}`;
+
+        return `${endpointName}/${queryArgs.userId}/${queryArgs.sortOrder}+${queryArgs.page}+${queryArgs.limit}`;
       },
       providesTags: (result, error, { userId }) => [
         { type: 'Task', id: `LIST-${userId}` }
@@ -103,7 +103,7 @@ export const TaskSlice = createApi({
       // },
 
       providesTags: (result, error, { authorId, assignedId }) => [
-        { type: 'Task', id: `BOTH-${authorId}-${assignedId}` }
+        { type: 'Task', id: `LIST-${authorId}-${assignedId}` }
       ]
     }),
 
@@ -268,7 +268,7 @@ export const TaskSlice = createApi({
       invalidatesTags: (result, error, { updates, taskId }) => [
         { type: 'Task', id: 'LIST' },
         { type: 'Task', id: taskId },
-        { type: 'Task', id: `BOTH-${updates.authorId}-${updates.assignedId}` },
+        { type: 'Task', id: `LIST-${updates.authorId}-${updates.assignedId}` },
         { type: 'Task', id: `WEEK-${updates.userId}` },
         { type: 'Task', id: `DAY-${updates.userId}` },
         { type: 'Task', id: `MONTH-${updates.userId}` }

@@ -43,7 +43,7 @@ export const TagSlice = createApi({
         body: addNewTagData
       }),
       invalidatesTags: (result, error, { userId }) => [
-        { type: 'Tag', id: `LIST-${userId}` }
+        { type: 'Tag', id: `LIST` }
       ]
     }),
 
@@ -52,10 +52,10 @@ export const TagSlice = createApi({
         url: `/user/${userId}`,
         method: 'GET'
       }),
-      serializeQueryArgs: ({ endpointName, queryArgs }) =>
-        `${endpointName}-${queryArgs}`,
+      // serializeQueryArgs: ({ endpointName, queryArgs }) =>
+      //   `${endpointName}-${queryArgs}`,
       providesTags: (result, error, userId) => [
-        { type: 'Tag', id: `LIST-${userId}` }
+        { type: 'Tag', id: `LIST` }
       ]
     })
   })
