@@ -264,6 +264,8 @@ export default function GroupChat() {
     }
   };
 
+  console.log('group', groupDetails);
+
   // Append a new comment and update the last read message
   const appendComment = (newComment) => {
     const newWork = async () => {
@@ -707,6 +709,25 @@ export default function GroupChat() {
   //   };
   // }, []);
 
+  // Function to check message seen status
+  const getSeenStatus = (comment, groupMembers) => {
+    if (!comment || !groupMembers) return 'Delivered';
+
+    const unseenUsers = groupMembers
+      .filter((member) => member.lastMessageReadId !== comment._id)
+      .map((member) => member._id);
+
+    // If no unseen users exist, all have seen the message
+    if (unseenUsers.length === 0) return 'Seen by all';
+
+    // Exclude current user from the unseen list
+    const otherUnseenUsers = unseenUsers.filter((id) => id !== user?._id);
+
+    if (otherUnseenUsers.length === 0) return 'Seen';
+
+    return `Seen by ${otherUnseenUsers.length} others`;
+  };
+
   return (
     <div className="mx-auto flex h-full max-w-full  ">
       {/* Sidebar with group members */}
@@ -899,10 +920,10 @@ export default function GroupChat() {
                 >
                   <div className="flex flex-col items-end justify-end">
                     <div
-                      className={`inline-block min-w-[150px] ${
+                      className={`flex flex-col min-w-[150px] max-w-[300px] ${
                         comment.authorId._id === user?._id
                           ? 'bg-[#151261] text-white'
-                          : 'bg-[#DCFCE7]'
+                          : 'bg-[#9333ea]  text-white'
                       } rounded-lg p-3`}
                       style={{
                         wordWrap: 'break-word',
@@ -947,7 +968,7 @@ export default function GroupChat() {
                             className={`flex items-center space-x-2 rounded-lg p-2 ${
                               comment.authorId._id === user?._id
                                 ? 'bg-blue-500/15'
-                                : 'bg-gray-200/15'
+                                : 'bg-green-300/80'
                             }`}
                           >
                             {/* Display File (Image or Non-Image) */}
@@ -972,89 +993,86 @@ export default function GroupChat() {
                               </div>
                             ) : (
                               <div className="flex items-center justify-between space-x-2">
-                                <span>
-                                  {parsedContent.originalFilename || 'File'}
-                                </span>
-                                <a
-                                  href={parsedContent.cdnUrl}
-                                  download={parsedContent.originalFilename}
-                                  className="text-gray-900 hover:underline"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <DownloadIcon className="h-5 w-5" />
-                                </a>
+                                <span className="overflow-hidden">
+                                {parsedContent.originalFilename || 'File'}
+                              </span>
+                              <a
+                                href={parsedContent}
+                                download={parsedContent}
+                                className="text-blue-600 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <DownloadIcon className="h-4 w-4" />
+                              </a>
                               </div>
                             )}
                           </div>
                         ) : (
                           <Linkify
-                            componentDecorator={(
-                              decoratedHref,
-                              decoratedText,
-                              key
-                            ) => (
-                              <a
-                                href={decoratedHref}
-                                key={key}
-                                style={{
-                                  textDecoration: '',
-                                  color: 'inherit',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  margin:"5px"
-                                }}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <div className='flex flex-row gap-2 bg-gray-800 shadow-xl p-2 rounded-xs'>
-
-                                <DownloadIcon className="h-4 w-4" />
-                                Document
-                                </div>
-                              </a>
-                            )}
-                          >
-                            <div className='text-xs break-word whitespace-pre-wrap'>
-
-                            {comment.content}
-                            </div>
+                          componentDecorator={(decoratedHref, decoratedText, key) => (
+                            <a
+                              href={decoratedHref}
+                              key={key}
+                              style={{
+                                textDecoration: 'underline',
+                                color: 'inherit'
+                              }}
+                            >
+                              {decoratedText}
+                            </a>
+                          )}
+                        >
+                          {comment.content}
                           </Linkify>
                         )}
                       </div>
                     </div>
-                    <div className="flex flex-row w-full justify-between items-center gap-1">
-              
-                        {comment.authorId._id === user?._id && (
-                          <p className="text-xs text-gray-500">
-                            {comment.seenBy?.length > 1 ? 'Seen' : 'Delivered'}
-                          </p>
-                        )}
-                     
-                     
-                        <span className="text-[10px] opacity-70">
-                          {moment(comment?.createdAt).isSame(moment(), 'day')
-                            ? moment(comment?.createdAt).format('hh:mm A')
-                            : moment(comment?.createdAt).format('YYYY-MM-DD')}
-                        </span>
-                     
-                      {/* {comment.authorId._id === user?._id && (
-                                <img
-                                  src={
-                                    comment.seenBy?.length > 1
-                                      ? seen
-                                      : delivered
-                                  }
-                                  alt={
-                                    comment.seenBy?.length > 1
-                                      ? 'seen'
-                                      : 'delivered'
-                                  }
-                                  className="h-3 w-3"
-                                />
-                              )} */}
+                    <div
+                      className={`flex w-full flex-row items-center gap-1 ${
+                        comment?.authorId?._id !== user?._id
+                          ? 'justify-end'
+                          : 'justify-between'
+                      }`}
+                    >
+                      {comment?.authorId?._id === user?._id && (
+                        <p className="text-xs text-gray-500">
+                          {comment?.seenBy?.length > 1 ? 'Seen' : 'Delivered'}
+                        </p>
+                      )}
+
+                      <span className="text-[10px] opacity-70">
+                        {moment(comment?.createdAt).isSame(moment(), 'day')
+                          ? moment(comment?.createdAt).format('hh:mm A')
+                          : moment(comment?.createdAt).format('YYYY-MM-DD')}
+                      </span>
                     </div>
+
+                    {comment?.authorId?._id === user?._id &&
+                      groupDetails?.members && (
+                        <div
+                          className={`flex w-full flex-row items-center ${comment?.authorId?._id === user?._id ? '' : 'justify-end'}`}
+                        >
+                          {(() => {
+                            const filteredMembers =
+                              groupDetails.members?.filter(
+                                (member) =>
+                                  member.lastMessageReadId === comment?._id &&
+                                  member._id !== comment?.creatorId &&
+                                  member._id !== user?._id
+                              ) || [];
+
+                            return filteredMembers.length > 0 ? (
+                              <p className="text-[12px]">
+                                {filteredMembers
+                                  .map((item) => item.name)
+                                  .join(', ')}
+                              </p>
+                            ) : null;
+                          })()}
+                        </div>
+                      )}
+
                     <div className="flex w-full flex-row-reverse items-center justify-between py-1"></div>
                   </div>
                 </div>
@@ -1064,14 +1082,14 @@ export default function GroupChat() {
         </div>
 
         {/* Message input */}
-        {typing && (
+        {/* {typing && (
           <div className="relative bottom-2 flex h-[5px] items-center space-x-2 pl-3 text-[10px]">
             <span>Typing</span>
             <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
             <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
             <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
           </div>
-        )}
+        )} */}
         <div className=" p-4">
           {isAccessible && (
             <form
@@ -1102,6 +1120,7 @@ export default function GroupChat() {
                     className="flex-1 resize-none"
                     onKeyDown={handleKeyDown}
                   />
+
                   <div className="flex max-w-full flex-col-reverse items-center gap-1">
                     {/* File uploader logic (currently commented out) */}
                     <Button
@@ -1142,8 +1161,7 @@ export default function GroupChat() {
             onOpenChange={setIsImageUploaderOpen}
             multiple={false}
             onUploadComplete={(uploadedFiles) => {
-              
-              handleCommentSubmit({ content: uploadedFiles.data.file_url })
+              handleCommentSubmit({ content: uploadedFiles.data.file_url, isFile: true });
             }}
             className="uc-light"
           />

@@ -212,7 +212,9 @@ const authSlice = createSlice({
   reducers: {
     resetError(state) {
       state.error = null; // Reset the error state
-    }
+    },
+   
+    
   },
   extraReducers: (builder) => {
     builder
@@ -224,12 +226,14 @@ const authSlice = createSlice({
         state.refreshToken = null;
       })
       .addCase(loginUser.fulfilled, (state, action: any) => {
+        
         state.loading = false;
         state.token = action.payload.data.accessToken;
         state.refreshToken = action.payload.data.refreshToken;
         const decodedUser = jwtDecode(action.payload.data.accessToken);
         state.user = decodedUser;
         state.error = null;
+      
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;

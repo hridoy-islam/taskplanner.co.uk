@@ -18,6 +18,7 @@ import { logout } from '@/redux/features/authSlice';
 import { AppDispatch } from '@/redux/store';
 import { useEffect, useState } from 'react';
 import axiosInstance from '../../lib/axios';
+import { fetchUsers } from '@/redux/features/userSlice';
 
 export default function UserNav() {
   const dispatch = useDispatch<AppDispatch>();
@@ -26,21 +27,43 @@ export default function UserNav() {
   const { user } = useSelector((state: any) => state.auth);
 const [profileData, setProfileData] = useState(null);
 
+
+const fetchProfileData = async () => {
+  try {
+    // Dispatch the fetchUsers action to get the data
+    const response = await dispatch(fetchUsers(user?._id));
+
+    if (fetchUsers.fulfilled.match(response)) {
+      const data = response.payload;
+      setProfileData(data); // Set the profile data once fetched
+    } else {
+      console.error('Error fetching users:', response.payload);
+    }
+  } catch (error) {
+    console.error('Error fetching users:', error);
+  }
+};
+
 useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const response = await axiosInstance.get(`/users/${user?._id}`);
-        const data = response.data.data;
-        setProfileData(data);
+    // const fetchProfileData = async () => {
+    //   try {
+    //     const response = await axiosInstance.get(`/users/${user?._id}`);
+    //     const data = response.data.data;
+    //     setProfileData(data);
        
-      } catch (error) {
-        console.error('Error fetching profile data:', error);
+    //   } catch (error) {
+    //     console.error('Error fetching profile data:', error);
         
-      }
-    };
+    //   }
+    // };
 
     fetchProfileData();
-  }, []);
+    const interval = setInterval(() => {
+      fetchProfileData();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [user,dispatch]);
 
   const handleLogout = async () => {
     await dispatch(logout());

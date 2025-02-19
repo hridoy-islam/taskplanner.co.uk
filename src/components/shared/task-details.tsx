@@ -197,7 +197,7 @@ export default function TaskDetails({
   }, [files, ctxProviderRef.current]);
 
   const handleCommentSubmit = async (data) => {
-    console.log(data);
+
 
     if (!data.content) {
       console.error(data, 'Content is required to submit a comment.');
@@ -393,172 +393,148 @@ export default function TaskDetails({
 
               return (
                 <div
-                  key={comment._id}
-                  className={`flex  w-full flex-row ${
-                    comment.authorId._id === user?._id
-                      ? 'justify-end'
-                      : 'justify-start'
-                  }`}
+                key={comment._id}
+                className={`flex w-full flex-row ${
+                  comment.authorId._id === user?._id ? 'justify-end' : 'justify-start'
+                }`}
+              >
+                <div
+                  className={`flex max-w-80 flex-col items-end justify-end xl:max-w-60 ${
+                    comment.authorId._id === user?._id ? 'flex-row-reverse' : 'flex-row'
+                  } items-center space-x-2`}
+                  style={{
+                    wordWrap: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'break-word'
+                  }}
                 >
                   <div
-                    className={`flex  max-w-80 flex-col items-end justify-end xl:max-w-60 ${
-                      comment.authorId._id === user?._id
-                        ? 'flex-row-reverse'
-                        : 'flex-row'
-                    }  items-center space-x-2`}
-                    style={{
-                      wordWrap: 'break-word',
-                      whiteSpace: 'pre-wrap',
-                      overflowWrap: 'break-word'
-                    }}
+                    className={`max-w-[90%] ${
+                      comment.authorId._id === user?._id ? 'mr-2' : 'ml-2'
+                    }`}
                   >
                     <div
-                      className={` max-w-[90%] ${
-                        comment.authorId._id === user?._id ? 'mr-2' : 'ml-2'
-                      }`}
+                     className={`flex min-w-[150px] flex-col rounded-lg ${
+                      isFile
+                        ? comment.authorId._id === user?._id
+                          ? 'bg-[#002055] p-2 text-white ' // For the current user
+                          : 'bg-[#9333ea]  text-white p-2 ' // For others
+                        : comment.authorId._id === user?._id
+                        ? 'bg-[#002055] p-2 text-white'
+                        : 'bg-[#9333ea]  text-white p-2'
+                    }`}
+                    
+                      style={{
+                        wordWrap: 'break-word',
+                        whiteSpace: 'pre-wrap',
+                        overflowWrap: 'break-word'
+                      }}
                     >
-                      <div
-                        className={`flex min-w-[150px] flex-col rounded-lg  ${
-                          isFile
-                            ? 'border border-gray-300'
-                            : comment.authorId._id === user?._id
-                              ? 'bg-[#002055] p-2 text-white'
-                              : 'bg-[#DCFCE7] p-2'
-                        }`}
-                        style={{
-                          wordWrap: 'break-word',
-                          whiteSpace: 'pre-wrap',
-                          overflowWrap: 'break-word'
-                        }}
-                      >
-                        <span className="inline-block items-center overflow-hidden text-ellipsis whitespace-nowrap pb-1 text-xs md:text-xs md:font-semibold">
-                          {comment?.authorId?.name}
-                        </span>
-                        {isFile ? (
-                          <div
-                            className={`flex items-center space-x-2 rounded-lg  p-2 ${
-                              comment.authorId._id === user?._id
-                                ? 'bg-blue-500/15 '
-                                : 'bg-gray-200/15 '
-                            }`}
-                          >
-                            {parsedContent.mimeType?.startsWith('image/') ? (
-                              <div className="flex items-end space-x-2">
-                                <img
-                                  src={parsedContent.cdnUrl}
-                                  alt={
-                                    parsedContent.originalFilename || 'Preview'
-                                  }
-                                  className="max-h-32 max-w-full rounded shadow-sm"
-                                />
-                                <a
-                                  href={parsedContent.cdnUrl}
-                                  download={parsedContent.originalFilename}
-                                  className="text-blue-600 hover:underline"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <ArrowUpRightFromSquare className="h-4 w-4 font-extralight" />
-                                </a>
-                              </div>
-                            ) : (
-                              <div className="flex items-end space-x-2 overflow-hidden text-ellipsis whitespace-pre-wrap break-words">
-                                <span className=" overflow-hidden">
-                                  {parsedContent.originalFilename || 'File'}
-                                </span>
-                                <a
-                                  href={parsedContent.cdnUrl}
-                                  download={parsedContent.originalFilename}
-                                  className="text-blue-600 hover:underline"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <DownloadIcon className="h-4 w-4" />
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <Linkify
-                            componentDecorator={(
-                              decoratedHref,
-                              decoratedText,
-                              key
-                            ) => (
+                      <span className="inline-block items-center overflow-hidden text-ellipsis whitespace-nowrap pb-1 text-xs md:text-xs md:font-semibold">
+                        {comment?.authorId?.name}
+                      </span>
+                      {isFile ? (
+                        <div
+                          className={`flex items-center space-x-2 rounded-lg ${
+                            comment.authorId._id === user?._id
+                              ? 'bg-gray-600 p-2'
+                              : 'bg-gray-600 p-2'
+                          }`}
+                        >
+                          {parsedContent.mimeType?.startsWith('image/') ? (
+                            <div className="flex items-end space-x-2">
+                              <img
+                                src={parsedContent}
+                                alt={parsedContent || 'Preview'}
+                                className="max-h-32 max-w-full rounded shadow-sm"
+                              />
                               <a
-                                href={decoratedHref}
-                                key={key}
-                                style={{
-                                  textDecoration: '',
-                                  color: 'inherit',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  margin: '5px'
-                                }}
+                                href={parsedContent}
+                                download={parsedContent}
+                                className="text-blue-600 hover:underline"
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
-                                <div className="rounded-xs flex flex-row gap-2 bg-gray-800 p-2 shadow-xl">
-                                  <DownloadIcon className="h-4 w-4" />
-                                  Document
-                                </div>
+                                <ArrowUpRightFromSquare className="h-4 w-4 font-extralight" />
                               </a>
-                            )}
-                          >
-                            <div className="text-xs">{comment.content}</div>
-                          </Linkify>
-                        )}
-                      </div>
-                      <div className="flex flex-row items-center justify-between gap-2  p-1">
-                        <div className="flex flex-row items-center gap-1">
-                          {comment.authorId._id === user?._id && (
-                            <p className="text-xs text-gray-500">
-                              {comment.seenBy?.length > 1
-                                ? 'Seen'
-                                : 'Delivered'}
-                            </p>
-                          )}
-
-                          {comment.authorId._id === user?._id && (
-                            <img
-                              src={
-                                comment.seenBy?.length > 1 ? seen : delivered
-                              }
-                              alt={
-                                comment.seenBy?.length > 1
-                                  ? 'seen'
-                                  : 'delivered'
-                              }
-                              className="h-2.5 w-2.5"
-                            />
+                            </div>
+                          ) : (
+                            <div className="flex items-end space-x-2 overflow-hidden text-ellipsis whitespace-pre-wrap break-words">
+                              <span className="overflow-hidden">
+                                {parsedContent.originalFilename || 'File'}
+                              </span>
+                              <a
+                                href={parsedContent}
+                                download={parsedContent}
+                                className="text-blue-600 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <DownloadIcon className="h-4 w-4" />
+                              </a>
+                            </div>
                           )}
                         </div>
-
-                        <span className="text-[10px] opacity-70">
-                          {
-                            moment(comment?.createdAt).isSame(moment(), 'day')
-                              ? moment(comment?.createdAt).format('hh:mm A') // If today, show time
-                              : moment(comment?.createdAt).format('DD/MM/YYYY') // Otherwise, show date
-                          }
-                        </span>
+                      ) : (
+                        <Linkify
+                          componentDecorator={(decoratedHref, decoratedText, key) => (
+                            <a
+                              href={decoratedHref}
+                              key={key}
+                              style={{
+                                textDecoration: 'underline',
+                                color: 'inherit'
+                              }}
+                            >
+                              {decoratedText}
+                            </a>
+                          )}
+                        >
+                          {comment.content}
+                        </Linkify>
+                      )}
+                    </div>
+                    <div className="flex flex-row items-center justify-between gap-2 p-1">
+                      <div className="flex flex-row items-center gap-1">
+                        {comment.authorId._id === user?._id && (
+                          <p className="text-xs text-gray-500">
+                            {comment.seenBy?.length > 1 ? 'Seen' : 'Delivered'}
+                          </p>
+                        )}
+              
+                        {comment.authorId._id === user?._id && (
+                          <img
+                            src={comment.seenBy?.length > 1 ? seen : delivered}
+                            alt={comment.seenBy?.length > 1 ? 'seen' : 'delivered'}
+                            className="h-2.5 w-2.5"
+                          />
+                        )}
                       </div>
+              
+                      <span className="text-[10px] opacity-70">
+                        {moment(comment?.createdAt).isSame(moment(), 'day')
+                          ? moment(comment?.createdAt).format('hh:mm A') 
+                          : moment(comment?.createdAt).format('DD/MM/YYYY')} 
+                      </span>
                     </div>
                   </div>
                 </div>
+              </div>
+              
+
               );
             })}
           </div>
         </div>
         <div className="flex-shrink-0 border-t border-gray-200 bg-gray-50 p-6">
-          {typing && (
+          {/* {typing && (
             <div className="relative bottom-5 flex h-[5px] items-center space-x-2 p-2 text-xs">
               <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
               <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
               <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
               <span>Typing...</span>
             </div>
-          )}
+          )} */}
           <form
             onSubmit={handleSubmit(handleCommentSubmit)}
             className="grid gap-2"
@@ -614,7 +590,7 @@ export default function TaskDetails({
             onUploadComplete={(uploadedFiles) => {
               // if (uploadedFiles?.file_url) {
 
-              handleCommentSubmit({ content: uploadedFiles.data.file_url });
+              handleCommentSubmit({ content: uploadedFiles.data.file_url , isFile: true});
 
               // }
             }}

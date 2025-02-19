@@ -117,7 +117,7 @@ export default function NotesPage() {
   const { users } = useSelector((state: RootState) => state.users);
   const [sharedWith, setSharedWith] = useState<any[]>([]);
   const [selectedTab, setSelectedTab] = useState('my-notes');
-
+  const [showFavorites, setShowFavorites] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
 
   // useEffect(() => {
@@ -251,9 +251,12 @@ export default function NotesPage() {
     }
   }, [sharedNoteData]);
 
-  const filteredTags = tags.filter((tag) =>
-    tag?.name?.toLowerCase().includes(tagSearchTerm.toLowerCase())
-  );
+  const filteredTags = tags.filter((tag) => {
+    if (searchTerm) {
+      return tag.name.toLowerCase().includes(searchTerm.toLowerCase());
+    }
+    return true; // Keep all tags visible if filtering by tag
+  });
 
   // useEffect(() => {
   //   async function fetchTags() {
@@ -287,14 +290,22 @@ export default function NotesPage() {
     }
   }, []);
 
-  const filteredNotes = notes.filter(
-    (note) =>
+  const filteredNotes = notes.filter((note) => {
+    if (showFavorites) {
+      return note.favorite; // Show only favorite notes
+    }
+    if (tagSearchTerm) {
+      return note.tags.some((tag) =>
+        tag.name.toLowerCase().includes(tagSearchTerm.toLowerCase())
+      );
+    }
+
+    return (
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.tags.some((tag) =>
-        tag.name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-  );
+      note.content.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
+
   const filterSharedNotes = sharedNoteData.filter(
     (note) =>
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -305,7 +316,17 @@ export default function NotesPage() {
   );
 
   const handleTagClick = (tagName: string) => {
-    setSearchTerm(tagName);
+    if (tagName === 'All') {
+      setTagSearchTerm(''); // Reset tag filter
+      setShowFavorites(false);
+    } else if (tagName === 'Favorites') {
+      setTagSearchTerm(''); // Clear tag filter
+      setShowFavorites(true);
+    } else {
+      setTagSearchTerm(tagName);
+      setShowFavorites(false);
+    }
+    setSearchTerm(''); // Clear text search when filtering by tag
   };
 
   const addNewNote = async () => {
@@ -756,19 +777,43 @@ export default function NotesPage() {
               <PopoverContent className="w-48 border-none bg-white p-0 text-black">
                 <div className="flex flex-col overflow-y-auto">
                   <div className="max-h-48 overflow-y-auto">
-                    {filteredTags.length > 0 ? (
-                      filteredTags.map((tag) => (
-                        <div
-                          key={tag._id}
-                          onClick={() => handleTagClick(tag.name)}
-                          className="cursor-pointer p-2 hover:bg-gray-200"
-                        >
-                          {tag.name}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-2 text-gray-500">No tags found.</div>
-                    )}
+                    <div>
+                      {/* All Tasks */}
+                      <div
+                        onClick={() => handleTagClick('All')}
+                        className={`cursor-pointer p-2 hover:bg-gray-200 ${
+                          !tagSearchTerm && !showFavorites ? 'font-bold' : ''
+                        }`}
+                      >
+                        All
+                      </div>
+
+                      {/* Favorite Tasks */}
+                      <div
+                        onClick={() => handleTagClick('Favorites')}
+                        className={`cursor-pointer p-2 hover:bg-gray-200 ${
+                          showFavorites ? 'font-bold' : ''
+                        }`}
+                      >
+                        Favorites
+                      </div>
+
+                      {filteredTags.length > 0 ? (
+                        filteredTags.map((tag) => (
+                          <div
+                            key={tag._id}
+                            onClick={() => handleTagClick(tag.name)}
+                            className={`cursor-pointer p-2 hover:bg-gray-200 ${
+                              tagSearchTerm === tag.name ? 'font-bold' : ''
+                            }`}
+                          >
+                            {tag.name}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-2 text-gray-500">No tags found.</div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </PopoverContent>

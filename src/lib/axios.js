@@ -1,5 +1,5 @@
 import axios from 'axios';
-import store from '../redux/store';
+
 
 // Create an instance of axios with custom configurations
 const axiosInstance = axios.create({
@@ -9,13 +9,9 @@ const axiosInstance = axios.create({
 // Add a request interceptor to attach the bearer token to all requests
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Fetch the token from wherever you have stored it (e.g., localStorage, Redux store)
-    // const token = localStorage.getItem('garirmela'); // Example using localStorage
+    // Parse token from localStorage
+    const token = JSON.parse(localStorage.getItem('taskplanner')); // Use JSON.parse
 
-    const { auth } = store.getState();
-    const token = auth.token;
-
-    // If a token exists, set the Authorization header with the token
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -23,60 +19,70 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
-    // Handle request errors
     return Promise.reject(error);
   }
 );
 
-// Add a response interceptor to handle token refresh
-// axiosInstance.interceptors.response.use(
-//   (response) => {
-//     // Return the response if everything is fine
-//     return response;
-//   },
-//   async (error) => {
-//     const originalRequest = error.config;
 
-//     if (error.response?.status === 401 || (500 && !originalRequest._retry)) {
-//       originalRequest._retry = true; // Mark the request as retried to avoid infinite loops
+// // Function to refresh the token
+const refreshToken = async () => {
+  try {
+    const refreshToken = JSON.parse(localStorage.getItem('taskplannerRefresh'));
 
-//       try {
-//         const { auth } = store.getState();
-//         const refreshToken = auth.refreshToken;
+    if (!refreshToken) {
+   
+      return null;
+    }
 
-//         // Call the refresh token endpoint to get a new access token
-//         const response = await axios.post(
-//           `${import.meta.env.VITE_API_URL}/auth/refreshtoken`,
-//           {
-//             refreshToken
-//           }
-//         );
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_URL}/auth/refreshToken`,
+      { refreshToken }
+    );
 
-//         const { accessToken, refreshToken: newRefreshToken } = response.data; // Assuming the response contains the new access token
 
-//         console.log('hjjaejh');
-//         // Store the new tokens in localStorage
-//         localStorage.setItem('accessToken', accessToken);
-//         localStorage.setItem('refreshToken', newRefreshToken);
 
-//         // Update the Redux store with the new token
-//         store.dispatch(setToken(accessToken));
+    if (response.data && response.data.data) {
+      const { accessToken, refreshToken: newRefreshToken } = response.data.data;
 
-//         // Update the Authorization header with the new token
-//         originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+      localStorage.setItem('taskplanner', JSON.stringify(accessToken));
+      localStorage.setItem('taskplannerRefresh', JSON.stringify(newRefreshToken));
 
-//         // Retry the original request with the new token
-//         return axiosInstance(originalRequest);
-//       } catch (refreshError) {
-//         // Handle refresh token failure (e.g., redirect to login)
-//         console.error('Failed to refresh token:', refreshError);
-//         store.dispatch(setToken(null)); // Clear the token in Redux
-//         window.location.href = '/login'; // Redirect to login page
-//         return Promise.reject(refreshError);
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
+      
+      return accessToken;
+    } else {
+      return null;
+    }
+  } catch (error) {
+
+    localStorage.removeItem('taskplanner');
+    localStorage.removeItem('taskplannerRefresh');
+
+    store.dispatch(logout());
+
+    return null;
+  }
+};
+
+// Response Interceptor: Handle token expiration and refresh
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response && (error.response.status === 500 || error.response.status === 400)) {
+      if (!originalRequest._retry) {
+        originalRequest._retry = true;
+
+        const newToken = await refreshToken();
+        if (newToken) {
+          originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+          return axiosInstance(originalRequest);
+        }
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default axiosInstance;

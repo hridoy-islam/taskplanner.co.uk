@@ -41,6 +41,8 @@ export default function UserProfileDetail() {
   const [loading, setLoading] = useState<boolean>(false); // New loading state
   const [companyId, setCompanyId] = useState(''); // New loading state
   const [email, setEmail] = useState<string>(''); // Email input state
+
+  
   const fetchUserDetails = async () => {
     const res = await axiosInstance.get(`/users/${id}`);
     setUserData(res.data.data);
@@ -196,7 +198,7 @@ export default function UserProfileDetail() {
   };
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto h-[calc(100vh-7rem)] py-10 overflow-auto">
       <h1 className="mb-8 text-3xl font-bold">Edit {userData?.name} Profile</h1>
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

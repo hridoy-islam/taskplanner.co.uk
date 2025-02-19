@@ -22,6 +22,9 @@ import { ImageUploader } from '@/components/shared/image-uploader';
 
 import { useToast } from '@/components/ui/use-toast';
 import { OutputFileEntry } from '@uploadcare/react-uploader';
+import { fetchUsers } from '@/redux/features/userSlice';
+import { useDispatch} from 'react-redux';
+import { AppDispatch } from '@/redux/store';
 
 const profileFormSchema = z.object({
   name: z.string().nonempty('Name is required'),
@@ -33,7 +36,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfilePage() {
-  // const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch();
   const { user } = useSelector((state: any) => state.auth);
   const [profileData, setProfileData] = useState<ProfileFormValues | null>(
     null
@@ -58,25 +61,47 @@ export default function ProfilePage() {
 
   const userId = user?._id;
 
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const response = await axiosInstance.get(`/users/${userId}`);
-        const data = response.data.data;
-        setProfileData(data);
-        form.reset(data); // Populate form with fetched data
-      } catch (error) {
-        console.error('Error fetching profile data:', error);
-        toast({
-          title: 'Error',
-          description: 'Unable to fetch profile data',
-          variant: 'destructive'
-        });
-      }
-    };
+  // const fetchProfileData = async () => {
+  //   try {
+  //     const response = await axiosInstance.get(`/users/${userId}`);
+  //     const data = response.data.data;
+  //     setProfileData(data);
+  //     form.reset(data); // Populate form with fetched data
+  //   } catch (error) {
+  //     console.error('Error fetching profile data:', error);
+  //     toast({
+  //       title: 'Error',
+  //       description: 'Unable to fetch profile data',
+  //       variant: 'destructive'
+  //     });
+  //   }
+  // };
 
+  const fetchProfileData = async () => {
+    try {
+      // Dispatch the fetchUsers action to get the data
+      const response = await dispatch(fetchUsers(user?._id));
+  
+      if (fetchUsers.fulfilled.match(response)) {
+        const data = response.payload;
+        setProfileData(data); // Set the profile data once fetched
+        form.reset(data); 
+      } else {
+        console.error('Error fetching users:', response.payload);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  useEffect(() => {
     fetchProfileData();
-  }, [userId]);
+    const interval = setInterval(() => {
+      fetchProfileData();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [userId, dispatch]);
 
 
 
@@ -104,7 +129,7 @@ export default function ProfilePage() {
 
  
   return (
-    <div className="space-y-4 p-4 md:p-8">
+    <div className="space-y-4 p-4 md:p-8  h-[calc(100vh-7rem)] overflow-y-auto">
       <PageHead title="Profile Page" />
       <Breadcrumbs
         items={[

@@ -8,6 +8,7 @@ import { TaskSlice } from './features/taskSlice';
 import userSlice from './features/userSlice';
 import { NoteSlice } from './features/noteSlice';
 import { TagSlice } from './features/tagSlice';
+
 const persistConfig = {
   key: 'taskplanner',
   storage

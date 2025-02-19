@@ -52,6 +52,7 @@ import { useSelector } from 'react-redux';
 
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
+import { now } from 'moment';
 
 interface Member {
   id: number;
@@ -76,6 +77,7 @@ interface Group {
   status: string; // Add this line
   createdAt: Date; // Add this line
   isArchived: boolean;
+  updatedAt: Date;
 }
 
 // interface Notification {
@@ -148,6 +150,7 @@ export default function GroupPage() {
           status: group.status,
           createdAt: group.createdAt,
           isArchived: group.isArchived,
+          updatedAt: group.updatedAt,
           members: group.members.map((member: any) => ({
             id: member._id,
             name: initialMembers.find((m) => m.id === member._id)?.name,
@@ -210,7 +213,6 @@ export default function GroupPage() {
             name: groupData.groupName,
             status: groupData.status,
             createdAt: new Date(),
-            isArchived: false,
             members: [
               {
                 id: user?._id,
@@ -301,29 +303,39 @@ export default function GroupPage() {
   //   );
   // };
 
+  // const filteredGroups = groups
+  //   .filter((group) =>
+  //     group.name.toLowerCase().includes(searchTerm.toLowerCase())
+  //   )
+  //   .sort((a, b) => {
+  //     if (sortBy === 'name') {
+  //       return sortOrder === 'asc'
+  //         ? a.name.localeCompare(b.name)
+  //         : b.name.localeCompare(a.name);
+  //     } else if (sortBy === 'members') {
+  //       return sortOrder === 'asc'
+  //         ? a.members.length - b.members.length
+  //         : b.members.length - a.members.length;
+  //     } else if (sortBy === 'unread') {
+  //       return sortOrder === 'asc'
+  //         ? (b.unreadMessageCount || 0) - (a.unreadMessageCount || 0)
+  //         : (a.unreadMessageCount || 0) - (b.unreadMessageCount || 0);
+  //     } else if (sortBy === 'recent') {
+  //       return sortOrder === 'asc'
+  //         ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  //         : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  //     }
+  //     return 0;
+  //   });
+
   const filteredGroups = groups
     .filter((group) =>
       group.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
-      if (sortBy === 'name') {
-        return sortOrder === 'asc'
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
-      } else if (sortBy === 'members') {
-        return sortOrder === 'asc'
-          ? a.members.length - b.members.length
-          : b.members.length - a.members.length;
-      } else if (sortBy === 'unread') {
-        return sortOrder === 'asc'
-          ? (b.unreadMessageCount || 0) - (a.unreadMessageCount || 0)
-          : (a.unreadMessageCount || 0) - (b.unreadMessageCount || 0);
-      } else if (sortBy === 'recent') {
-        return sortOrder === 'asc'
-          ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-      return 0;
+      const dateA = new Date(a.updatedAt);
+      const dateB = new Date(b.updatedAt);
+      return dateB.getTime() - dateA.getTime();
     });
 
   return (
@@ -418,24 +430,33 @@ export default function GroupPage() {
                     <div className="flex flex-row items-center justify-start">
                       <TableCell
                         onClick={() => navigate(`${group?.id}`)}
-                        className="flex flex-row items-center justify-start gap-2 font-semibold "
+                        className="flex flex-row items-center justify-center gap-2 font-semibold "
                       >
-                        <div>{group.name}</div>
-                        <div
-                          className="flex flex-row hover:bg-none "
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent the row's onClick from firing
-                            // Add button-specific logic here
-                          }}
-                        >
-                          <MessageSquareText className="h-4 w-4" />
-                          <span className="ml-1 text-[10px]">
-                            {(group.unreadMessageCount ?? 0) > 0 ? (
-                              <span>{group?.unreadMessageCount}</span>
-                            ) : (
-                              ''
-                            )}
-                          </span>
+                        {' '}
+                        <div className="mt-2 flex flex-row items-center justify-center gap-2">
+                          <div>{group.name}</div>
+                          <div
+                            className="flex flex-row hover:bg-none "
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent the row's onClick from firing
+                              // Add button-specific logic here
+                            }}
+                          >
+                            {/* <MessageSquareText className="h-4 w-4" /> */}
+                            <span
+                              className={`flex h-4 w-4 items-center justify-center rounded-full text-[12px] text-white ${
+                                (group.unreadMessageCount ?? 0) > 0
+                                  ? 'bg-[#7f1d1d]'
+                                  : 'bg-transparent'
+                              }`}
+                            >
+                              {(group.unreadMessageCount ?? 0) > 0 ? (
+                                <span>{group?.unreadMessageCount}</span>
+                              ) : (
+                                ''
+                              )}
+                            </span>
+                          </div>
                         </div>
                       </TableCell>
                     </div>
