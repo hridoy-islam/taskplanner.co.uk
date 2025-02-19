@@ -304,7 +304,11 @@ export default function NotesPage() {
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       note.content.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  });
+  }).sort((a, b) => {
+    const dateA = new Date(a.updatedAt);
+    const dateB = new Date(b.updatedAt);
+    return dateB.getTime() - dateA.getTime();
+  }); 
 
   const filterSharedNotes = sharedNoteData.filter(
     (note) =>
@@ -867,7 +871,7 @@ export default function NotesPage() {
                       {note.tags.map((tag) => (
                         <span
                           key={tag._id}
-                          className="rounded bg-gray-300 px-1 text-xs text-gray-700"
+                          className="rounded-full bg-violet-600 p-1 text-[10px] text-white"
                         >
                           {tag.name}
                         </span>
@@ -1026,12 +1030,12 @@ export default function NotesPage() {
                   {selectedNote.tags.map((tag) => (
                     <span
                       key={tag?._id}
-                      className="flex items-center rounded-full bg-gray-200 px-2 py-1 text-sm text-gray-700"
+                      className="flex items-center rounded-full  bg-violet-600  px-2 py-1 text-sm text-white"
                     >
                       {tag?.name}
                       <button
                         onClick={() => removeTag(tag)}
-                        className="ml-1 text-gray-500 hover:text-gray-700"
+                        className="ml-1 text-white"
                       >
                         ×
                       </button>
