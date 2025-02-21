@@ -1030,49 +1030,53 @@ export default function GroupChat() {
                       </div>
                     </div>
                     <div
-                      className={`flex w-full flex-row items-center gap-1 ${
-                        comment?.authorId?._id !== user?._id
-                          ? 'justify-end'
-                          : 'justify-between'
-                      }`}
-                    >
-                      {comment?.authorId?._id === user?._id && (
-                        <p className="text-xs text-gray-500">
-                          {comment?.seenBy?.length > 1 ? 'Seen' : 'Delivered'}
-                        </p>
-                      )}
+  className={`flex w-full flex-row items-center gap-1 ${
+    comment?.authorId?._id !== user?._id ? 'justify-end' : 'justify-between'
+  }`}
+>
+  {comment?.authorId?._id === user?._id && (
+    <p className="text-xs text-gray-500">
+      {comment?.seenBy?.length === groupDetails?.members?.length
+        ? 'Seen by All'
+        : comment?.seenBy?.length > 1
+        ? 'Seen by'
+        : 'Delivered'}
+    </p>
+  )}
 
-                      <span className="text-[10px] opacity-70">
-                        {moment(comment?.createdAt).isSame(moment(), 'day')
-                          ? moment(comment?.createdAt).format('hh:mm A')
-                          : moment(comment?.createdAt).format('YYYY-MM-DD')}
-                      </span>
-                    </div>
+  <span className="text-[10px] opacity-70">
+    {moment(comment?.createdAt).isSame(moment(), 'day')
+      ? moment(comment?.createdAt).format('hh:mm A')
+      : moment(comment?.createdAt).format('YYYY-MM-DD')}
+  </span>
+</div>
 
-                    {comment?.authorId?._id === user?._id &&
-                      groupDetails?.members && (
-                        <div
-                          className={`flex w-full flex-row items-center ${comment?.authorId?._id === user?._id ? '' : 'justify-end'}`}
-                        >
-                          {(() => {
-                            const filteredMembers =
-                              groupDetails.members?.filter(
-                                (member) =>
-                                  member.lastMessageReadId === comment?._id &&
-                                  member._id !== comment?.creatorId &&
-                                  member._id !== user?._id
-                              ) || [];
+{comment?.authorId?._id === user?._id && groupDetails?.members && (
+  <div
+    className={`flex w-full flex-row items-center ${
+      comment?.authorId?._id === user?._id ? '' : 'justify-end'
+    }`}
+  >
+    {(() => {
+      const filteredMembers =
+        groupDetails.members?.filter(
+          (member) =>
+            member.lastMessageReadId === comment?._id &&
+            member._id !== comment?.creatorId &&
+            member._id !== user?._id
+        ) || [];
 
-                            return filteredMembers.length > 0 ? (
-                              <p className="text-[12px]">
-                                {filteredMembers
-                                  .map((item) => item.name)
-                                  .join(', ')}
-                              </p>
-                            ) : null;
-                          })()}
-                        </div>
-                      )}
+      return filteredMembers.length === groupDetails.members.length - 1 ? (
+        <p className="text-[12px]"></p>
+      ) : filteredMembers.length > 0 ? (
+        <p className="text-[12px]">
+          {filteredMembers.map((item) => item.name).join(', ')}
+        </p>
+      ) : null;
+    })()}
+  </div>
+)}
+
 
                     <div className="flex w-full flex-row-reverse items-center justify-between py-1"></div>
                   </div>

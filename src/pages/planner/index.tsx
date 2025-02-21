@@ -541,7 +541,7 @@ export default function TaskPlanner() {
               <div  className="flex flex-col">
                 <div  className="flex flex-row gap-2 pb-2 items-center  text-[14px]">
                   <div className="flex flex-row items-center gap-1 ">
-                    <CircleUser className="h-4 w-4 bg-violet-400 rounded-full"  />
+                    <CircleUser className="h-4 w-4  rounded-full"  />
                     <h1 className="font-semibold ">
                       {selectedTask?.author?.name}
                     </h1>
@@ -552,7 +552,7 @@ export default function TaskPlanner() {
               </Badge>
                   </div>
                   <div className="flex flex-row items-center gap-1 ">
-                    <CircleUser className="h-4 w-4 bg-green-400 rounded-full" />
+                    <CircleUser className="h-4 w-4  rounded-full" />
                     <h1 className="font-semibold ">
                       {selectedTask?.assigned?.name}
                     </h1>

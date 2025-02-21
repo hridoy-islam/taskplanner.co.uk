@@ -163,7 +163,7 @@ export default function NotesPage() {
     getNotesFn;
     getTagsFn;
     getShareNotesFn;
-  }, []);
+  }, [noteData, tagsData]);
 
   const openUpdateModal = (note) => {
     setSelectedNote(note);
@@ -187,7 +187,7 @@ export default function NotesPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [noteData]);
 
   useEffect(() => {
     if (users && Array.isArray(users) && shareRecipients.length === 0) {
@@ -821,7 +821,11 @@ export default function NotesPage() {
           <Tabs
             value={selectedTab}
             defaultValue="my-notes"
-            onValueChange={setSelectedTab}
+            onValueChange={(value) => {
+              setSelectedTab(value);
+              setSelectedNote(null); // Reset selected note when switching tabs
+            }}
+            
             className="w-full "
           >
             <TabsList className="grid w-full  grid-cols-2 ">
