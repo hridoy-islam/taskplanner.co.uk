@@ -59,7 +59,7 @@ export const TaskSlice = createApi({
 
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
 
-        return `${endpointName}/${queryArgs.userId}/${queryArgs.sortOrder}+${queryArgs.page}+${queryArgs.limit}`;
+        return `${endpointName}/${queryArgs.userId}/${queryArgs.sortOrder}-${queryArgs.page}-${queryArgs.limit}`;
       },
       providesTags: (result, error, { userId }) => [
         { type: 'Task', id: `LIST-${userId}` }
