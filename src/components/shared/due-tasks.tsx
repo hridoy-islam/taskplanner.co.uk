@@ -18,7 +18,7 @@ export default function DueTasks({ user }) {
   // Fetch initial tasks using RTK Query
   const { isLoading, data, refetch } = useFetchDueTasksQuery(
     {
-      userId: user._id,
+      userId: user?._id,
 
       sortOrder,
       page,
@@ -30,13 +30,15 @@ export default function DueTasks({ user }) {
   const getDueTaskFn = TaskSlice.usePrefetch('fetchDueTasks');
   useEffect(() => {
     getDueTaskFn({
-      userId: user._id,
+      userId: user?._id,
 
       sortOrder: 'desc',
       page: 1,
       limit: 5000
     });
   }, []);
+
+
 
   useEffect(() => {
     refetch();

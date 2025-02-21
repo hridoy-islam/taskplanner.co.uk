@@ -140,9 +140,9 @@ export default function ProfilePage() {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col items-center justify-center space-y-8 "
+          className="flex  flex-col items-center justify-center lg:space-y-8 space-y-4 "
         >
-          <div className="flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center lg:space-y-4 space-y-2">
             <Avatar className="h-32 w-32">
               <AvatarImage src={profileData?.image} alt="Profile picture" />
               <AvatarFallback>
@@ -179,7 +179,7 @@ export default function ProfilePage() {
                 <FormLabel>Name</FormLabel>
                 <FormControl>
                   <Input
-                    className="h-[50px] w-[400px] "
+                    className="lg:h-[50px] lg:w-[400px]  "
                     placeholder="Enter Your Name..."
                     {...field}
                   />
@@ -195,7 +195,7 @@ export default function ProfilePage() {
                 <FormLabel>Email</FormLabel>
                 <FormControl>
                   <Input
-                    className="h-[50px] w-[400px] "
+                    className="lg:h-[50px] lg:w-[400px]  "
                     placeholder="example@example.com"
                     disabled
                     {...field}
@@ -213,7 +213,7 @@ export default function ProfilePage() {
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
                   <Input
-                    className="h-[50px] w-[400px] "
+                    className="lg:h-[50px] lg:w-[400px] "
                     placeholder="Phone"
                     {...field}
                   />
@@ -230,7 +230,7 @@ export default function ProfilePage() {
                 <FormLabel>Address</FormLabel>
                 <FormControl>
                   <Input
-                    className="h-[50px] w-[400px] "
+                    className="lg:h-[50px] lg:w-[400px] "
                     placeholder="Enter Your Address"
                     {...field}
                   />
@@ -240,7 +240,7 @@ export default function ProfilePage() {
             )}
           />
           <Button
-            className="h-[50px] w-[400px] "
+            className=" lg:h-[50px] lg:w-[400px] w-[200px] relative "
             variant="outline"
             type="submit"
           >

@@ -88,12 +88,15 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
     }
   };
 
+  const sortedTasks = [...tasks]?.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+
   return (
     <div>
       <main className="flex-1 overflow-auto ">
         <ScrollArea className="h-[calc(80vh-8rem)] ">
           <div className="space-y-2">
-            {tasks?.map((task) => (
+            {sortedTasks?.map((task) => (
               <div
                 key={task._id}
                 className={`flex items-center space-x-2 rounded-lg border border-gray-200 p-3 shadow-md ${

@@ -29,14 +29,6 @@ const axiosBaseQuery =
     }
   };
 
-interface DueTaskQueryParams {
-  userId: string;
-  searchTerm?: string;
-  sortOrder?: string;
-  page?: number;
-  limit?: number;
-}
-
 export const TaskSlice = createApi({
   reducerPath: 'taskSlice',
   baseQuery: axiosBaseQuery({
@@ -45,7 +37,7 @@ export const TaskSlice = createApi({
 
   tagTypes: ['Task'],
   endpoints: (builder: EndpointBuilder<any, any, any>) => ({
-    fetchDueTasks: builder.query<any, DueTaskQueryParams>({
+    fetchDueTasks: builder.query({
       query: ({
         userId,
 
@@ -232,25 +224,24 @@ export const TaskSlice = createApi({
     fetchTodayTasks: builder.query({
       query: ({
         userId,
-        searchTerm = '',
         sortOrder = 'desc',
         page = 1,
-        limit
+        limit,
+        status
       }) => ({
         url: `/today/${userId}`,
         params: {
-          searchTerm,
           sort: sortOrder === 'asc' ? 'dueDate' : '-dueDate',
           page,
           limit,
-          status: 'completed'
+         status: 'pending'
         }
       }),
 
       // Adjusted to match the pattern in fetchAssignedTasks
-      serializeQueryArgs: ({ endpointName, queryArgs }) => {
-        return `${endpointName}-${queryArgs.userId}-${queryArgs.searchTerm}-${queryArgs.sortOrder}`;
-      },
+      // serializeQueryArgs: ({ endpointName, queryArgs }) => {
+      //   return `${endpointName}-${queryArgs.userId}-${queryArgs.sortOrder}-${queryArgs.page}-${queryArgs.limit}-${queryArgs.status}`;
+      // },
 
       // Updated providesTags to match the pattern
       providesTags: (result, error, { userId }) => [
@@ -269,6 +260,7 @@ export const TaskSlice = createApi({
         { type: 'Task', id: 'LIST' },
         { type: 'Task', id: taskId },
         { type: 'Task', id: `LIST-${updates.authorId}-${updates.assignedId}` },
+        { type: 'Task', id: `TODAY-${updates.userId}` },
         { type: 'Task', id: `WEEK-${updates.userId}` },
         { type: 'Task', id: `DAY-${updates.userId}` },
         { type: 'Task', id: `MONTH-${updates.userId}` }

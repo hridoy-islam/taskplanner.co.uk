@@ -264,7 +264,7 @@ export default function GroupChat() {
     }
   };
 
-  console.log('group', groupDetails);
+
 
   // Append a new comment and update the last read message
   const appendComment = (newComment) => {
@@ -693,7 +693,7 @@ export default function GroupChat() {
 
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isSideGroupVisible, setIsSideGroupVisible] = useState(false);
-
+ console.log("group",groupDetails)
   // useEffect(() => {
   //   const handleClickOutside = (event) => {
   //     // If the click is outside the button, act like ArrowLeft (hide the sidebar)
@@ -804,6 +804,7 @@ export default function GroupChat() {
               >
                 <div className="mb-1 ml-1 flex items-center space-x-2">
                   <Avatar className="h-8 w-8">
+                    <AvatarImage src={member.image} alt={member.name} />
                     <AvatarFallback>
                       {member?.name
                         ?.split(' ')

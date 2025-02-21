@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useForm } from 'react-hook-form';
+
 import {
   Popover,
   PopoverContent,
@@ -119,12 +121,18 @@ export default function NotesPage() {
   const [selectedTab, setSelectedTab] = useState('my-notes');
   const [showFavorites, setShowFavorites] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
+  const { register, handleSubmit, reset } = useForm();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTagSubmitting, setIsTagSubmitting] = useState(false);
 
   // useEffect(() => {
   //   if (user && Array.isArray(user)) {
   //     setShareRecipients(user);
   //   }
   // }, []);
+
+
+ 
 
   const [addNewNoteData] = useAddNewNoteMutation();
   const [addNewTagData] = useAddNewTagMutation();
@@ -141,6 +149,8 @@ export default function NotesPage() {
     pollingInterval: 10000,
     skip: !user?._id
   });
+
+  console.log(tags)
 
   const getNotesFn = NoteSlice.usePrefetch('fetchNotes');
   const getTagsFn = TagSlice.usePrefetch('fetchTags');
@@ -181,8 +191,6 @@ export default function NotesPage() {
 
   useEffect(() => {
     if (users && Array.isArray(users) && shareRecipients.length === 0) {
-      console.log('Setting shareRecipients with fetched users:', users);
-
       setShareRecipients(users); // This will only set users if shareRecipients is empty
     }
   }, [users]);
@@ -195,38 +203,6 @@ export default function NotesPage() {
     value: user._id,
     label: `${user.name} (${user.email}) `
   }));
-
-  // useEffect(() => {
-  //   async function fetchNotes() {
-  //     if (!user?._id) return; // Don't fetch if user is not available
-
-  //     try {
-  //       const response = await axiosInstance.get(`/notes/${user._id}`);
-  //       const notesData = response.data?.data?.result || []; // Ensure it's always an array
-
-  //       if (!Array.isArray(notesData)) {
-  //         console.error("Unexpected response format", response.data);
-  //         setNotes([]); // Reset notes to an empty array
-  //         return;
-  //       }
-
-  //       setNotes(notesData);
-  //       if (notesData.length > 0) {
-  //         setSelectedNote(notesData[0]); // Select the first note by default
-  //       } else {
-  //         setSelectedNote(null); // No notes available
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching notes:", error);
-  //       setNotes([]); // Reset notes in case of an error
-  //       setSelectedNote(null);
-  //     }
-  //   }
-
-  //   fetchNotes();
-  // }, [user?._id]); // Depend on user?._id to refetch when it changes
-
-  // Filter tags based on search term
 
   useEffect(() => {
     if (selectedTab !== 'my-notes') {
@@ -258,30 +234,6 @@ export default function NotesPage() {
     return true; // Keep all tags visible if filtering by tag
   });
 
-  // useEffect(() => {
-  //   async function fetchTags() {
-  //     if (!user?._id) return; // Don't fetch if user is not available
-
-  //     try {
-  //       const response = await axiosInstance.get(`/tags/user/${user._id}`);
-  //       const tagsData = response.data?.data?.result || []; // Ensure it's always an array
-
-  //       if (!Array.isArray(tagsData)) {
-  //         console.error('Unexpected response format');
-  //         setTags([]); // Reset tags to an empty array
-  //         return;
-  //       }
-
-  //       setTags(tagsData);
-  //     } catch (error) {
-  //       console.error('Error fetching tags:', error);
-  //       setTags([]); // Reset tags in case of an error
-  //     }
-  //   }
-
-  //   fetchTags();
-  // }, [user?._id]); // Re-fetch when user._id changes
-
   useEffect(() => {
     if (tagsData.length > 0) {
       setTags(tagsData);
@@ -290,25 +242,27 @@ export default function NotesPage() {
     }
   }, []);
 
-  const filteredNotes = notes.filter((note) => {
-    if (showFavorites) {
-      return note.favorite; // Show only favorite notes
-    }
-    if (tagSearchTerm) {
-      return note.tags.some((tag) =>
-        tag.name.toLowerCase().includes(tagSearchTerm.toLowerCase())
-      );
-    }
+  const filteredNotes = notes
+    .filter((note) => {
+      if (showFavorites) {
+        return note.favorite; // Show only favorite notes
+      }
+      if (tagSearchTerm) {
+        return note.tags.some((tag) =>
+          tag.name.toLowerCase().includes(tagSearchTerm.toLowerCase())
+        );
+      }
 
-    return (
-      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }).sort((a, b) => {
-    const dateA = new Date(a.updatedAt);
-    const dateB = new Date(b.updatedAt);
-    return dateB.getTime() - dateA.getTime();
-  }); 
+      return (
+        note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        note.content.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.updatedAt);
+      const dateB = new Date(b.updatedAt);
+      return dateB.getTime() - dateA.getTime();
+    });
 
   const filterSharedNotes = sharedNoteData.filter(
     (note) =>
@@ -333,10 +287,12 @@ export default function NotesPage() {
     setSearchTerm(''); // Clear text search when filtering by tag
   };
 
-  const addNewNote = async () => {
+  const addNewNote = async (data) => {
+    if (isSubmitting) return;
     try {
+      setIsSubmitting(true);
       const newNoteData = {
-        title: noteName,
+        title: data.title,
         content: '',
         tags: [],
         author: user._id
@@ -344,11 +300,14 @@ export default function NotesPage() {
 
       // const response = await axiosInstance.post("/notes/", newNoteData);
       await addNewNoteData(newNoteData);
+      setNotes((prevNotes) => [newNoteData, ...prevNotes]);
+       reset();
 
       setIsDialogOpen(false);
-      setNoteName('');
     } catch (error) {
       console.error('Error creating note:', error);
+    } finally {
+      setIsSubmitting(false); // Re-enable the button
     }
   };
 
@@ -565,19 +524,24 @@ export default function NotesPage() {
   };
 
   const addNewTag = async () => {
+    if (isTagSubmitting || !newTag.trim()) return; // Prevent multiple submissions & empty tags
+
     try {
+      setIsTagSubmitting(true); // Disable submission while processing
+
       const data = {
-        name: newTag,
+        name: newTag.trim(), // Trim whitespace
         author: user._id
       };
 
-      // const response = await axiosInstance.post('/tags/', data);
       await addNewTagData(data);
 
-      setTags([data, ...tags]);
-      setNewTag('');
+      setTags([data, ...tags]); // Update state with new tag
+      setNewTag(''); // Clear input after submission
     } catch (error) {
       console.error('Error creating tag:', error);
+    } finally {
+      setIsTagSubmitting(false); // Re-enable submission after request completes
     }
   };
 
@@ -744,7 +708,7 @@ export default function NotesPage() {
         <div className="overflow-hidden px-2 py-4">
           <Button
             variant="ghost"
-            className="w-full justify-center border border-gray-400 text-gray-700 hover:bg-gray-300"
+            className="w-full justify-center border border-gray-400 text-gray-700 hover:bg-black"
             onClick={() => setIsDialogOpen(true)}
           >
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -754,14 +718,27 @@ export default function NotesPage() {
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent>
               <DialogTitle>Enter Note Title</DialogTitle>
-              <Input
-                value={noteName}
-                onChange={(e) => setNoteName(e.target.value)}
-                placeholder="Note Title"
-              />
-              <DialogFooter>
-                <Button onClick={addNewNote}>Create Note</Button>
-              </DialogFooter>
+
+              <form
+                onSubmit={handleSubmit((data) => addNewNote(data))} // Pass form data to addNewNote
+              >
+                <Input
+                  {...register('title', { required: true })}
+                  placeholder="Note Title"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault(); // Prevent default form submission behavior
+                      handleSubmit((data) => addNewNote(data))(); // Corrected function execution
+                    }
+                  }}
+                />
+
+                <DialogFooter>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Creating...' : 'Create Note'}
+                  </Button>
+                </DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         </div>
@@ -1214,9 +1191,18 @@ export default function NotesPage() {
                 placeholder="New tag name"
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault(); // Prevent default behavior
+                    addNewTag(); // Call function
+                  }
+                }}
               />
-              <Button onClick={addNewTag}>Add</Button>
+              <Button onClick={addNewTag} disabled={isTagSubmitting}>
+                {isTagSubmitting ? 'Adding...' : 'Add'}
+              </Button>
             </div>
+
             <ScrollArea className="h-[200px]">
               {tags.map((tag) => (
                 <div

@@ -455,7 +455,7 @@ export default function TaskPlanner() {
             </Button> */}
             <Popover>
               <PopoverTrigger>
-                <Button variant="outline">
+                <Button variant="outline" className='h-8'>
                   <CalendarIcon />
                 </Button>
               </PopoverTrigger>
@@ -496,8 +496,7 @@ export default function TaskPlanner() {
         {calendarView === 'day' && renderDayView()}
         {renderDueTasksForSmallScreen()}
       </div>
-
-      <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
+      {/* <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{selectedTask?.taskName}</DialogTitle>
@@ -528,6 +527,47 @@ export default function TaskPlanner() {
                 {moment(selectedTask?.dueDate).format('MMM Do YYYY')}
               </Badge>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+ */}
+      <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Task Details</DialogTitle>
+          </DialogHeader>
+          <div className="mt-2">
+            {selectedTask?.taskName && (
+              <div  className="flex flex-col">
+                <div  className="flex flex-row gap-2 pb-2 items-center  text-[14px]">
+                  <div className="flex flex-row items-center gap-1 ">
+                    <CircleUser className="h-4 w-4 bg-violet-400 rounded-full"  />
+                    <h1 className="font-semibold ">
+                      {selectedTask?.author?.name}
+                    </h1>
+                  </div>
+                  <div>
+                  <Badge variant="outline" className={'bg-black '}>
+                <ArrowRight className="h-3 w-3 " />
+              </Badge>
+                  </div>
+                  <div className="flex flex-row items-center gap-1 ">
+                    <CircleUser className="h-4 w-4 bg-green-400 rounded-full" />
+                    <h1 className="font-semibold ">
+                      {selectedTask?.assigned?.name}
+                    </h1>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-800">
+                  {selectedTask?.taskName}
+                </p>
+                <p className="mt-2 text-[12px] font-bold text-gray-500">
+                  {moment(selectedTask?.updatedAt).format(
+                    'MMMM Do YYYY, h:mm:ss a'
+                  )}
+                </p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

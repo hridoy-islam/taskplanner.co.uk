@@ -58,7 +58,7 @@ interface Member {
   id: number;
   name: string;
   email: string;
-  avatar: string;
+  image: string;
 }
 
 interface Comment {
@@ -108,6 +108,7 @@ export default function GroupPage() {
     try {
       const response = await axiosInstance.get(`/users/company/${user?._id}`);
 
+      console.log("response",response.data.data )
       return response.data.data;
     } catch (error) {
       console.error('Error fetching members:', error);
@@ -125,20 +126,23 @@ export default function GroupPage() {
           id: user?._id,
           name: user?.name,
           email: user?.email,
-          avatar: user?.avatarUrl,
+          image: user?.image,
           isCurrentUser: true // Add this line
         },
         ...fetchedMembers.map((member: any) => ({
           id: member._id,
           name: member.name,
           email: member.email,
-          avatar: member.avatarUrl
+          image: member.image
         }))
       ]);
     };
 
     loadMembers();
   }, [user?._id]);
+
+
+  console.log("initial",initialMembers)
 
   const fetchGroups = async () => {
     try {
@@ -154,7 +158,7 @@ export default function GroupPage() {
           members: group.members.map((member: any) => ({
             id: member._id,
             name: initialMembers.find((m) => m.id === member._id)?.name,
-            avatar: initialMembers.find((m) => m.id === member._id)?.avatar
+            image: initialMembers.find((m) => m.id === member._id)?.image
           })),
           comments: [],
           unreadMessageCount: group.unreadMessageCount
@@ -182,6 +186,7 @@ export default function GroupPage() {
 
   // const pageSize = 5;
 
+
   const addGroup = async () => {
     if (newGroupName) {
       const groupData = {
@@ -194,6 +199,7 @@ export default function GroupPage() {
             _id: user?._id, // Add the current user as an admin
             role: 'admin', // Assign the role as admin
             acceptInvitation: true,
+            
             name: user?.name
           },
           ...selectedMembers.map((memberId) => ({
@@ -218,7 +224,7 @@ export default function GroupPage() {
                 id: user?._id,
                 name: user?.name || 'You',
                 email: '',
-                avatar: user?.avatarUrl
+                image: user?.image
               },
               ...initialMembers.filter((member) =>
                 selectedMembers.includes(member.id)
@@ -281,8 +287,12 @@ export default function GroupPage() {
   // };
 
   const filteredMembers = initialMembers.filter((member) =>
-    member.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    member.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  ).map((member) => ({
+    ...member,
+   image: member.image
+  }));
+  
 
   // const addNotification = (content: string) => {
   //   const newNotification: Notification = {
@@ -338,6 +348,9 @@ export default function GroupPage() {
       return dateB.getTime() - dateA.getTime();
     });
 
+
+    
+  console.log("members",filteredMembers)
   return (
     <div className="container mx-auto h-full overflow-auto p-4">
       <h1 className="mb-4 text-2xl font-bold">Groups</h1>
@@ -401,7 +414,7 @@ export default function GroupPage() {
                               <TooltipTrigger asChild>
                                 <Avatar className="inline-block border-2 border-background">
                                   <AvatarImage
-                                    src={member.avatar}
+                                    src={member.image}
                                     alt={member.name}
                                   />
                                   <AvatarFallback>
@@ -557,7 +570,7 @@ export default function GroupPage() {
                       className="flex items-center space-x-2"
                     >
                       <Avatar>
-                        <AvatarImage src={member.avatar} alt={member.name} />
+                        <AvatarImage src={member.image} alt={member.name} />
                         <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <span>{member.name}</span>

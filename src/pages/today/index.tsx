@@ -5,12 +5,13 @@ import axiosInstance from '../../lib/axios';
 import { useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { TaskSlice, useFetchTodayTasksQuery } from '@/redux/features/taskSlice';
+import { TaskSlice, useFetchTodayTasksQuery, useUpdateTaskMutation } from '@/redux/features/taskSlice';
 
 import { CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
 import Loader from '@/components/shared/loader';
+
 
 export default function TodayPage() {
   const { user } = useSelector((state: any) => state.auth);
@@ -19,44 +20,53 @@ export default function TodayPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [updateTask] = useUpdateTaskMutation();
 
-  const { data, refetch, isLoading, isFetching, isSuccess } =
+  const { data, refetch, isLoading,error} =
     useFetchTodayTasksQuery(
       {
-        userId: user._id,
-        searchTerm,
+        userId: user?._id,
+
         sortOrder,
         page,
-        limit: 15
+        limit: 5000
       },
-      { skip: !user._id }
+      { pollingInterval: 10000, refetchOnFocus: true, refetchOnReconnect: true }
     );
 
-  console.log(tasks);
+    const getTodayTaskFn = TaskSlice.usePrefetch('fetchTodayTasks');
+    useEffect(() => {
+      getTodayTaskFn({
+        userId: user?._id,
+  
+        sortOrder: 'desc',
+        page: 1,
+        limit: 5000
+      });
+    }, []);
+
+    
+  
 
   useEffect(() => {
     refetch();
   }, [refetch]);
 
+  
+  // Update tasks when data changes
   useEffect(() => {
-    if (data?.data?.result) {
-      setTasks(data.data.result);
+    if (data?.data) {
+      setTasks(data.data); // Extract the `result` array
     }
   }, [data]);
 
-  const handleRefetch = () => {
-    if (!isFetching && isSuccess) {
-      refetch(); // Only refetch if the query is not already in progress and has been successful
-    } else {
-      console.log('Query is already in progress or has not been started yet.');
-    }
-  };
+
 
   const handleMarkAsImportant = async (taskId) => {
     const taskToToggle = tasks.find((task) => task._id === taskId);
     if (!taskToToggle) return;
 
-    // Optimistically update UI
+    // Optimistic update
     const previousTasks = [...tasks];
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
@@ -65,27 +75,14 @@ export default function TodayPage() {
     );
 
     try {
-      // Update server
-      const response = await axiosInstance.patch(`/task/${taskId}`, {
-        important: !taskToToggle.important
+      await updateTask({
+        taskId,
+        updates: {
+          important: !taskToToggle.important
+        }
       });
-
-      if (response.data.success) {
-        // Update RTK Query cache
-        TaskSlice.util.updateQueryData(
-          'fetchCompletedTasks',
-          { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
-          (draft) => {
-            const task = draft?.data?.result?.find((t) => t._id === taskId);
-            if (task) {
-              task.important = !task.important;
-            }
-          }
-        );
-        toast({ title: 'Task Updated', description: 'Thank You' });
-      } else {
-        throw new Error('Failed to update task');
-      }
+      refetch();
+      toast({ title: 'Task Updated', description: 'Thank You' });
     } catch (error) {
       // Revert optimistic update on error
       setTasks(previousTasks);
@@ -98,6 +95,7 @@ export default function TodayPage() {
   };
 
   const handleToggleTaskCompletion = async (taskId: string) => {
+    // Find the task in the state
     const taskToToggle = tasks.find((task) => task._id === taskId);
     if (!taskToToggle) return;
 
@@ -112,41 +110,20 @@ export default function TodayPage() {
         : task
     );
     setTasks(updatedTasks.filter((task) => task.status !== 'completed')); // Hide completed tasks
-
     try {
-      // Update server
-      const response = await axiosInstance.patch(`/task/${taskId}`, {
-        status: taskToToggle.status === 'completed' ? 'pending' : 'completed'
-      });
-
-      if (response.data.success) {
-        // Update RTK Query cache
-        TaskSlice.util.updateQueryData(
-          'fetchCompletedTasks',
-          { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
-          (draft) => {
-            const task = draft?.data?.result?.find((t) => t._id === taskId);
-            if (task) {
-              task.status =
-                task.status === 'completed' ? 'pending' : 'completed';
-            }
-          }
-        );
-        toast({
-          title: 'Task Updated',
-          description: 'Thank You'
-        });
-      } else {
-        throw new Error('Failed to update task');
-      }
+      await updateTask({
+        taskId,
+        updates: {
+          // important: !taskToToggle.important,
+          status: taskToToggle.status === 'completed' ? 'pending' : 'completed'
+        }
+      }).unwrap();
+      refetch();
+      toast({ title: 'Task Updated', description: 'Thank You' });
     } catch (error) {
       // Revert optimistic update on error
-      setTasks(previousTasks); // Restore previous state
-      console.error('Error toggling task completion:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Something Went Wrong!'
-      });
+      setTasks(previousTasks);
+      toast({ variant: 'destructive', title: 'Something Went Wrong!' });
     }
   };
 

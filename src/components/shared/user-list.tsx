@@ -14,21 +14,21 @@ export default function UserList({ user, filteredUsers }) {
 
 
 
-  const fetchUserData = async () => {
-    try {
-      // Dispatch the fetchUsers action to get the data
-      const actionResult = await dispatch(fetchUsers(user?._id));
+  // const fetchUserData = async () => {
+  //   try {
+  //     // Dispatch the fetchUsers action to get the data
+  //     const actionResult = await dispatch(fetchUsers(user?._id));
 
-      if (fetchUsers.fulfilled.match(actionResult)) {
-        const data = actionResult.payload;
-        setProfileData(data); // Set the profile data once fetched
-      } else {
-        console.error('Error fetching users:', actionResult.payload);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
+  //     if (fetchUsers.fulfilled.match(actionResult)) {
+  //       const data = actionResult.payload;
+  //       setProfileData(data); // Set the profile data once fetched
+  //     } else {
+  //       console.error('Error fetching users:', actionResult.payload);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching users:', error);
+  //   }
+  // };
 
 
   // const fetchUserData = async () => {
@@ -42,26 +42,27 @@ export default function UserList({ user, filteredUsers }) {
   //   }
   // };
 
-  useEffect(() => {
-    if (
-      user?.role === 'user' ||
-      user?.role === 'creator' ||
-      user?.role === 'company'
-    ) {
-      fetchUserData();
-      const interval = setInterval(() => {
-        fetchUserData();
-      }, 10000);
+  // useEffect(() => {
+  //   if (
+  //     user?.role === 'user' ||
+  //     user?.role === 'creator' ||
+  //     user?.role === 'company'
+  //   ) {
+  //     fetchUserData();
+  //     const interval = setInterval(() => {
+  //       fetchUserData();
+  //     }, 10000);
   
-      return () => clearInterval(interval);
-    } // Fetch users on component mount
-  }, [user, dispatch]);
+  //     return () => clearInterval(interval);
+  //   } // Fetch users on component mount
+  // }, [user, dispatch]);
+  
 
   return (
     <ScrollArea className="h-full max-h-[220px] overflow-auto">
     {/* Exclude deleted user */}
     
-      <Link to={`/dashboard/task/${user?._id}`}>
+      {/* <Link to={`/dashboard/task/${user?._id}`}>
         <Button variant="ghost" className="mb-2 w-full justify-start">
           <Avatar className="mr-2 h-6 w-6">
             <AvatarImage src={profileData?.image} alt="Profile picture" />
@@ -83,7 +84,7 @@ export default function UserList({ user, filteredUsers }) {
               </span>
           </div>
         </Button>
-      </Link>
+      </Link> */}
     
 
     {/* {(user?.role === 'creator' || user?.role === 'user') &&
@@ -109,12 +110,15 @@ export default function UserList({ user, filteredUsers }) {
         </Link>
       )} */}
 
+    
+
     {filteredUsers
       // Exclude deleted users
       .map((user) => (
         <Link key={user._id} to={`/dashboard/task/${user?._id}`}>
           <Button variant="ghost" className="mb-2 w-full justify-start">
             <Avatar className="mr-2 h-6 w-6 rounded-full">
+            <AvatarImage src={user?.image} alt="Profile picture" />
               <AvatarFallback>
                 {user?.name
                   .split(' ')

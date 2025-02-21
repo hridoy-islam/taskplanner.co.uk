@@ -37,7 +37,7 @@ export function NotificationItem({ notification, userImage, duration }) {
       {/* <Icon className="mt-1 h-5 w-5 text-background" /> */}
       <div className="flex items-center  space-x-2">
         {userImage ? (
-          <Avatar className="h-8 w-8 bg-black p-5 ">
+          <Avatar className="h-8 w-8  ">
             <AvatarImage src={userImage.image} alt="Profile picture" />
             <AvatarFallback>
               {userImage.name

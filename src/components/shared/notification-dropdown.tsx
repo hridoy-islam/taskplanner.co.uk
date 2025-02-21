@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, CircleUser } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,6 +18,13 @@ import { useSelector } from 'react-redux';
 import { Badge } from '../ui/badge';
 import ReactHowler from 'react-howler';
 import notification from '@/assets/sound/notification.mp3';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import moment from 'moment';
 
 interface Notification {
   _id: string;
@@ -25,6 +32,7 @@ interface Notification {
   isRead: boolean;
   senderId?: string;
   updatedAt: string;
+  createdAt?:string
 }
 
 export function NotificationDropdown() {
@@ -32,6 +40,8 @@ export function NotificationDropdown() {
   const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useSelector((state: any) => state.auth);
   const [playSound, setPlaySound] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  
 
   // Fetch notifications on component mount
   useEffect(() => {
@@ -72,22 +82,23 @@ export function NotificationDropdown() {
     }
   }, []);
 
-  const markAsRead = async (id: string) => {
+  const markAsRead = async (id: string, notification) => {
     try {
       await axiosInstance.patch(`/notifications/${id}/read`, { isRead: true }); // API call to mark notification as read
       setNotifications((prev) =>
         prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
       );
       setUnreadCount((prevUnread) => Math.max(0, prevUnread - 1));
+      setSelectedNotification(notification);
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
   };
 
   // Function to calculate duration
-  const calculateDuration = (updatedAt: string): string => {
+  const calculateDuration = (createdAt: string): string => {
     const currentTime = new Date();
-    const updatedTime = new Date(updatedAt);
+    const updatedTime = new Date(createdAt);
     const durationInMinutes = Math.floor(
       (currentTime.getTime() - updatedTime.getTime()) / 60000
     );
@@ -140,16 +151,16 @@ export function NotificationDropdown() {
               <DropdownMenuItem
                 className="hover:border-none hover:bg-transparent focus:border-none focus:bg-transparent"
                 key={notification._id}
-                onClick={() => markAsRead(notification._id)}
+                onClick={() => markAsRead(notification._id, notification)}
               >
                 <NotificationItem
                   notification={notification}
                   userImage={
-                    notification.senderId === user?._id
-                      ? { image: user?.image, name: user.name }
+                    notification.senderId
+                      ? { image: notification?.senderId?.image, name: notification.senderId?.name }
                       : undefined
                   }
-                  duration={calculateDuration(notification.updatedAt)}
+                  duration={calculateDuration(notification?.createdAt)}
                 />
               </DropdownMenuItem>
             ))}
@@ -165,6 +176,29 @@ export function NotificationDropdown() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <Dialog open={selectedNotification !== null} onOpenChange={(open) => !open && setSelectedNotification(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Notification Details</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            {selectedNotification && (
+              <div>
+                <div className='flex flex-row gap-1 pb-2  items-center'>
+
+                <CircleUser className="h-4 w-4" />
+                <h1 className="font-semibold ">{selectedNotification?.senderId?.name}</h1>
+          
+                </div>
+                <p className="text-sm text-gray-800">{selectedNotification.message}</p>
+                <p className="text-[12px] font-bold mt-2 text-gray-500">
+                  {moment(selectedNotification.updatedAt).format('MMMM Do YYYY, h:mm:ss a')}
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

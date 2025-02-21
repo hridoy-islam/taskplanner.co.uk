@@ -85,15 +85,15 @@ export default function CompanyTableList({ refreshKey }) {
           value={searchTerm}
           onChange={handleSearch}
         />
-        <div>
+        {/* <div>
           <DynamicPagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
-        </div>
+        </div> */}
       </div>
-      <ScrollArea className="h-[calc(80vh-220px)] rounded-md md:h-[calc(80dvh-80px)]">
+      <ScrollArea className="h-[calc(76vh-7rem)] rounded-md ">
         <Table>
           <TableHeader>
             <TableRow>
