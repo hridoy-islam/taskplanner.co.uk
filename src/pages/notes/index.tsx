@@ -137,16 +137,16 @@ export default function NotesPage() {
   const [addNewNoteData] = useAddNewNoteMutation();
   const [addNewTagData] = useAddNewTagMutation();
   const { data: noteData = [] } = useFetchNotesQuery(user._id, {
-    pollingInterval: 10000,
+    pollingInterval: 5000,
     skip: !user?._id
   });
   const { data: sharedNoteData = [] } = useFetchShareNotesQuery(user._id, {
-    pollingInterval: 10000,
+    pollingInterval: 5000,
     skip: !user?._id
   });
 
   const { data: tagsData = [] } = useFetchTagsQuery(user?._id, {
-    pollingInterval: 10000,
+    pollingInterval: 5000,
     skip: !user?._id
   });
 

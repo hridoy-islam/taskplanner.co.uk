@@ -110,7 +110,7 @@ export default function TaskPlanner() {
   const { data: monthTasks, isError: isMonthError } = useFetchPlannerMonthQuery(
     { year, month, userId: user._id },
     {
-      pollingInterval: 10000
+      pollingInterval: 5000
     }
   );
 
@@ -120,7 +120,7 @@ export default function TaskPlanner() {
     isError: isWeekError
   } = useFetchPlannerWeekQuery(
     { year, week, userId: user._id },
-    { pollingInterval: 10000 }
+    { pollingInterval: 5000 }
   );
 
   const { data: dayTasks, isError: isDayError } = useFetchPlannerDayQuery({
