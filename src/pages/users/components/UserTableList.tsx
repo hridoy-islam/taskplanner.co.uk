@@ -129,7 +129,7 @@ export default function UserTableList({ refreshKey }) {
         fetchData(currentPage, entriesPerPage, searchTerm);
         toast({
           title: 'Updated Successfully',
-          description: 'Thank You'
+    
         });
       }
     } catch (error) {

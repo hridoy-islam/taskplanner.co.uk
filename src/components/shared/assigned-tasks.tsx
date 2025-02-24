@@ -68,7 +68,7 @@ export default function AssignedTasks({ user }) {
         }
       }).unwrap();
       refetch();
-      toast({ title: 'Task Updated', description: 'Thank You' });
+      toast({ title: 'Task Updated' });
     } catch (error) {
       // Revert optimistic update on error
       setTasks(previousTasks);
@@ -105,7 +105,7 @@ export default function AssignedTasks({ user }) {
         }
       }).unwrap();
       refetch();
-      toast({ title: 'Task Updated', description: 'Thank You' });
+      toast({ title: 'Task Updated' });
     } catch (error) {
       // Revert optimistic update on error
       setTasks(previousTasks);

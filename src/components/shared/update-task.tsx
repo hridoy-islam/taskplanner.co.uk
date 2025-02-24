@@ -62,11 +62,13 @@ const UpdateTask = ({
             placeholder="Task Name"
           />
 
+          <p>Due Date</p>
           <Input
             type="date"
             {...register('dueDate', { required: true })}
             className="mb-4"
           />
+          <p>Repeat</p>
 
           <Select
             value={scheduleType}

@@ -122,7 +122,7 @@ export default function CreatorTableList({ refreshKey }) {
         fetchData(currentPage, entriesPerPage, searchTerm);
         toast({
           title: 'Updated Successfully',
-          description: 'Thank You'
+
         });
       }
     } catch (error) {

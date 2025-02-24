@@ -72,7 +72,7 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
         //setOpenUpdate(false); // Close modal after update
         toast({
           title: 'Task Updated Successfully',
-          description: 'Thank You'
+          
         });
         //reset();
       } else {

@@ -178,7 +178,7 @@ export default function TaskPage() {
         }
       }).unwrap();
       refetch();
-      toast({ title: 'Task Updated', description: 'Thank You' });
+      toast({ title: 'Task Updated'});
     } catch (error) {
       // Revert optimistic update on error
       setTasks(previousTasks);
@@ -211,7 +211,7 @@ export default function TaskPage() {
         }
       }).unwrap();
       refetch();
-      toast({ title: 'Task Updated', description: 'Thank You' });
+      toast({ title: 'Task Updated' });
     } catch (error) {
       // Revert optimistic update on error
       setTasks(previousTasks);
@@ -277,7 +277,7 @@ export default function TaskPage() {
       // Show success toast
       toast({
         title: 'Task Added',
-        description: 'Thank You'
+
       });
     } catch (error) {
       // Show error toast

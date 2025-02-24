@@ -127,7 +127,7 @@ export default function ImportantPage() {
         );
         toast({
           title: 'Task Updated',
-          description: 'Thank You'
+
         });
       } else {
         throw new Error('Failed to update task');

@@ -48,7 +48,7 @@ export default function DirectorProfileDetail() {
       await axiosInstance.patch(`/users/${id}`, data);
       toast({
         title: 'Profile Updated Successfully',
-        description: 'Thank You'
+  
       });
       fetchUserDetails();
     } catch (error) {

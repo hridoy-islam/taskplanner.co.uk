@@ -116,7 +116,7 @@ export default function ProfilePage() {
       await axiosInstance.patch(`/users/${userId}`, updatedData);
       toast({
         title: 'Profile Updated',
-        description: 'Thank You'
+    
       });
     } catch (error) {
       toast({

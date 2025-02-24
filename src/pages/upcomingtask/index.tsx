@@ -107,7 +107,7 @@ export default function UpcomingTaskPage() {
       fetchUpcomingTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
       toast({
         title: 'Task Updated',
-        description: 'Thank You'
+        
       });
     } else {
       toast({
@@ -128,7 +128,7 @@ export default function UpcomingTaskPage() {
       fetchUpcomingTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
       toast({
         title: 'Task Updated',
-        description: 'Thank You'
+      
       });
     } else {
       toast({

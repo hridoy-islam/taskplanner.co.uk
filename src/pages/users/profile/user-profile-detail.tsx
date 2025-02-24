@@ -77,7 +77,7 @@ export default function UserProfileDetail() {
       await axiosInstance.patch(`/users/${id}`, data);
       toast({
         title: 'Profile Updated Successfully',
-        description: 'Thank You'
+
       });
       fetchUserDetails();
     } catch (error) {
@@ -115,7 +115,7 @@ export default function UserProfileDetail() {
       if (res.data.success) {
         toast({
           title: 'Member Assigned Successfully',
-          description: 'Thank You'
+        
         });
 
         // Update assignedMembers state

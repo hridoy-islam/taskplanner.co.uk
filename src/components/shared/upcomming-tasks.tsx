@@ -69,7 +69,7 @@ export default function UpcomingTasks({ user }) {
         }
       }).unwrap();
       refetch();
-      toast({ title: 'Task Updated', description: 'Thank You' });
+      toast({ title: 'Task Updated'});
     } catch (error) {
       // Revert optimistic update on error
       setTasks(previousTasks);
@@ -118,7 +118,7 @@ export default function UpcomingTasks({ user }) {
         );
         toast({
           title: 'Task Updated',
-          description: 'Thank You'
+       
         });
       } else {
         throw new Error('Failed to update task');

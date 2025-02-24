@@ -163,7 +163,7 @@ export default function AssignedTaskPage() {
         );
         toast({
           title: 'Task Updated',
-          description: 'Thank You'
+         
         });
       } else {
         throw new Error('Failed to update task');
@@ -209,7 +209,7 @@ export default function AssignedTaskPage() {
             }
           }
         );
-        toast({ title: 'Task Updated', description: 'Thank You' });
+        toast({ title: 'Task Updated' });
       } else {
         throw new Error('Failed to update task');
       }
