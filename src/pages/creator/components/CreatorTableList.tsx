@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { Pencil } from 'lucide-react';
+import { Pencil, UserCheck, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DynamicPagination from '@/components/shared/DynamicPagination';
 import { Input } from '@/components/ui/input';
@@ -121,8 +121,7 @@ export default function CreatorTableList({ refreshKey }) {
       if (res.data.success) {
         fetchData(currentPage, entriesPerPage, searchTerm);
         toast({
-          title: 'Updated Successfully',
-
+          title: 'Updated Successfully'
         });
       }
     } catch (error) {
@@ -134,8 +133,41 @@ export default function CreatorTableList({ refreshKey }) {
     }
   };
 
+  const handleAddRemoveColleague = async (userId, colleagueId, action) => {
+    try {
+      const payload = {
+        colleagueId,
+        action,
+      };
+
+      const response = await axiosInstance.patch(`users/addmember/${userId}`, payload);
+
+      if (response.data.success) {
+        toast({
+          title: action === 'add' ? 'User Added Successfully' : 'User Removed Successfully',
+        });
+        fetchData(currentPage, entriesPerPage, searchTerm); // Refresh the data
+      } else {
+        toast({
+          title: 'Something Went Wrong',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error updating colleagues:', error);
+      toast({
+        title: 'Error updating colleagues',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const isColleague = (creator) => {
+    return creator.colleagues && creator.colleagues.includes(user._id);
+  };
+
   return (
-    <div className='flex h-[calc(82vh-7rem)] flex-col overflow-hidden px-2 bg-transparent'>
+    <div className="flex h-[calc(82vh-7rem)] flex-col overflow-hidden bg-transparent px-2">
       <div className="mb-6 flex gap-8">
         <Input
           type="text"
@@ -151,7 +183,7 @@ export default function CreatorTableList({ refreshKey }) {
           />
         </div> */}
       </div>
-      <div className="h-full  -mt-6 overflow-y-auto rounded-md">
+      <div className="-mt-6  h-full overflow-y-auto rounded-md">
         <Table>
           <TableHeader>
             <TableRow>
@@ -165,9 +197,12 @@ export default function CreatorTableList({ refreshKey }) {
               {(user.role === 'admin' ||
                 user.role === 'director' ||
                 user.role === 'company') && <TableHead>User Status</TableHead>}
+              {(user.role === 'admin' || user.role === 'director') && (
+                <TableHead>Add User</TableHead>
+              )}
             </TableRow>
           </TableHeader>
-          <TableBody className='overflow-y-auto'>
+          <TableBody className="overflow-y-auto">
             {users.map((creator: any) => (
               <TableRow key={creator._id}>
                 <TableCell>{creator?.name}</TableCell>
@@ -217,6 +252,24 @@ export default function CreatorTableList({ refreshKey }) {
                       {creator.isDeleted ? 'Inactive' : 'Active'}
                     </span>
                   </TableCell>
+                )}
+
+                {(user.role === 'admin' || user.role === 'director') && (
+                  <TableCell>
+                  <div className="flex flex-row items-center justify-center">
+                    {isColleague(creator) ? (
+                      <UserCheck
+                        className="cursor-pointer"
+                        onClick={() => handleAddRemoveColleague(creator._id, user._id, 'remove')}
+                      />
+                    ) : (
+                      <UserPlus
+                        className="cursor-pointer"
+                        onClick={() => handleAddRemoveColleague(creator._id, user._id, 'add')}
+                      />
+                    )}
+                  </div>
+                </TableCell>
                 )}
               </TableRow>
             ))}

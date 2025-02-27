@@ -73,6 +73,7 @@ export default function UserProfileDetail() {
   const onSubmit = async (data: userDetails) => {
     try {
       data.email = convertToLowerCase(data.email);
+      data.colleagues = assignedMembers;
       setLoading(true); // Set loading to true
       await axiosInstance.patch(`/users/${id}`, data);
       toast({

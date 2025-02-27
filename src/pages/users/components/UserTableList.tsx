@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { Pencil } from 'lucide-react';
+import { Pencil, UserCheck, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DynamicPagination from '@/components/shared/DynamicPagination';
 import { Input } from '@/components/ui/input';
@@ -42,7 +42,7 @@ export default function UserTableList({ refreshKey }) {
           endpoint = `/users?role=user&company=${user._id}&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}`;
         } else if (user.role === 'creator') {
           dispatch(fetchUserProfile(user?._id));
-          
+
           endpoint = `/users?role=user&company=${profileData.company._id}&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}`;
         } else {
           endpoint = `/users?role=user&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}`;
@@ -128,8 +128,7 @@ export default function UserTableList({ refreshKey }) {
       if (res.data.success) {
         fetchData(currentPage, entriesPerPage, searchTerm);
         toast({
-          title: 'Updated Successfully',
-    
+          title: 'Updated Successfully'
         });
       }
     } catch (error) {
@@ -141,15 +140,53 @@ export default function UserTableList({ refreshKey }) {
     }
   };
 
+  const handleAddRemoveColleague = async (userId, colleagueId, action) => {
+    try {
+      const payload = {
+        colleagueId,
+        action
+      };
+
+      const response = await axiosInstance.patch(
+        `users/addmember/${userId}`,
+        payload
+      );
+
+      if (response.data.success) {
+        toast({
+          title:
+            action === 'add'
+              ? 'User Added Successfully'
+              : 'User Removed Successfully'
+        });
+        fetchData(currentPage, entriesPerPage, searchTerm); // Refresh the data
+      } else {
+        toast({
+          title: 'Something Went Wrong',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating colleagues:', error);
+      toast({
+        title: 'Error updating colleagues',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const isColleague = (userData) => {
+    return userData.colleagues && userData.colleagues.includes(user._id);
+  };
+
   return (
-    <div className="flex h-[calc(82vh-7rem)] flex-col overflow-hidden px-2 bg-transparent">
+    <div className="flex h-[calc(82vh-7rem)] flex-col overflow-hidden bg-transparent px-2">
       <div className="mb-8 flex gap-8">
         <Input
           type="text"
           placeholder="Search..."
           value={searchTerm}
           onChange={handleSearch}
-          
         />
         {/* <div>
           <DynamicPagination
@@ -159,9 +196,9 @@ export default function UserTableList({ refreshKey }) {
           />
         </div> */}
       </div>
-      <div className="h-full  -mt-6 overflow-y-auto rounded-md ">
+      <div className="-mt-6  h-full overflow-y-auto rounded-md ">
         <Table>
-          <TableHeader >
+          <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
@@ -174,9 +211,13 @@ export default function UserTableList({ refreshKey }) {
                 user.role === 'director' ||
                 user.role === 'company' ||
                 user.role === 'creator') && <TableHead>User Status</TableHead>}
+
+              {(user.role === 'admin' || user.role === 'director') && (
+                <TableHead>Add User</TableHead>
+              )}
             </TableRow>
           </TableHeader>
-          <TableBody className='overflow-y-auto'>
+          <TableBody className="overflow-y-auto">
             {users.map((stuff: any) => (
               <TableRow key={stuff._id}>
                 <TableCell>{stuff?.name}</TableCell>
@@ -228,11 +269,37 @@ export default function UserTableList({ refreshKey }) {
                     </span>
                   </TableCell>
                 )}
+
+                {(user.role === 'admin' || user.role === 'director') && (
+                  <TableCell>
+                    <div className="flex flex-row items-center justify-center">
+                      {isColleague(stuff) ? (
+                        <UserCheck
+                          className="cursor-pointer"
+                          onClick={() =>
+                            handleAddRemoveColleague(
+                              stuff._id,
+                              user._id,
+                              'remove'
+                            )
+                          }
+                        />
+                      ) : (
+                        <UserPlus
+                          className="cursor-pointer"
+                          onClick={() =>
+                            handleAddRemoveColleague(stuff._id, user._id, 'add')
+                          }
+                        />
+                      )}
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-      </div>
+    </div>
   );
 }

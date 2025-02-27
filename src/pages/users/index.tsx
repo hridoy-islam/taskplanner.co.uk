@@ -11,7 +11,7 @@ export default function UserPage() {
     setRefreshKey((prev) => prev + 1); // Update the key to trigger re-fetch
   };
   return (
-    <div className="space-y-4 p-4 md:p-8">
+    <div className="space-y-4 p-4 md:p-8 ">
       <PageHead title="Profile Page" />
       <Breadcrumbs
         items={[

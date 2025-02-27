@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { Pencil } from 'lucide-react';
+import { Pencil, UserCheck, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DynamicPagination from '@/components/shared/DynamicPagination';
 import { Input } from '@/components/ui/input';
@@ -63,8 +63,7 @@ export default function CompanyTableList({ refreshKey }) {
       if (res.data.success) {
         fetchData(currentPage, entriesPerPage, searchTerm);
         toast({
-          title: 'Updated Successfully',
- 
+          title: 'Updated Successfully'
         });
       }
     } catch (error) {
@@ -74,6 +73,45 @@ export default function CompanyTableList({ refreshKey }) {
         variant: 'destructive'
       });
     }
+  };
+
+  const handleAddRemoveColleague = async (userId, colleagueId, action) => {
+    try {
+      const payload = {
+        colleagueId,
+        action
+      };
+
+      const response = await axiosInstance.patch(
+        `users/addmember/${userId}`,
+        payload
+      );
+
+      if (response.data.success) {
+        toast({
+          title:
+            action === 'add'
+              ? 'User Added Successfully'
+              : 'User Removed Successfully'
+        });
+        fetchData(currentPage, entriesPerPage, searchTerm); // Refresh the data
+      } else {
+        toast({
+          title: 'Something Went Wrong',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating colleagues:', error);
+      toast({
+        title: 'Error updating colleagues',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const isColleague = (company) => {
+    return company.colleagues && company.colleagues.includes(user._id);
   };
 
   return (
@@ -102,6 +140,9 @@ export default function CompanyTableList({ refreshKey }) {
               <TableHead>Actions</TableHead>
               {(user.role === 'admin' || user.role === 'director') && (
                 <TableHead>Company Status</TableHead>
+              )}
+              {(user.role === 'admin' || user.role === 'director') && (
+                <TableHead className='text-center'>Add User</TableHead>
               )}
             </TableRow>
           </TableHeader>
@@ -135,6 +176,36 @@ export default function CompanyTableList({ refreshKey }) {
                     >
                       {company.isDeleted ? 'Inactive' : 'Active'}
                     </span>
+                  </TableCell>
+                )}
+
+                {(user.role === 'admin' || user.role === 'director') && (
+                  <TableCell>
+                    <div className="flex flex-row items-center justify-center">
+                      {isColleague(company) ? (
+                        <UserCheck
+                          className="cursor-pointer"
+                          onClick={() =>
+                            handleAddRemoveColleague(
+                              company._id,
+                              user._id,
+                              'remove'
+                            )
+                          }
+                        />
+                      ) : (
+                        <UserPlus
+                          className="cursor-pointer"
+                          onClick={() =>
+                            handleAddRemoveColleague(
+                              company._id,
+                              user._id,
+                              'add'
+                            )
+                          }
+                        />
+                      )}
+                    </div>
                   </TableCell>
                 )}
               </TableRow>
