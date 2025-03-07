@@ -4,6 +4,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    allowedHosts: ['www.taskplanner.co.uk','taskplanner.co.uk'],
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src')
