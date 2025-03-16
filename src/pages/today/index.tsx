@@ -31,7 +31,7 @@ export default function TodayPage() {
         page,
         limit: 5000
       },
-      { pollingInterval: 10000, refetchOnFocus: true, refetchOnReconnect: true }
+      { pollingInterval: 5000, refetchOnFocus: true, refetchOnReconnect: true }
     );
 
     const getTodayTaskFn = TaskSlice.usePrefetch('fetchTodayTasks');

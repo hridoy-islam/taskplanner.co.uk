@@ -131,9 +131,6 @@ export default function NotesPage() {
   //   }
   // }, []);
 
-
- 
-
   const [addNewNoteData] = useAddNewNoteMutation();
   const [addNewTagData] = useAddNewTagMutation();
   const { data: noteData = [] } = useFetchNotesQuery(user._id, {
@@ -145,15 +142,29 @@ export default function NotesPage() {
     skip: !user?._id
   });
 
-  const { data: tagsData = [] } = useFetchTagsQuery(user?._id, {
-    pollingInterval: 5000,
-    skip: !user?._id
-  });
+  // const { data: tagsData = [] } = useFetchTagsQuery( {
+  //   pollingInterval: 5000,
+  //   skip: !user?._id
+  // });
 
-  console.log(tags)
+  const fetchTags = async () => {
+    try {
+      const response = await axiosInstance.get(`/tags/user/${user._id}`);
+
+      setTags(response.data?.data?.result);
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user?._id) {
+      fetchTags();
+    }
+  }, [user?._id]);
 
   const getNotesFn = NoteSlice.usePrefetch('fetchNotes');
-  const getTagsFn = TagSlice.usePrefetch('fetchTags');
+  // const getTagsFn = TagSlice.usePrefetch('fetchTags');
   const getShareNotesFn = NoteSlice.usePrefetch('fetchShareNotes');
 
   const [deleteNote] = useDeleteNoteMutation();
@@ -161,9 +172,9 @@ export default function NotesPage() {
 
   useEffect(() => {
     getNotesFn;
-    getTagsFn;
+    // getTagsFn;
     getShareNotesFn;
-  }, [noteData, tagsData]);
+  }, [noteData]);
 
   const openUpdateModal = (note) => {
     setSelectedNote(note);
@@ -185,6 +196,24 @@ export default function NotesPage() {
     }
   };
 
+  const handleChange = (selectedOptions) => {
+    setSharedWith(selectedOptions);
+  };
+
+  const userOptions = shareRecipients.map((user) => ({
+    value: user._id,
+    label: `${user.name} (${user.email}) `
+  }));
+
+  const filteredTags = Array.isArray(tags)
+    ? tags.filter((tag) => {
+        if (searchTerm) {
+          return tag?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        return true;
+      })
+    : [];
+
   useEffect(() => {
     fetchData();
   }, [noteData]);
@@ -193,50 +222,11 @@ export default function NotesPage() {
     if (users && Array.isArray(users) && shareRecipients.length === 0) {
       setShareRecipients(users); // This will only set users if shareRecipients is empty
     }
-  }, [users]);
-
-  const handleChange = (selectedOptions) => {
-    setSharedWith(selectedOptions || []);
-  };
-
-  const userOptions = shareRecipients.map((user) => ({
-    value: user._id,
-    label: `${user.name} (${user.email}) `
-  }));
+  }, [users, shareRecipients]);
 
   useEffect(() => {
-    if (selectedTab !== 'my-notes') {
-      setSelectedNote(null);
-    }
-  }, [selectedTab]);
-
-  useEffect(() => {
-    if (noteData.length > 0) {
-      setNotes(noteData);
-      // setSelectedNote(noteData[0]);
-    } else {
-      setSelectedNote(null);
-    }
-  }, [noteData]);
-
-  useEffect(() => {
-    if (sharedNoteData.length > 0) {
-      setSharedNotes(sharedNoteData);
-    } else {
-      setSelectedNote(null);
-    }
-  }, [sharedNoteData]);
-
-  const filteredTags = tags.filter((tag) => {
-    if (searchTerm) {
-      return tag.name.toLowerCase().includes(searchTerm.toLowerCase());
-    }
-    return true; // Keep all tags visible if filtering by tag
-  });
-
-  useEffect(() => {
-    if (tagsData.length > 0) {
-      setTags(tagsData);
+    if (tags.length > 0) {
+      setTags(tags);
     } else {
       setTags([]);
     }
@@ -301,7 +291,7 @@ export default function NotesPage() {
       // const response = await axiosInstance.post("/notes/", newNoteData);
       await addNewNoteData(newNoteData);
       setNotes((prevNotes) => [newNoteData, ...prevNotes]);
-       reset();
+      reset();
 
       setIsDialogOpen(false);
     } catch (error) {
@@ -485,28 +475,26 @@ export default function NotesPage() {
         ? updatedNote.sharedWith
         : [];
 
-      setNotes((prevNotes: any) =>
+      // Update the local state with the updated note
+      setNotes((prevNotes) =>
         prevNotes.map((note) =>
           note._id === selectedNote._id
-            ? {
-                ...note,
-                sharedWith: [
-                  ...new Set([...existingSharedWith, ...updatedSharedList])
-                ]
-              }
+            ? { ...note, sharedWith: updatedSharedList }
             : note
         )
       );
 
+      // Update the selectedNote state
       setSelectedNote((prevNote) => ({
         ...prevNote!,
-        sharedWith: [
-          ...new Set([...(prevNote?.sharedWith ?? []), ...updatedSharedList])
-        ]
+        sharedWith: updatedSharedList
       }));
 
+      // Clear the sharedWith state
+      setSharedWith([]);
+
+      // Close the share dialog
       setIsShareDialogOpen(false);
-      setSharedWith(updatedSharedList);
 
       toast({ title: 'Note shared successfully!' });
     } catch (error) {
@@ -698,6 +686,29 @@ export default function NotesPage() {
   };
 
   useEffect(() => {
+    if (selectedTab !== 'my-notes') {
+      setSelectedNote(null);
+    }
+  }, [selectedTab, isDialogOpen]);
+
+  useEffect(() => {
+    if (noteData.length > 0) {
+      setNotes(noteData);
+      // setSelectedNote(noteData[0]);
+    } else {
+      setSelectedNote(null);
+    }
+  }, [noteData, isDialogOpen]);
+
+  useEffect(() => {
+    if (sharedNoteData.length > 0) {
+      setSharedNotes(sharedNoteData);
+    } else {
+      setSelectedNote(null);
+    }
+  }, [sharedNoteData, isDialogOpen]);
+
+  useEffect(() => {
     setUserSearchTerm('');
   }, [isShareDialogOpen]);
 
@@ -825,7 +836,6 @@ export default function NotesPage() {
               setSelectedTab(value);
               setSelectedNote(null); // Reset selected note when switching tabs
             }}
-            
             className="w-full "
           >
             <TabsList className="grid w-full  grid-cols-2 ">
@@ -849,7 +859,7 @@ export default function NotesPage() {
                         : note.content}
                     </p>
                     <div className="mt-1 flex flex-wrap gap-1">
-                      {note.tags.map((tag) => (
+                      {note.tags?.map((tag) => (
                         <span
                           key={tag._id}
                           className="rounded-full bg-violet-600 p-1 text-[10px] text-white"
@@ -927,7 +937,7 @@ export default function NotesPage() {
                         {/* Tag List */}
                         <div className="max-h-48 overflow-y-auto">
                           {filteredTags.length > 0 ? (
-                            filteredTags.map((tag) => (
+                            filteredTags?.map((tag) => (
                               <div
                                 key={tag._id}
                                 onClick={() => addTag(tag)}
@@ -1008,7 +1018,7 @@ export default function NotesPage() {
             <main className="flex-1 bg-white p-6">
               {selectedTab === 'my-notes' && (
                 <div className="mb-4 flex flex-wrap gap-2">
-                  {selectedNote.tags.map((tag) => (
+                  {selectedNote.tags?.map((tag) => (
                     <span
                       key={tag?._id}
                       className="flex items-center rounded-full  bg-violet-600  px-2 py-1 text-sm text-white"
@@ -1070,39 +1080,6 @@ export default function NotesPage() {
           <Tabs defaultValue="users" className="w-full">
             <TabsContent value="users">
               <div className="space-y-4">
-                {/* <div className="relative">
-                  <Search
-                    className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"
-                    size={18}
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Search users"
-                    className="pl-10"
-                    value={userSearchTerm}
-                    onChange={(e) => setUserSearchTerm(e.target.value)}
-                  />
-                </div> */}
-
-                {/* <ScrollArea className="h-[200px]">
-                  {filteredUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="mb-2 flex items-center space-x-2"
-                    >
-                      <input
-                        type="checkbox"
-                        id={`user-${user._id}`}
-                        checked={shareRecipients.some((r) => r.id === user.id)}
-                        onChange={() => toggleRecipient(user)}
-                        className="rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      <label htmlFor={`user-${user.id}`} className="flex-1">
-                        {user.name} ({user.email})
-                      </label>
-                    </div>
-                  ))}
-                </ScrollArea> */}
                 <Select
                   options={userOptions}
                   isMulti
@@ -1111,14 +1088,11 @@ export default function NotesPage() {
                   className="w-full"
                   placeholder="Select users..."
                 />
-                <ScrollArea className="h-[200px]">
+                <ScrollArea key={selectedNote?._id} className="h-[200px]">
                   {(selectedNote?.sharedWith || []).map((userId) => {
-                    // Find the user from userOptions based on the userId
                     const user = userOptions.find(
                       (user) => user.value === userId
                     );
-
-                    // If user exists, render their name and email
                     if (user) {
                       return (
                         <div
@@ -1129,8 +1103,7 @@ export default function NotesPage() {
                             htmlFor={`user-${user.value}`}
                             className="flex-1"
                           >
-                            {user.label}{' '}
-                            {/* Assuming label is in the format of "name (email)" */}
+                            {user.label}
                           </label>
                           <Button
                             variant="ghost"
@@ -1142,7 +1115,7 @@ export default function NotesPage() {
                         </div>
                       );
                     }
-                    return null; // Return null if no user is found
+                    return null;
                   })}
                 </ScrollArea>
               </div>
@@ -1208,21 +1181,25 @@ export default function NotesPage() {
             </div>
 
             <ScrollArea className="h-[200px]">
-              {tags.map((tag) => (
-                <div
-                  key={tag._id} // Use _id as the key (unique identifier for each tag)
-                  className="flex items-center justify-between py-2"
-                >
-                  <span>{tag.name}</span> {/* Display the tag name */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeExistingTag(tag)}
+              {Array.isArray(tags) ? (
+                tags.map((tag) => (
+                  <div
+                    key={tag._id}
+                    className="flex items-center justify-between py-2"
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+                    <span>{tag.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeExistingTag(tag)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <p>Loading tags...</p>
+              )}
             </ScrollArea>
           </div>
         </DialogContent>

@@ -49,14 +49,12 @@ export const TagSlice = createApi({
 
     fetchTags: builder.query({
       query: (userId) => ({
-        url: `/user/${userId}`,
+        url: `/`,
         method: 'GET'
       }),
-      serializeQueryArgs: ({ endpointName, queryArgs }) =>
-        `${endpointName}/${queryArgs.userId}`,
-      
-      providesTags: (result, error, userId) => [
-        { type: 'Tag', id: `LIST-${userId}` }
+   
+      providesTags: () => [
+        { type: 'Tag', id: `LIST}` }
       ]
     })
   })

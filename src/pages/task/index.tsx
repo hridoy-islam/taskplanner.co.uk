@@ -45,21 +45,7 @@ export default function TaskPage() {
 
   const [createTask] = useCreateTaskMutation();
   const [updateTask] = useUpdateTaskMutation();
-  // const fetchTasks = useCallback(
-  //   async (page, entriesPerPage, searchTerm = '', sortOrder = 'desc') => {
-  //     try {
-  //       const sortQuery = sortOrder === 'asc' ? 'dueDate' : '-dueDate';
-  //       const res = await axiosInstance.get(
-  //         `/task/getbothuser/${user?._id}/${id}?page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}&status=pending`
-  //       );
-  //       setTasks(res.data.data.result);
-  //       setTotalPages(res.data.data.meta.totalPage);
-  //     } catch (err) {
-  //       console.log(err);
-  //     }
-  //   },
-  //   [id]
-  // );
+
 
   const { data, isLoading, refetch } = useFetchTasksForBothUsersQuery(
     {
@@ -114,47 +100,6 @@ export default function TaskPage() {
       setTasks(filteredTasks);
     }
   };
-
-  // const handleMarkAsImportant = async (taskId) => {
-  //   const taskToToggle = tasks.find((task) => task._id === taskId);
-  //   if (!taskToToggle) return;
-
-  //   // Optimistically update UI
-  //   const previousTasks = [...tasks];
-  //   setTasks((prevTasks) =>
-  //     prevTasks.map((task) =>
-  //       task._id === taskId ? { ...task, important: !task.important } : task
-  //     )
-  //   );
-
-  //   try {
-  //     // Update server
-  //     const response = await axiosInstance.patch(`/task/${taskId}`, {
-  //       important: !taskToToggle.important
-  //     });
-
-  //     if (response.data.success) {
-  //       // Update RTK Query cache
-  //       TaskSlice.util.updateQueryData(
-  //         'fetchTasksForBothUsers',
-  //         { userId: user._id, searchTerm, sortOrder, page, limit: 15 },
-  //         (draft) => {
-  //           const task = draft?.data?.result?.find((t) => t._id === taskId);
-  //           if (task) {
-  //             task.important = !task.important;
-  //           }
-  //         }
-  //       );
-  //       toast({ title: 'Task Updated', description: 'Thank You' });
-  //     } else {
-  //       throw new Error('Failed to update task');
-  //     }
-  //   } catch (error) {
-  //     // Revert optimistic update on error
-  //     setTasks(previousTasks);
-  //     toast({ variant: 'destructive', title: 'Something Went Wrong!' });
-  //   }
-  // };
 
   const handleMarkAsImportant = async (taskId) => {
     const taskToToggle = tasks.find((task) => task._id === taskId);
@@ -219,37 +164,60 @@ export default function TaskPage() {
     }
   };
 
+  
   // const onSubmit = async (data) => {
   //   if (loading) return;
   //   setLoading(true);
-  //   data.author = user?._id;
-  //   data.assigned = id;
 
-  //   try {
-  //     // await axiosInstance.post(`/task`, data);
-  //     await createTask(data)
-  //     reset();
-  //     refetch();
-  //     toast({
-  //       title: 'Task Added',
-  //       description: 'Thank You'
-  //     });
-
-  //   } catch (error) {
+  //   // Ensure user and assigned ID are available before proceeding
+  //   if (!user?._id || !id) {
   //     toast({
   //       variant: 'destructive',
-  //       title: 'An error occurred while adding the task.'
+  //       title: 'User information is missing!'
   //     });
+  //     setLoading(false);
+  //     return;
+  //   }
+
+  //   try {
+  //     // Make the API call to create the task
+  //     const response = await createTask({
+  //       taskName: data.taskName,
+  //       description: data.description || '',
+  //       author: user?._id,
+  //       assigned: id
+  //     }).unwrap();
+
+  //     setTasks((prevTasks) => [response.data, ...prevTasks]);
+
+  //     // Reset the form
+  //     reset();
+
+  //     // Show success toast
+  //     toast({
+  //       title: 'Task Added',
+
+  //     });
+  //   } catch (error) {
+  //     // Show error toast
+  //     // console.log(error);
+  //     // toast({
+  //     //   variant: 'destructive',
+  //     //   title: 'An error occurred while adding the task.'
+  //     // });
+
+  //     reset()
   //   } finally {
   //     setLoading(false); // Reset loading state
   //   }
   // };
 
+
+
   const onSubmit = async (data) => {
     if (loading) return;
     setLoading(true);
-
-    // Ensure user and assigned ID are available before proceeding
+  
     if (!user?._id || !id) {
       toast({
         variant: 'destructive',
@@ -258,38 +226,44 @@ export default function TaskPage() {
       setLoading(false);
       return;
     }
-
+  
     try {
-      // Make the API call to create the task
+      // Create the task
       const response = await createTask({
         taskName: data.taskName,
         description: data.description || '',
         author: user?._id,
         assigned: id
       }).unwrap();
-
-      // Update state only if API call succeeds
-      setTasks((prevTasks) => [response.data, ...prevTasks]);
-
+  
+      // Fetch additional user details for the task
+      const authorResponse = await axiosInstance.get(`/users/${user._id}`);
+      const assignedResponse = await axiosInstance.get(`/users/${id}`);
+  
+      // Add author and assign details to the task
+      const taskWithDetails = {
+        ...response.data,
+        author: authorResponse.data.data,
+        assigned: assignedResponse.data.data
+      };
+  
+      // Update the state with the new task
+      setTasks((prevTasks) => [taskWithDetails, ...prevTasks]);
+  
       // Reset the form
       reset();
-
+  
       // Show success toast
       toast({
         title: 'Task Added',
-
       });
     } catch (error) {
-      // Show error toast
-      // console.log(error);
-      // toast({
-      //   variant: 'destructive',
-      //   title: 'An error occurred while adding the task.'
-      // });
-
-      reset()
+      toast({
+        variant: 'destructive',
+        title: 'An error occurred while adding the task.'
+      });
     } finally {
-      setLoading(false); // Reset loading state
+      setLoading(false);
     }
   };
 
