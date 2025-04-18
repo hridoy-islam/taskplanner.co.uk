@@ -1,160 +1,174 @@
-import PageHead from '@/components/shared/page-head';
-import { Breadcrumbs } from '@/components/shared/breadcrumbs';
-import TaskList from '@/components/shared/task-list';
-import axiosInstance from '../../lib/axios';
-import { useSelector } from 'react-redux';
+
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { TaskSlice, useFetchTodayTasksQuery, useUpdateTaskMutation } from '@/redux/features/taskSlice';
-
-import { CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {  updateTask } from '@/redux/features/allTaskSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '@/redux/store';
 
-import Loader from '@/components/shared/loader';
+import moment from 'moment';
 
+import { usePollTasks } from '@/hooks/usePolling';
+import TaskList from '@/components/shared/task-list';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import PageHead from '@/components/shared/page-head';
+import { Breadcrumbs } from '@/components/shared/breadcrumbs';
+
+type PopulatedUserReference = {
+  _id: string;
+  name: string;
+};
+
+type Task = {
+  _id: string;
+  taskName: string;
+  status: string;
+  dueDate?: string;
+  important: boolean;
+  author: string | PopulatedUserReference;
+  assigned?: string | PopulatedUserReference;
+  updatedAt: string;
+};
 
 export default function TodayPage() {
-  const { user } = useSelector((state: any) => state.auth);
-  const [tasks, setTasks] = useState([]);
   const { toast } = useToast();
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(1);
+  const dispatch = useDispatch<AppDispatch>();
   const [searchTerm, setSearchTerm] = useState('');
-  const [updateTask] = useUpdateTaskMutation();
-
-  const { data, refetch, isLoading,error} =
-    useFetchTodayTasksQuery(
-      {
-        userId: user?._id,
-
-        sortOrder,
-        page,
-        limit: 5000
-      },
-      { pollingInterval: 5000, refetchOnFocus: true, refetchOnReconnect: true }
-    );
-
-    const getTodayTaskFn = TaskSlice.usePrefetch('fetchTodayTasks');
-    useEffect(() => {
-      getTodayTaskFn({
-        userId: user?._id,
-  
-        sortOrder: 'desc',
-        page: 1,
-        limit: 5000
-      });
-    }, []);
-
-    
-  
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  const { tasks } = useSelector((state: RootState) => state.alltasks);
+  const user = useSelector((state: any) => state.auth.user);
 
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    const filterTasks = () => {
+      const filtered = tasks
+        .filter((task) => {
+          if (!task) return false;
 
-  
-  // Update tasks when data changes
-  useEffect(() => {
-    if (data?.data) {
-      setTasks(data.data); // Extract the `result` array
-    }
-  }, [data]);
+          // Match task name with the search term (case-insensitive)
+          const matchesSearch = (task.taskName?.toLowerCase() || '').includes(
+            searchTerm.toLowerCase()
+          );
+          const isPending = task.status === 'pending';
+          const isDueToday = task.dueDate
+            ? moment(task.dueDate).isSame(moment(), 'day')
+            : false;
 
+          return matchesSearch && isPending && isDueToday;
+        })
+        .sort((a, b) => {
+          return (
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          );
+        });
 
+      setFilteredTasks(filtered);
+    };
 
-  const handleMarkAsImportant = async (taskId) => {
-    const taskToToggle = tasks.find((task) => task._id === taskId);
-    if (!taskToToggle) return;
+    filterTasks();
+  }, [searchTerm, tasks, user._id]);
 
-    // Optimistic update
-    const previousTasks = [...tasks];
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task._id === taskId ? { ...task, important: !task.important } : task
-      )
-    );
+  // Enable polling to keep tasks updated
+  usePollTasks({
+    userId: user._id,
+    tasks,
+    filteredTasks
+  });
 
-    try {
-      await updateTask({
-        taskId,
-        updates: {
-          important: !taskToToggle.important
-        }
-      });
-      refetch();
-      toast({ title: 'Task Updated'});
-    } catch (error) {
-      // Revert optimistic update on error
-      setTasks(previousTasks);
-      toast({ variant: 'destructive', title: 'Something Went Wrong!' });
-    }
-  };
-
-  const handleSearch = (event) => {
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
+  // In parent component
+  const handleMarkAsImportant = async (taskId: string) => {
+    const originalTasks = [...tasks];
+
+    // Find the current task
+    const currentTask = tasks.find((task) => task._id === taskId);
+    if (!currentTask) return;
+
+    // Optimistic update while preserving all nested objects
+    setFilteredTasks((prev) =>
+      prev.map((task) => {
+        if (task._id === taskId) {
+          return {
+            ...task,
+            important: !task.important
+          };
+        }
+        return task;
+      })
+    );
+
+    try {
+      await dispatch(
+        updateTask({
+          taskId,
+          taskData: { important: !currentTask.important }
+        })
+      ).unwrap();
+    } catch (error) {
+      // Revert on error
+      setFilteredTasks(originalTasks);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to update task importance'
+      });
+    }
+  };
+
   const handleToggleTaskCompletion = async (taskId: string) => {
-    // Find the task in the state
     const taskToToggle = tasks.find((task) => task._id === taskId);
     if (!taskToToggle) return;
 
-    // Optimistically update UI
-    const previousTasks = [...tasks];
-    const updatedTasks = tasks.map((task) =>
-      task._id === taskId
-        ? {
-            ...task,
-            status: task.status === 'completed' ? 'pending' : 'completed'
-          }
-        : task
-    );
-    setTasks(updatedTasks.filter((task) => task.status !== 'completed')); // Hide completed tasks
+    const updatedStatus =
+      taskToToggle.status === 'completed' ? 'pending' : 'completed';
+
     try {
-      await updateTask({
-        taskId,
-        updates: {
-          // important: !taskToToggle.important,
-          status: taskToToggle.status === 'completed' ? 'pending' : 'completed'
-        }
-      }).unwrap();
-      refetch();
-      toast({ title: 'Task Updated' });
-    } catch (error) {
-      // Revert optimistic update on error
-      setTasks(previousTasks);
-      toast({ variant: 'destructive', title: 'Something Went Wrong!' });
+      await dispatch(
+        updateTask({
+          taskId,
+          taskData: { status: updatedStatus }
+        })
+      ).unwrap();
+
+      toast({ title: 'Task status updated' });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to update task',
+        description: error?.message || 'An error occurred'
+      });
     }
   };
 
   return (
-    <div className="p-4 md:p-8 ">
-      <PageHead title="Task Page" />
-      <div className="pb-4">
-        <Breadcrumbs
-          items={[
-            { title: 'Dashboard', link: '/dashboard' },
-            { title: 'Todays Task', link: `/task` }
-          ]}
+    <div className="p-4 ">
+          <PageHead title="Task Page" />
+          <div className="px-4">
+            <Breadcrumbs
+              items={[
+                { title: 'Dashboard', link: '/dashboard' },
+                { title: 'Today Task', link: `#` }
+              ]}
+            />
+          </div>
+          <div className="px-6">
+            <Input
+              className=" my-4 flex h-[40px] w-full items-center px-6 py-4"
+              placeholder="Search notes..."
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </div>
+      <ScrollArea className="h-[calc(88vh-7rem)] flex-1 overflow-y-auto px-6 scrollbar-hide">
+        <TaskList
+          tasks={filteredTasks}
+          onMarkAsImportant={handleMarkAsImportant}
+          onToggleTaskCompletion={handleToggleTaskCompletion}
         />
-      </div>
-      <Input
-        className="m-4 flex h-[40px] w-[90%] items-center p-4 md:w-[98%]"
-        placeholder="Search notes..."
-        value={searchTerm}
-        onChange={handleSearch}
-      />
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <CardContent className="flex-1 overflow-y-auto px-4 scrollbar-hide">
-          <TaskList
-            tasks={tasks}
-            onMarkAsImportant={handleMarkAsImportant}
-            onToggleTaskCompletion={handleToggleTaskCompletion}
-          />
-        </CardContent>
-      )}
+      </ScrollArea>
     </div>
   );
 }

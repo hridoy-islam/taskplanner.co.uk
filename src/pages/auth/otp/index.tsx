@@ -6,7 +6,8 @@ import { useRouter } from '@/routes/hooks';
 import { jwtDecode } from 'jwt-decode';
 import { useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
-
+import taskplan from '@/assets/imges/home/otp.png';
+import logo from '@/assets/imges/home/logos/tlogo.png';
 import { Link } from 'react-router-dom';
 
 export default function Otp() {
@@ -90,69 +91,77 @@ export default function Otp() {
   };
 
   return (
-    <>
-      <div className="container grid h-svh flex-col items-center justify-center bg-primary lg:max-w-none lg:px-0">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-2 sm:w-[480px] lg:p-8">
-          <div className="mb-4 flex items-center justify-center">
-            <img src="/logo.png" alt="Logo" className="w-1/2" />
-          </div>
-          <Card className="p-6">
-            <div className="mb-2 flex flex-col space-y-2 text-left">
-              <h1 className="text-md font-semibold tracking-tight">
+    <div className="grid h-screen md:grid-cols-2 lg:px-0">
+      {/* Left Image Panel - Fixed implementation */}
+      <div
+        className="relative hidden h-full flex-col border-gray-200 p-8 text-black dark:border-r lg:flex"
+        style={{
+          background: `url(${taskplan}) center/contain no-repeat, white`
+        }}
+      >
+        <div className="relative right-10 z-20 -mt-20 flex scale-90 items-center text-lg font-semibold">
+          <img src={logo} alt="logo" />
+        </div>
+      </div>
+
+      {/* Right Form Panel */}
+      <div className="flex h-full items-center justify-center p-4 lg:p-8">
+        <div className="w-full max-w-md space-y-6">
+          <Card className="p-6 shadow-md">
+            <div className="flex flex-col space-y-2 text-left">
+              <h1 className="text-lg font-semibold tracking-tight">
                 Verification Code
               </h1>
-              <p className="text-sm text-muted">
-                Enter the verification code sent to your email
+              <p className="text-sm text-muted-foreground">
+                Enter the verification code sent to your email.
               </p>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <section className="bg-white py-5">
-                <div className="container">
-                  <div>
-                    <p className="text-dark mb-1.5 text-sm font-medium dark:text-white">
-                      Secure code
-                    </p>
-                    <form id="otp-form" className="flex gap-2">
-                      {otp.map((digit, index) => (
-                        <input
-                          key={index}
-                          type="text"
-                          maxLength={1}
-                          value={digit}
-                          onChange={handleInput}
-                          onKeyDown={handleKeyDown}
-                          onFocus={handleFocus}
-                          onPaste={handlePaste}
-                          ref={(el) => (inputRefs.current[index] = el)}
-                          className="shadow-xs border-stroke text-gray-5 dark:border-dark-3 flex w-[64px] items-center justify-center rounded-lg border bg-white p-2 text-center text-2xl font-medium outline-none dark:bg-white/5 sm:text-4xl"
-                        />
-                      ))}
-                    </form>
-                    <Button
-                      disabled={otp.some((digit) => digit === '')}
-                      onClick={handleOtpSubmit}
-                      className="ml-auto mt-5 w-full bg-background text-white hover:bg-background"
-                      variant="outline"
-                    >
-                      Verify OTP
-                    </Button>
-                  </div>
-                </div>
-              </section>
-            </div>
-            {/* <ForgotForm /> */}
-            <p className="mt-4 px-8 text-center text-sm text-muted">
-              Don't have an account?{' '}
-              <Link
-                to="/sign-up"
-                className="text-muted underline underline-offset-4"
+
+              <form
+                id="otp-form"
+                className="mt-4 flex justify-between gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleOtpSubmit();
+                }}
               >
-                Sign up
-              </Link>
-              .
-            </p>
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    type="text"
+                    maxLength={1}
+                    value={digit}
+                    onChange={handleInput}
+                    onKeyDown={handleKeyDown}
+                    onFocus={handleFocus}
+                    onPaste={handlePaste}
+                    ref={(el) => (inputRefs.current[index] = el)}
+                    className="flex h-12 w-12 items-center justify-center rounded-lg border border-gray-300 bg-white text-center text-xl font-medium shadow-sm outline-none focus:ring-2 focus:ring-primary sm:h-16 sm:w-16 sm:text-3xl"
+                  />
+                ))}
+              </form>
+
+              <Button
+                disabled={otp.some((digit) => digit === '')}
+                onClick={handleOtpSubmit}
+                className="mt-5 w-full"
+              >
+                Verify OTP
+              </Button>
+
+              <p className="mt-4 text-center text-sm text-muted-foreground">
+                Don't have an account?{' '}
+                <Link
+                  to="/signup"
+                  className="hover:pointer underline underline-offset-4"
+                >
+                  Sign up
+                </Link>
+              </p>
+            </div>
           </Card>
         </div>
       </div>
-    </>
+    </div>
   );
 }

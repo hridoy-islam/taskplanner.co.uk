@@ -6,11 +6,11 @@ import {
   TabsTrigger
 } from '@/components/ui/tabs.js';
 import { useSelector } from 'react-redux';
-import DueTasks from '@/components/shared/due-tasks.js';
-import UpcomingTasks from '@/components/shared/upcomming-tasks.js';
-import AssignedTasks from '@/components/shared/assigned-tasks';
-import CompletedTasks from '@/components/shared/completed-tasks';
+import DueTasks from '@/pages/duetask/index';
+import UpcomingTasks from '@/pages/upcomingtask/index.tsx'
+import CompletedTasks from '@/pages/completedtask/index.tsx';
 import { useState } from 'react';
+import AssignedTasks from '@/pages/assignedtask/index.tsx';
 
 export default function DashboardPage() {
   const { user } = useSelector((state: any) => state.auth);

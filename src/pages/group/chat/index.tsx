@@ -49,12 +49,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { ImageUploader } from '@/components/shared/image-uploader';
 import { EyeOpenIcon } from '@radix-ui/react-icons';
 import delivered from '@/assets/imges/home/logos/delivered.svg';
 import seen from '@/assets/imges/home/logos/seen.svg';
 import moment from 'moment';
-// Mock data
+import { ImageUploader } from './components/file-uploader';
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
 let socket, selectedChatCompare;
 
@@ -96,7 +95,7 @@ export default function GroupChat() {
   const router = useRouter();
   const [socketConnected, setSocketConnected] = useState(false);
   const currentPath = router?.location?.pathname?.split('/')[3] || 'null';
-  const { groupId } = useParams<{ groupId: string }>();
+  const { id:groupId } = useParams<{ groupId: string }>();
   const [groupDetails, setGroupDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const { register, handleSubmit, reset } = useForm();
@@ -155,6 +154,9 @@ export default function GroupChat() {
       return [];
     }
   };
+
+
+ 
 
   const handleMemberDialog = () => {
     setIsAddMemberOpen(true);
@@ -693,7 +695,7 @@ export default function GroupChat() {
 
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isSideGroupVisible, setIsSideGroupVisible] = useState(false);
- console.log("group",groupDetails)
+
   // useEffect(() => {
   //   const handleClickOutside = (event) => {
   //     // If the click is outside the button, act like ArrowLeft (hide the sidebar)
@@ -901,14 +903,13 @@ export default function GroupChat() {
               const isFile = comment.isFile;
               let parsedContent = comment.content;
 
-              // Parse file content if the message contains a file
-              if (isFile) {
-                try {
-                  parsedContent = JSON.parse(comment.content);
-                } catch (error) {
-                  console.error('Failed to parse file content:', error);
-                }
-              }
+              // if (isFile) {
+              //   try {
+              //     parsedContent = JSON.parse(comment.content);
+              //   } catch (error) {
+              //     console.error('Failed to parse file content:', error);
+              //   }
+              // }
 
               return (
                 <div
@@ -1168,6 +1169,7 @@ export default function GroupChat() {
             onUploadComplete={(uploadedFiles) => {
               handleCommentSubmit({ content: uploadedFiles.data.file_url, isFile: true });
             }}
+            entityId={groupId}
             className="uc-light"
           />
         </div>

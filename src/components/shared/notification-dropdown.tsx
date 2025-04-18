@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { NotificationItem } from '@/components/shared/notification-item';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../lib/axios';
 import { socket, setupSocket } from '../../lib/socket';
 import { useSelector } from 'react-redux';
@@ -32,7 +32,7 @@ interface Notification {
   isRead: boolean;
   senderId?: string;
   updatedAt: string;
-  createdAt?:string
+  createdAt?: string;
 }
 
 export function NotificationDropdown() {
@@ -40,8 +40,9 @@ export function NotificationDropdown() {
   const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useSelector((state: any) => state.auth);
   const [playSound, setPlaySound] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
-  
+  const [selectedNotification, setSelectedNotification] =
+    useState<Notification | null>(null);
+  const navigate = useNavigate();
 
   // Fetch notifications on component mount
   useEffect(() => {
@@ -49,7 +50,6 @@ export function NotificationDropdown() {
       try {
         const { data } = await axiosInstance.get(`/notifications/${userId}`);
         setNotifications(data.data.result); // Set the fetched notifications in state
-        // Calculate unread count
         const unread = data.data.result.filter(
           (n: Notification) => !n.isRead
         ).length;
@@ -89,7 +89,16 @@ export function NotificationDropdown() {
         prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
       );
       setUnreadCount((prevUnread) => Math.max(0, prevUnread - 1));
-      setSelectedNotification(notification);
+
+      if (notification.type === 'task' && notification.docId) {
+        navigate(`/dashboard/task-details/${notification.docId}`);
+      }
+      else if (notification?.type === 'group' && notification?.docId) {
+        navigate(`/dashboard/group/${notification?.docId}`);
+      }
+      else if (notification?.type === 'note' || notification?.docId) {
+        navigate(`/dashboard/notes`);
+      }
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -147,9 +156,9 @@ export function NotificationDropdown() {
           </DropdownMenuLabel>
           {/* <DropdownMenuSeparator /> */}
           <DropdownMenuGroup className="max-h-[300px] overflow-y-auto bg-primary">
-            {notifications.map((notification) => (
+            {notifications?.map((notification) => (
               <DropdownMenuItem
-                className="hover:border-none hover:bg-transparent focus:border-none focus:bg-transparent"
+                className=" hover:bg-transparent border-b focus:bg-transparent rounded-none border-gray-200 p-0"
                 key={notification._id}
                 onClick={() => markAsRead(notification._id, notification)}
               >
@@ -157,7 +166,10 @@ export function NotificationDropdown() {
                   notification={notification}
                   userImage={
                     notification.senderId
-                      ? { image: notification?.senderId?.image, name: notification.senderId?.name }
+                      ? {
+                          image: notification?.senderId?.image,
+                          name: notification.senderId?.name
+                        }
                       : undefined
                   }
                   duration={calculateDuration(notification?.createdAt)}
@@ -176,7 +188,10 @@ export function NotificationDropdown() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Dialog open={selectedNotification !== null} onOpenChange={(open) => !open && setSelectedNotification(null)}>
+      <Dialog
+        open={selectedNotification !== null}
+        onOpenChange={(open) => !open && setSelectedNotification(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Notification Details</DialogTitle>
@@ -184,15 +199,19 @@ export function NotificationDropdown() {
           <div className="mt-4">
             {selectedNotification && (
               <div>
-                <div className='flex flex-row gap-1 pb-2  items-center'>
-
-                <CircleUser className="h-4 w-4" />
-                <h1 className="font-semibold ">{selectedNotification?.senderId?.name}</h1>
-          
+                <div className="flex flex-row items-center gap-1  pb-2">
+                  <CircleUser className="h-4 w-4" />
+                  <h1 className="font-semibold ">
+                    {selectedNotification?.senderId?.name}
+                  </h1>
                 </div>
-                <p className="text-sm text-gray-800">{selectedNotification.message}</p>
-                <p className="text-[12px] font-bold mt-2 text-gray-500">
-                  {moment(selectedNotification.updatedAt).format('MMMM Do YYYY, h:mm:ss a')}
+                <p className="text-sm text-gray-800">
+                  {selectedNotification.message}
+                </p>
+                <p className="mt-2 text-[12px] font-bold text-gray-500">
+                  {moment(selectedNotification.updatedAt).format(
+                    'MMMM Do YYYY, h:mm:ss a'
+                  )}
                 </p>
               </div>
             )}

@@ -35,7 +35,7 @@ const refreshToken = async () => {
     }
 
     const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/auth/refreshToken`,
+      `${import.meta.env.VITE_API_URL}/auth/refreshtoken`,
       { refreshToken }
     );
 
@@ -48,7 +48,7 @@ const refreshToken = async () => {
       localStorage.setItem('taskplannerRefresh', JSON.stringify(newRefreshToken));
 
       
-      return accessToken;
+      return {accessToken, newRefreshToken};
     } else {
       return null;
     }

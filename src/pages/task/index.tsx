@@ -1,305 +1,327 @@
 import { Breadcrumbs } from '@/components/shared/breadcrumbs';
 import PageHead from '@/components/shared/page-head';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../../lib/axios';
 import { useDispatch, useSelector } from 'react-redux';
-import TaskList from '@/components/shared/task-list';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CornerDownLeft } from 'lucide-react';
-import { useForm } from 'react-hook-form';
 import {
-  TaskSlice,
-  useCreateTaskMutation,
-  useFetchTasksForBothUsersQuery,
-  useUpdateTaskMutation
-} from '@/redux/features/taskSlice';
-import Loader from '@/components/shared/loader';
-
+  CornerDownLeft,
+} from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { Textarea } from '@/components/ui/textarea';
-import { fetchUsers } from '@/redux/features/userSlice';
+import {
+  createNewTask,
+  updateTask,
+} from '@/redux/features/allTaskSlice';
+import { AppDispatch, RootState } from '@/redux/store';
+import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+import { usePollTasks } from '@/hooks/usePolling';
+import TaskList from '@/components/shared/task-list';
+
+type PopulatedUserReference = {
+  _id: string;
+  name: string;
+};
+
+type Task = {
+  _id: string;
+  taskName: string;
+  description?: string;
+  status: string;
+  dueDate?: string;
+  important: boolean;
+  author: string | PopulatedUserReference;
+  assigned?: string | PopulatedUserReference;
+  updatedAt: string;
+  seen: boolean;
+  tempId?: string; // Add this field to track optimistic updates
+};
 
 export default function TaskPage() {
   const { id } = useParams();
-  const { user } = useSelector((state: any) => state.auth);
   const { toast } = useToast();
-  const [page, setPage] = useState(1);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
-  const [userDetail, setUserDetail] = useState<any>();
+  const { tasks } = useSelector((state: RootState) => state.alltasks);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+
   const [loading, setLoading] = useState(false);
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const [entriesPerPage, setEntriesPerPage] = useState(5000);
+  const [userDetail, setUserDetail] = useState<any>();
   const [searchTerm, setSearchTerm] = useState('');
+
   const { register, handleSubmit, reset } = useForm();
+  const user = useSelector((state: RootState) => state.auth.user);
+
+  const [optimisticTasks, setOptimisticTasks] = useState<Record<string, Task>>({});
+
+  useEffect(() => {
+    const enrichedServerTasks = tasks.map(serverTask => {
+      const needsEnrichment = 
+        (typeof serverTask.author === 'string' || !serverTask.author?.name) ||
+        (typeof serverTask.assigned === 'string' || !serverTask.assigned?.name);
+      
+      if (!needsEnrichment) return serverTask;
+      
+      const matchingOptimisticTask = Object.values(optimisticTasks).find(optTask => 
+        (optTask.taskName === serverTask.taskName && 
+         ((typeof optTask.assigned === 'object' && typeof serverTask.assigned === 'object')
+           ? optTask.assigned?._id === serverTask.assigned?._id
+           : (typeof optTask.assigned === 'object' && typeof serverTask.assigned === 'string')
+           ? optTask.assigned?._id === serverTask.assigned
+           : false)) ||
+        (serverTask.tempId && serverTask.tempId === optTask.tempId)
+      );
+      
+      if (!matchingOptimisticTask) return serverTask;
+      
+      return {
+        ...serverTask,
+        author: typeof serverTask.author === 'string' && typeof matchingOptimisticTask.author === 'object'
+          ? { _id: serverTask.author, name: matchingOptimisticTask.author.name }
+          : serverTask.author,
+        assigned: typeof serverTask.assigned === 'string' && typeof matchingOptimisticTask.assigned === 'object'
+          ? { _id: serverTask.assigned, name: matchingOptimisticTask.assigned.name }
+          : serverTask.assigned
+      };
+    });
+    
+    const optimisticIds = Object.values(optimisticTasks).map(task => {
+      return {
+        tempId: task._id,
+        taskName: task.taskName,
+        assignedId: typeof task.assigned === 'object' ? task.assigned._id : task.assigned
+      };
+    });
+    
+    const serverTasks = enrichedServerTasks.filter(serverTask => {
+      return !optimisticIds.some(opt => 
+        serverTask.taskName === opt.taskName && 
+        (typeof serverTask.assigned === 'object' 
+          ? serverTask.assigned?._id === opt.assignedId
+          : serverTask.assigned === opt.assignedId) &&
+        new Date(serverTask.updatedAt).getTime() > Date.now() - 5000
+      );
+    });
+    
+    const merged = [...Object.values(optimisticTasks), ...serverTasks];
+  
+    const filtered = merged
+  .filter((task) => {
+    if (!task || !task?.assigned || !task?.author) return false;
+
+    const matchesSearch = (task.taskName?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const isPending = task.status === 'pending';
+
+    const authorId = typeof task.author === 'object' ? task.author._id : task.author;
+    const assignedId = typeof task.assigned === 'object' ? task.assigned._id : task.assigned;
+
+    const condition1 = authorId === id && assignedId === user._id;
+    const condition2 = authorId === user._id && assignedId === id;
+
+    return matchesSearch && isPending && (condition1 || condition2);
+  })
+  .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+    setFilteredTasks(filtered);
+  }, [searchTerm, tasks, id, optimisticTasks, user]);
+  
+  usePollTasks({
+    userId: user?._id,
+    tasks, 
+    setOptimisticTasks,
+  });
 
   const fetchUserDetails = async () => {
-    const response = await axiosInstance.get(`/users/${id}`);
-    setUserDetail(response.data.data);
-  };
-
-  const [createTask] = useCreateTaskMutation();
-  const [updateTask] = useUpdateTaskMutation();
-
-
-  const { data, isLoading, refetch } = useFetchTasksForBothUsersQuery(
-    {
-      authorId: user?._id,
-      assignedId: id,
-      page: page,
-      sortOrder: sortOrder,
-      limit: entriesPerPage
-    },
-    {
-      pollingInterval: 5000,
-      refetchOnFocus: true,
-      refetchOnReconnect: true
-    }
-  );
-
-  const getTasksForBothUsersFn = TaskSlice.usePrefetch(
-    'fetchTasksForBothUsers'
-  );
-  useEffect(() => {
-    getTasksForBothUsersFn({
-      authorId: user?._id,
-      assignedId: id,
-      sortOrder: 'desc',
-      page: currentPage,
-      limit: entriesPerPage
-    });
-  }, []);
-
-  useEffect(() => {
-    if (data?.data?.result) {
-      setTasks(data.data.result);
-      fetchUserDetails();
-    }
-  }, [data]);
-
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
-
-  const handleSearch = (event) => {
-    const searchTerm = event.target.value.toLowerCase();
-    setSearchTerm(searchTerm);
-    if (data?.data?.result) {
-      const filteredTasks = data.data.result.filter(
-        (task) =>
-          task.taskName.toLowerCase().includes(searchTerm) ||
-          (task.description &&
-            task.description.toLowerCase().includes(searchTerm))
-      );
-
-      setTasks(filteredTasks);
-    }
-  };
-
-  const handleMarkAsImportant = async (taskId) => {
-    const taskToToggle = tasks.find((task) => task._id === taskId);
-    if (!taskToToggle) return;
-
-    // Optimistic update
-    const previousTasks = [...tasks];
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task._id === taskId ? { ...task, important: !task.important } : task
-      )
-    );
-
     try {
-      await updateTask({
-        taskId,
-        updates: {
-          important: !taskToToggle.important,
-          authorId: user?._id,
-          assignedId: id
-        }
-      }).unwrap();
-      refetch();
-      toast({ title: 'Task Updated'});
+      const response = await axiosInstance.get(`/users/${id}`);
+      setUserDetail(response.data.data);
     } catch (error) {
-      // Revert optimistic update on error
-      setTasks(previousTasks);
-      toast({ variant: 'destructive', title: 'Something Went Wrong!' });
+      toast({
+        variant: 'destructive',
+        title: 'Failed to fetch user details!',
+      });
     }
   };
 
-  const handleToggleTaskCompletion = async (taskId: string) => {
-    // Find the task in the state
-    const taskToToggle = tasks.find((task) => task._id === taskId);
-    if (!taskToToggle) return;
-
-    // Optimistically update UI
-    const previousTasks = [...tasks];
-    const updatedTasks = tasks.map((task) =>
-      task._id === taskId
-        ? {
-            ...task,
-            status: task.status === 'completed' ? 'pending' : 'completed'
-          }
-        : task
-    );
-    setTasks(updatedTasks.filter((task) => task.status !== 'completed')); // Hide completed tasks
-    try {
-      await updateTask({
-        taskId,
-        updates: {
-          // important: !taskToToggle.important,
-          status: taskToToggle.status === 'completed' ? 'pending' : 'completed'
-        }
-      }).unwrap();
-      refetch();
-      toast({ title: 'Task Updated' });
-    } catch (error) {
-      // Revert optimistic update on error
-      setTasks(previousTasks);
-      toast({ variant: 'destructive', title: 'Something Went Wrong!' });
-    }
-  };
-
-  
-  // const onSubmit = async (data) => {
-  //   if (loading) return;
-  //   setLoading(true);
-
-  //   // Ensure user and assigned ID are available before proceeding
-  //   if (!user?._id || !id) {
-  //     toast({
-  //       variant: 'destructive',
-  //       title: 'User information is missing!'
-  //     });
-  //     setLoading(false);
-  //     return;
-  //   }
-
-  //   try {
-  //     // Make the API call to create the task
-  //     const response = await createTask({
-  //       taskName: data.taskName,
-  //       description: data.description || '',
-  //       author: user?._id,
-  //       assigned: id
-  //     }).unwrap();
-
-  //     setTasks((prevTasks) => [response.data, ...prevTasks]);
-
-  //     // Reset the form
-  //     reset();
-
-  //     // Show success toast
-  //     toast({
-  //       title: 'Task Added',
-
-  //     });
-  //   } catch (error) {
-  //     // Show error toast
-  //     // console.log(error);
-  //     // toast({
-  //     //   variant: 'destructive',
-  //     //   title: 'An error occurred while adding the task.'
-  //     // });
-
-  //     reset()
-  //   } finally {
-  //     setLoading(false); // Reset loading state
-  //   }
-  // };
-
-
+  useEffect(() => {
+    fetchUserDetails();
+  }, [id]);
 
   const onSubmit = async (data) => {
-    if (loading) return;
+    if (loading || !user || !userDetail) return;
     setLoading(true);
   
-    if (!user?._id || !id) {
-      toast({
-        variant: 'destructive',
-        title: 'User information is missing!'
-      });
-      setLoading(false);
-      return;
-    }
+    const tempId = `temp-${Date.now()}`;
+    const isSameUser = user?._id === id;
+
+    const optimisticTask: Task = {
+      _id: tempId,
+      taskName: data.taskName,
+      description: data.description || '',
+      status: 'pending',
+      dueDate: undefined,
+      important: false,
+      author: { _id: user?._id, name: user.name },
+      assigned: {
+        _id: id || '',
+        name: userDetail?.name || 'Unassigned',
+      },
+      seen: isSameUser,
+      updatedAt: new Date().toISOString(),
+      tempId: tempId, // Store tempId to help with cleanup
+    };
+  
+    // Add to optimistic tasks
+    setOptimisticTasks(prev => ({ ...prev, [tempId]: optimisticTask }));
+    
+    // Reset form
+    reset();
   
     try {
-      // Create the task
-      const response = await createTask({
-        taskName: data.taskName,
-        description: data.description || '',
-        author: user?._id,
-        assigned: id
-      }).unwrap();
+      // Create task on server
+      const result = await dispatch(
+        createNewTask({
+          taskName: data.taskName,
+          description: data.description || '',
+          author: user?._id,
+          assigned: id,
+          seen: isSameUser,
+        })
+      ).unwrap();
+      
+      // Clear the optimistic task after successful server update
+      // We delay this slightly to ensure the redux store is updated first
+      setTimeout(() => {
+        setOptimisticTasks(prev => {
+          const newState = { ...prev };
+          delete newState[tempId];
+          return newState;
+        });
+      }, 500);
   
-      // Fetch additional user details for the task
-      const authorResponse = await axiosInstance.get(`/users/${user._id}`);
-      const assignedResponse = await axiosInstance.get(`/users/${id}`);
-  
-      // Add author and assign details to the task
-      const taskWithDetails = {
-        ...response.data,
-        author: authorResponse.data.data,
-        assigned: assignedResponse.data.data
-      };
-  
-      // Update the state with the new task
-      setTasks((prevTasks) => [taskWithDetails, ...prevTasks]);
-  
-      // Reset the form
-      reset();
-  
-      // Show success toast
-      toast({
-        title: 'Task Added',
-      });
+      toast({ title: 'Task Added' });
     } catch (error) {
+      // Remove optimistic task on error
+      setOptimisticTasks(prev => {
+        const newState = { ...prev };
+        delete newState[tempId];
+        return newState;
+      });
+  
       toast({
         variant: 'destructive',
-        title: 'An error occurred while adding the task.'
+        title: 'Failed to add task',
+        description: error?.message || 'Please try again',
       });
     } finally {
       setLoading(false);
     }
   };
+  
+  // Handle search input change
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  // Handle marking a task as important
+  const handleMarkAsImportant = async (taskId: string) => {
+    // Create a copy of current tasks
+    const originalTasks = [...tasks];
+
+    // Find the current task
+    const currentTask = tasks.find((task) => task?._id === taskId);
+    if (!currentTask) return;
+
+    // Optimistic update while preserving all nested objects
+    setFilteredTasks((prev) =>
+      prev.map((task) => {
+        if (task?._id === taskId) {
+          return {
+            ...task,
+            important: !task.important,
+          };
+        }
+        return task;
+      })
+    );
+
+    try {
+      await dispatch(
+        updateTask({
+          taskId,
+          taskData: { important: !currentTask.important },
+        })
+      ).unwrap();
+    } catch (error) {
+      // Revert on error
+      setFilteredTasks(originalTasks);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to update task importance',
+      });
+    }
+  };
+
+  // Handle toggling task completion status
+  const handleToggleTaskCompletion = async (taskId: string) => {
+    const taskToToggle = tasks.find((task) => task?._id === taskId);
+    if (!taskToToggle) return;
+
+    const updatedStatus =
+      taskToToggle.status === 'completed' ? 'pending' : 'completed';
+
+    try {
+      await dispatch(
+        updateTask({
+          taskId,
+          taskData: { status: updatedStatus },
+        })
+      ).unwrap();
+
+      toast({ title: 'Task status updated' });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to update task',
+        description: error?.message || 'An error occurred',
+      });
+    }
+  };
 
   return (
-    <div className=" flex h-full flex-col  justify-between  p-4 md:p-6">
+    <div className="flex h-full flex-col justify-between p-4 md:p-6">
       <div>
         <PageHead title="Task Page" />
         <Breadcrumbs
           items={[
             { title: 'Dashboard', link: '/dashboard' },
-            { title: userDetail?.name, link: `/task/${id}` }
+            { title: userDetail?.name || 'User Tasks', link: `/task/${id}` },
           ]}
         />
-        <div className="my-2 flex items-center justify-between gap-2">
-          <Input
-            placeholder="Search task..."
-            value={searchTerm}
-            onChange={handleSearch}
-          />
-        </div>
       </div>
-      {isLoading ? (
-        <div className="-mt-48">
-          <Loader />
-        </div>
-      ) : (
-        <div className=" ">
+
+      <Card className="mt-2 flex h-[calc(86vh-7rem)] flex-col overflow-hidden">
+        <Input
+          className="mx-6 my-4 flex h-[40px] items-center px-4 py-4"
+          placeholder="Search tasks..."
+          value={searchTerm}
+          onChange={handleSearch}
+        />
+        <ScrollArea className="flex-1 overflow-y-auto px-6 scrollbar-hide">
           <TaskList
-            tasks={tasks}
+            tasks={filteredTasks}
             onMarkAsImportant={handleMarkAsImportant}
             onToggleTaskCompletion={handleToggleTaskCompletion}
           />
-        </div>
-      )}
+        </ScrollArea>
+      </Card>
 
-      <div className="relative mt-2 rounded-xl bg-white p-3 shadow ">
+      <div className="mt-4 rounded-xl bg-white p-3 shadow">
         <form
           id="taskForm"
           onSubmit={handleSubmit(onSubmit)}
@@ -317,8 +339,9 @@ export default function TaskPage() {
               }
             }}
           />
-          <Button type="submit" variant={'outline'}>
+          <Button type="submit" variant="outline" disabled={loading}>
             <CornerDownLeft className="mr-2 h-4 w-4" />
+            Add
           </Button>
         </form>
       </div>

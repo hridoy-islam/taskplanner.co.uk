@@ -22,32 +22,62 @@ import 'react-datepicker/dist/react-datepicker.css';
 import TaskDetails from './task-details';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import axiosInstance from '../../lib/axios';
+import axiosInstance from '@/lib/axios';
 import { toast } from '../ui/use-toast';
 import UpdateTask from './update-task';
+import { useNavigate } from 'react-router-dom';
+
 
 const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
   const { user } = useSelector((state: any) => state.auth);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isTaskDetailsOpen, setTaskDetailsOpen] = useState(false);
   // const { register, handleSubmit, reset } = useForm();
-
+  const navigate = useNavigate();
   const [openUpdate, setOpenUpdate] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // const sortedTasks = tasks?.sort((a, b) => {
-  //   return a.status === 'completed' && b.status === 'pending' ? 1 : -1;
-  // });
+ 
 
-  const openTaskDetails = (task: any) => {
-    setSelectedTask(task);
-    setTaskDetailsOpen(true);
-  };
+  const [optimisticTasks, setOptimisticTasks] = useState(tasks);
 
-  const closeTaskDetails = () => {
-    setTaskDetailsOpen(false);
-    setSelectedTask(null); // Clear the selected task
+  useEffect(() => {
+    setOptimisticTasks(tasks);
+  }, [tasks]);
+
+  const openTaskDetails = async (task: any) => {
+    if (user?._id !== task?.author?._id ) {
+      const updatedTasks = optimisticTasks.map(t =>
+        t._id === task._id ? { ...t, seen: true } : t
+      );
+      setOptimisticTasks(updatedTasks);
+      try {
+        const res = await axiosInstance.patch(`/task/${task._id}`, { seen: true });
+        console.log("PATCH success:", res.data);        navigate(`/dashboard/task-details/${task._id}`);
+      } catch (error) {
+        console.error("Error marking task as seen:", error);
+        setOptimisticTasks(optimisticTasks); // fallback to original state
+      }
+    }
+    navigate(`/dashboard/task-details/${task._id}`);
+
   };
+  
+
+
+  
+
+
+
+  // const openTaskDetails = (task: any) => {
+  //   setSelectedTask(task);
+  //   setTaskDetailsOpen(true);
+  // };
+
+  // const closeTaskDetails = () => {
+  //   setTaskDetailsOpen(false);
+  //   setSelectedTask(null); // Clear the selected task
+  // };
 
   const openUpdateModal = (task) => {
     setSelectedTask(task);
@@ -61,6 +91,19 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
 
   const onUpdateConfirm = async (data) => {
     setLoading(true);
+
+    const updatedTasks = optimisticTasks.map(task => 
+      task._id === selectedTask._id 
+        ? { 
+            ...task, 
+            taskName: data.taskName,
+            dueDate: data.dueDate 
+          } 
+        : task
+    );
+    setOptimisticTasks(updatedTasks);
+
+
     try {
       const dueDateUTC = moment(data.dueDate).utc().toISOString();
       const res = await axiosInstance.patch(`/task/${selectedTask?._id}`, {
@@ -70,6 +113,7 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
       if (res.data.success) {
         // fetchTasks(); // Refresh tasks
         //setOpenUpdate(false); // Close modal after update
+        
         toast({
           title: 'Task Updated Successfully',
           
@@ -82,26 +126,30 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
         });
       }
     } catch (error) {
+      setOptimisticTasks(tasks);
       console.error('Error updating due date:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const sortedTasks = [...tasks]?.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  
+  
+  const sortedTasks = [...optimisticTasks]?.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
 
 
   return (
     <div>
       <main className="flex-1 overflow-auto ">
-        <ScrollArea className="h-[calc(80vh-8rem)] ">
-          <div className="space-y-2">
+        {/* <ScrollArea className="h-[calc(70vh-7rem)] "> */}
+          <div className="space-y-2 pb-2">
             {sortedTasks?.map((task) => (
               <div
                 key={task._id}
-                className={`flex items-center space-x-2 rounded-lg border border-gray-200 p-3 shadow-md ${
-                  task.important ? 'bg-orange-100' : 'bg-white'
-                }`}
+                className={`flex items-center space-x-2 rounded-lg border border-gray-200 p-3 shadow-md
+                  ${!task.seen ? 'bg-blue-100' : task.important ? 'bg-orange-100' : 'bg-white'}
+                `}
               >
                 <div className=" flex w-full flex-col items-center justify-between gap-2 lg:flex-row ">
                   <div className="flex w-full flex-row items-center justify-between gap-2">
@@ -117,26 +165,15 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
                             ? 'text-gray-500 line-through '
                             : ''
                         }`}
-                        onClick={() => {
-                          if (task.author?._id === user?._id) {
-                            openUpdateModal(task);
-                          } else {
-                            toast({
-                              title: `Please Contact with ${task?.author?.name}`,
-                              description:
-                                'You do not have permission for this action',
-                              variant: 'destructive'
-                            });
-                          }
-                        }}
+                        onClick={() => openTaskDetails(task)}
                       >
                         {task.taskName}
                       </span>
                     </div>
-                    <div className="flex flex-row  gap-8">
-                      <div className="flex items-center justify-center gap-2 max-lg:hidden">
-                        <TooltipProvider>
-                          <Tooltip>
+                    <div className="flex flex-row  gap-8"  >
+                      <div className="flex items-center justify-center gap-2 max-lg:hidden"  onClick={() => openTaskDetails(task)}>
+                        <TooltipProvider >
+                          <Tooltip  >
                             <TooltipTrigger>
                               <Badge
                                 variant="outline"
@@ -344,7 +381,7 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
               </div>
             ))}
           </div>
-        </ScrollArea>
+        {/* </ScrollArea> */}
 
         <UpdateTask
           task={selectedTask}
@@ -357,13 +394,13 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
         />
       </main>
 
-      {isTaskDetailsOpen && selectedTask !== null && (
+      {/* {isTaskDetailsOpen && selectedTask !== null && (
         <TaskDetails
           task={selectedTask}
           isOpen={isTaskDetailsOpen}
           onOpenChange={closeTaskDetails}
         />
-      )}
+      )} */}
     </div>
   );
 };

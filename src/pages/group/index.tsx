@@ -108,7 +108,7 @@ export default function GroupPage() {
     try {
       const response = await axiosInstance.get(`/users/company/${user?._id}`);
 
-      console.log("response",response.data.data )
+      console.log('response', response.data.data);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching members:', error);
@@ -141,8 +141,7 @@ export default function GroupPage() {
     loadMembers();
   }, [user?._id]);
 
-
-  console.log("initial",initialMembers)
+  console.log('initial', initialMembers);
 
   const fetchGroups = async () => {
     try {
@@ -186,7 +185,6 @@ export default function GroupPage() {
 
   // const pageSize = 5;
 
-
   const addGroup = async () => {
     if (newGroupName) {
       const groupData = {
@@ -199,7 +197,7 @@ export default function GroupPage() {
             _id: user?._id, // Add the current user as an admin
             role: 'admin', // Assign the role as admin
             acceptInvitation: true,
-            
+
             name: user?.name
           },
           ...selectedMembers.map((memberId) => ({
@@ -286,13 +284,14 @@ export default function GroupPage() {
   //   );
   // };
 
-  const filteredMembers = initialMembers.filter((member) =>
-    member.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  ).map((member) => ({
-    ...member,
-   image: member.image
-  }));
-  
+  const filteredMembers = initialMembers
+    .filter((member) =>
+      member.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .map((member) => ({
+      ...member,
+      image: member.image
+    }));
 
   // const addNotification = (content: string) => {
   //   const newNotification: Notification = {
@@ -348,11 +347,9 @@ export default function GroupPage() {
       return dateB.getTime() - dateA.getTime();
     });
 
-
-    
-  console.log("members",filteredMembers)
+  console.log('members', filteredMembers);
   return (
-    <div className="container mx-auto h-full overflow-auto p-4">
+    <div className=" mx-auto h-full overflow-auto p-4">
       <h1 className="mb-4 text-2xl font-bold">Groups</h1>
       <div className="flex md:flex-row  ">
         <div className="mb-4 flex w-full gap-4 max-md:flex-col">
@@ -362,7 +359,7 @@ export default function GroupPage() {
               placeholder="Search groups..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
+              className="w-full pl-8"
             />
           </div>
 
@@ -390,135 +387,117 @@ export default function GroupPage() {
         <CardContent>
           <Table>
             <ScrollArea className="h-[40rem] max-h-fit pr-2 ">
-              <TableHeader className="sticky top-0 z-10 bg-white">
-                <TableRow>
-                  <TableHead className="max-md:hidden">Members</TableHead>
+              <TableHeader className="sticky w-full  top-0 z-10 bg-white">
+                <TableRow >
                   <TableHead>Name</TableHead>
-                  <TableHead>Archive</TableHead>
+                  <TableHead className='text-right pl-2'>Archive</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredGroups.map((group) => (
-                  <TableRow
-                    key={group.id}
-                    className="cursor-pointer  items-center border-none shadow hover:bg-slate-100"
-                  >
-                    <TableCell
-                      onClick={() => navigate(`${group?.id}`)}
-                      className="max-md:hidden"
-                    >
-                      <div className="flex -space-x-2 overflow-hidden">
-                        {group.members.slice(0, 3).map((member) => (
-                          <TooltipProvider key={member.id}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Avatar className="inline-block border-2 border-background">
-                                  <AvatarImage
-                                    src={member.image}
-                                    alt={member.name}
-                                  />
-                                  <AvatarFallback>
-                                    {member?.name
-                                      ?.split(' ')
-                                      ?.map((n) => n[0])
-                                      ?.join('') || 'User'}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{member.name}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ))}
-                        {group.members.length > 3 && (
-                          <Avatar className="inline-block border-2 border-background ">
-                            <AvatarFallback>
-                              +{group.members.length - 3}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                    </TableCell>
-                    <div className="flex flex-row items-center justify-start">
-                      <TableCell
-                        onClick={() => navigate(`${group?.id}`)}
-                        className="flex flex-row items-center justify-center gap-2 font-semibold "
-                      >
-                        {' '}
-                        <div className="mt-2 flex flex-row items-center justify-center gap-2">
-                          <div>{group.name}</div>
-                          <div
-                            className="flex flex-row hover:bg-none "
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent the row's onClick from firing
-                              // Add button-specific logic here
-                            }}
-                          >
-                            {/* <MessageSquareText className="h-4 w-4" /> */}
-                            <span
-                              className={`flex h-4 w-4 items-center justify-center rounded-full text-[12px] text-white ${
-                                (group.unreadMessageCount ?? 0) > 0
-                                  ? 'bg-[#7f1d1d]'
-                                  : 'bg-transparent'
-                              }`}
-                            >
-                              {(group.unreadMessageCount ?? 0) > 0 ? (
-                                <span>{group?.unreadMessageCount}</span>
-                              ) : (
-                                ''
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                    </div>
-                    <TableCell>
-                      {/* <Switch
-                      
-                       checked={group.isArchived}
-                        onChange={(checked)  => handleGroupStatusChange(group.id, checked)}
-
-                      /> */}
-
-                      <select
-                        value={group.status || 'active'}
-                        onChange={async (e) => {
-                          const updatedStatus = e.target.value;
-                          try {
-                            const response = await axiosInstance.patch(
-                              `/group/single/${group.id}`,
-                              {
-                                status: updatedStatus
-                              }
-                            );
-                            if (response.status === 200) {
-                              toast({
-                                title: 'Group status updated successfully',
-                                className: 'bg-green-500 border-none text-white'
-                              });
-                              fetchGroups();
-                            } else {
-                              throw new Error('Failed to update group status');
-                            }
-                          } catch (error) {
-                            console.error(
-                              'Error updating group status:',
-                              error
-                            );
-                            toast({
-                              title: 'Failed to update group status',
-                              className: 'bg-red-500 border-none text-white'
-                            });
-                          }
-                        }}
-                        className="rounded-lg border-2 border-gray-600 px-2 py-1"
-                      >
-                        <option value="active">Active</option>
-                        <option value="archived">Archived</option>
-                      </select>
-                    </TableCell>
-                  </TableRow>
+                 <TableRow
+                 key={group.id}
+                 className="cursor-pointer w-full items-center border-none shadow hover:bg-slate-100"
+               >
+                 <TableCell
+                   onClick={() => navigate(`${group?.id}`)}
+                   className="flex flex-col items-start justify-start gap-2 font-semibold w-full"
+                 >
+                   <div className="mt-2 flex flex-row items-center justify-start gap-2">
+                     <div>{group.name}</div>
+                     <div
+                       className="flex flex-row hover:bg-none"
+                       onClick={(e) => {
+                         e.stopPropagation();
+                       }}
+                     >
+                       <span
+                         className={`flex h-4 w-4 items-center justify-center rounded-full text-[12px] text-white ${
+                           (group.unreadMessageCount ?? 0) > 0
+                             ? 'bg-[#7f1d1d]'
+                             : 'bg-transparent'
+                         }`}
+                       >
+                         {(group.unreadMessageCount ?? 0) > 0 ? (
+                           <span>{group?.unreadMessageCount}</span>
+                         ) : (
+                           ''
+                         )}
+                       </span>
+                     </div>
+                   </div>
+                   <div className="flex space-x-2 overflow-hidden justify-start">
+                     {group.members.slice(0, 3).map((member) => (
+                       <TooltipProvider key={member.id}>
+                         <Tooltip>
+                           <TooltipTrigger asChild>
+                             <Avatar className="inline-block h-5 w-5">
+                               <AvatarImage
+                                 src={member.image}
+                                 alt={member.name}
+                               />
+                               <AvatarFallback>
+                                 {member?.name
+                                   ?.split(' ')
+                                   ?.map((n) => n[0])
+                                   ?.join('') || 'User'}
+                               </AvatarFallback>
+                             </Avatar>
+                           </TooltipTrigger>
+                           <TooltipContent>
+                             <p>{member.name}</p>
+                           </TooltipContent>
+                         </Tooltip>
+                       </TooltipProvider>
+                     ))}
+                     {group.members.length > 3 && (
+                       <Avatar className="inline-block h-5 w-5 border-background">
+                         <AvatarFallback>
+                           +{group.members.length - 3}
+                         </AvatarFallback>
+                       </Avatar>
+                     )}
+                   </div>
+                 </TableCell>
+                 <TableCell className="text-right whitespace-nowrap">
+                   <select
+                     value={group.status || 'active'}
+                     onChange={async (e) => {
+                       const updatedStatus = e.target.value;
+                       try {
+                         const response = await axiosInstance.patch(
+                           `/group/single/${group.id}`,
+                           {
+                             status: updatedStatus
+                           }
+                         );
+                         if (response.status === 200) {
+                           toast({
+                             title: 'Group status updated successfully',
+                           });
+                           fetchGroups();
+                         } else {
+                           throw new Error('Failed to update group status');
+                         }
+                       } catch (error) {
+                         console.error(
+                           'Error updating group status:',
+                           error
+                         );
+                         toast({
+                           title: 'Failed to update group status',
+                           className: 'bg-destructive border-none text-white'
+                         });
+                       }
+                     }}
+                     className="rounded-sm border border-gray-200 px-4 py-1"
+                     onClick={(e) => e.stopPropagation()}
+                   >
+                     <option value="active">Active</option>
+                     <option value="archived">Archived</option>
+                   </select>
+                 </TableCell>
+               </TableRow>
                 ))}
               </TableBody>
             </ScrollArea>

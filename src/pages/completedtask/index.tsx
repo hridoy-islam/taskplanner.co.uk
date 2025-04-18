@@ -1,208 +1,159 @@
-import { Breadcrumbs } from '@/components/shared/breadcrumbs';
-import PageHead from '@/components/shared/page-head.jsx';
-import { useSelector } from 'react-redux';
-import axiosInstance from '../../lib/axios';
-import { useCallback, useEffect, useState } from 'react';
-import TaskList from '@/components/shared/task-list';
-import { useToast } from '@/components/ui/use-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import DynamicPagination from '@/components/shared/DynamicPagination';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-export default function CompletedTaskPage() {
-  const { user } = useSelector((state: any) => state.auth);
-  const { toast } = useToast();
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [sortBy, setSortBy] = useState<'name' | 'unread' | 'recent'>('unread');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(100);
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchUpcomingTasks = useCallback(
-    async (page, entriesPerPage, searchTerm = '', sortOrder = 'desc') => {
-      try {
-        const sortQuery = sortOrder === 'asc' ? 'dueDate' : '-dueDate';
-        const res = await axiosInstance.get(
-          `/task?author=${user._id}&status=completed&page=${page}&limit=${entriesPerPage}&searchTerm=${searchTerm}&sort=${sortQuery}`
-        );
-        setTasks(res.data.data.result);
-        setTotalPages(res.data.data.meta.totalPage);
-      } catch (err) {
-        console.error(err);
-      }
-    },
-    []
-  );
+
+
+
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
+import {  updateTask } from '@/redux/features/allTaskSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '@/redux/store';
+
+import moment from 'moment';
+
+import { usePollTasks } from '@/hooks/usePolling';
+import TaskList from '@/components/shared/task-list';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+type PopulatedUserReference = {
+  _id: string;
+  name: string;
+};
+
+type Task = {
+  _id: string;
+  taskName: string;
+  status: string;
+  dueDate?: string;
+  important: boolean;
+  author: string | PopulatedUserReference;
+  assigned?: string | PopulatedUserReference;
+  updatedAt: string;
+};
+
+export default function CompletedTasks() {
+  const { toast } = useToast();
+  const dispatch = useDispatch<AppDispatch>();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  const { tasks } = useSelector((state: RootState) => state.alltasks);
+  const user = useSelector((state: any) => state.auth.user);
+
+
 
   useEffect(() => {
-    fetchUpcomingTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
-    const intervalId = setInterval(() => {
-      fetchUpcomingTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
-    }, 30000); // 30 seconds
+    const filterTasks = () => {
+      const filtered = tasks
+        .filter((task) => {
+          if (!task) return false;
 
-    // const timeoutId = setTimeout(() => {
-    //   clearInterval(intervalId);
-    // }, 3600000); // 1 hour
+          const taskNameMatches = (task.taskName?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+                  const isCompleted = task.status === 'completed';
+            
+                  return taskNameMatches && isCompleted;
+        })
+        .sort((a, b) => {
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        });
 
-    // Cleanup on component unmount
-    return () => {
-      // clearInterval(intervalId);
-      clearTimeout(intervalId);
+      setFilteredTasks(filtered);
     };
-  }, [currentPage, entriesPerPage, searchTerm, sortOrder, user]);
-  const filteredGroups = tasks
-    .filter((task) =>
-      task?.taskName?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === 'name') {
-        return sortOrder === 'asc'
-          ? a.taskName.localeCompare(b.taskName)
-          : b.taskName.localeCompare(a.taskName);
-      } else if (sortBy === 'unread') {
-        return sortOrder === 'asc'
-          ? (b.unreadMessageCount || 0) - (a.unreadMessageCount || 0)
-          : (a.unreadMessageCount || 0) - (b.unreadMessageCount || 0);
-      } else if (sortBy === 'recent') {
-        return sortOrder === 'asc'
-          ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-      return 0;
-    });
-  const handleSearch = (event) => {
+
+    filterTasks();
+  }, [searchTerm, tasks, user._id]); 
+
+  // Enable polling to keep tasks updated
+  usePollTasks({
+    userId: user._id,
+    tasks,
+    filteredTasks
+  });
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
-    setCurrentPage(1); // Reset to first page when searching
   };
 
-  // const handleEntriesPerPageChange = (event) => {
-  //   setEntriesPerPage(Number(event.target.value));
-  //   setCurrentPage(1); // Reset to first page when changing entries per page
-  // };
+  // In parent component
+const handleMarkAsImportant = async (taskId: string) => {
+  const originalTasks = [...tasks];
 
-  const handleSortToggle = () => {
-    const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-    setSortOrder(newSortOrder);
-    fetchUpcomingTasks(currentPage, entriesPerPage, searchTerm, newSortOrder); // Fetch with the new sort order
-  };
+  // Find the current task
+  const currentTask = tasks.find(task => task._id === taskId);
+  if (!currentTask) return;
 
-  const handleMarkAsImportant = async (taskId) => {
-    const task: any = tasks.find((t: any) => t._id === taskId);
+  // Optimistic update while preserving all nested objects
+  setFilteredTasks(prev =>
+    prev.map(task => {
+      if (task._id === taskId) {
+        return {
+          ...task,  
+          important: !task.important 
+        };
+      }
+      return task;
+    })
+  );
 
-    const response = await axiosInstance.patch(
-      `/task/${taskId}`,
-      { important: !task.important } // Toggle important status
-    );
-
-    if (response.data.success) {
-      fetchUpcomingTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
-      toast({
-        title: 'Task Updated',
-       
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Something Went Wrong!'
-      });
-    }
-  };
-
-  const handleToggleTaskCompletion = async (taskId) => {
-    const task: any = tasks.find((t: any) => t._id === taskId);
-
-    const response = await axiosInstance.patch(`/task/${taskId}`, {
-      status: task?.status === 'completed' ? 'pending' : 'completed'
+  try {
+    await dispatch(
+      updateTask({
+        taskId,
+        taskData: { important: !currentTask.important },
+      })
+    ).unwrap();
+  } catch (error) {
+    // Revert on error
+    setFilteredTasks(originalTasks);
+    toast({
+      variant: 'destructive',
+      title: 'Failed to update task importance',
     });
+  }
+};
 
-    if (response.data.success) {
-      fetchUpcomingTasks(currentPage, entriesPerPage, searchTerm, sortOrder);
-      toast({
-        title: 'Task Updated',
+const handleToggleTaskCompletion = async (taskId: string) => {
+      const taskToToggle = tasks.find((task) => task._id === taskId);
+      if (!taskToToggle) return;
+  
+      const updatedStatus =
+        taskToToggle.status === 'completed' ? 'pending' : 'completed';
+  
+      try {
+        await dispatch(
+          updateTask({
+            taskId,
+            taskData: { status: updatedStatus }
+          })
+        ).unwrap();
+  
+        toast({ title: 'Task status updated' });
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to update task',
+          description: error?.message || 'An error occurred'
+        });
+      }
+    };
 
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Something Went Wrong!'
-      });
-    }
-  };
 
   return (
-    <div className="p-4 md:p-8">
-      <PageHead title="Due Task" />
-      <Breadcrumbs
-        items={[
-          { title: 'Dashboard', link: '/dashboard' },
-          { title: 'Completed Task', link: '/completedtask' }
-        ]}
+    <Card className="flex h-[calc(88vh-7rem)] flex-col overflow-hidden px-2">
+      <Input
+        className="mx-6 my-4 flex h-[40px] items-center px-4 py-4"
+        placeholder="Search due tasks..."
+        value={searchTerm}
+        onChange={handleSearch}
       />
-      <div className="my-2 flex justify-between gap-2">
-        <Input
-          placeholder="Search Tasks"
-          value={searchTerm}
-          onChange={handleSearch}
-        />
-        <Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex min-w-fit flex-row">
-              {sortBy || 'sort'} {sortOrder === 'asc' ? '↑' : '↓'}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  setSortBy('name');
-                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                }}
-              >
-                Name
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setSortBy('unread');
-                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                }}
-              >
-                New Message
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setSortBy('recent');
-                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                }}
-              >
-                Date Created
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </Button>
-        <div>
-          <DynamicPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      </div>
-
+      <ScrollArea className=" flex-1 overflow-y-auto px-6 scrollbar-hide">
       <TaskList
-        tasks={tasks}
-        onMarkAsImportant={handleMarkAsImportant}
-        onToggleTaskCompletion={handleToggleTaskCompletion}
-        fetchTasks={fetchUpcomingTasks}
+      tasks={filteredTasks}
+      onMarkAsImportant={handleMarkAsImportant}
+      onToggleTaskCompletion={handleToggleTaskCompletion}
       />
-    </div>
+      </ScrollArea>
+    </Card>
   );
 }

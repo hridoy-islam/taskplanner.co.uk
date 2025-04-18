@@ -821,7 +821,7 @@ export default function NotesPage() {
             <Input
               type="text"
               placeholder="Search"
-              className="border border-gray-400  pl-10 focus:ring-0"
+              className="border border-gray-400  pl-10 focus:ring-0 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

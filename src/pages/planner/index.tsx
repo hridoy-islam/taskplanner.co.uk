@@ -1,33 +1,9 @@
-import { useEffect, useState } from 'react';
-import {
-  format,
-  startOfWeek,
-  addDays,
-  startOfMonth,
-  endOfMonth,
-  endOfWeek,
-  isSameMonth,
-  isSameDay,
-  addMonths,
-  parse
-} from 'date-fns';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar as CalendarIcon,
-  Clock,
-  UserRoundCheck,
-  ArrowRight,
-  CircleUser
-} from 'lucide-react';
+'use client';
+
+import { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
+
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import {
@@ -35,22 +11,47 @@ import {
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover';
+
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Star,
+  UserRoundCheck,
+
+  MessageSquareText
+} from 'lucide-react';
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@/components/ui/tooltip';
 import { Calendar } from '@/components/ui/calendar';
-import axiosInstance from '../../lib/axios';
-import moment from 'moment';
 import { useSelector } from 'react-redux';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useDispatch } from 'react-redux';
+import { AppDispatch, RootState } from '@/redux/store';
+import { useToast } from '@/components/ui/use-toast';
+import moment from 'moment';
 import {
-  useFetchPlannerMonthQuery,
-  useFetchPlannerWeekQuery,
-  useFetchPlannerDayQuery
-} from '@/redux/features/taskSlice';
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+  Clock,
+  ArrowRight,
+  CircleUser,
+  Timer
+} from 'lucide-react';
+import { usePollTasks } from '@/hooks/usePolling';
+import { useNavigate } from 'react-router-dom';
+import axiosInstance from '@/lib/axios';
+
 
 type Task = {
   _id: string;
   taskName: string;
-  dueDate: Date;
+  dueDate: string;
   important: boolean;
   author: {
     name: string;
@@ -58,127 +59,153 @@ type Task = {
   assigned: {
     name: string;
   };
+  updatedAt: string;
+  status: string;
 };
 
 type CalendarViewType = 'month' | 'week' | 'day';
 
 export default function TaskPlanner() {
   const { user } = useSelector((state: any) => state.auth);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { toast } = useToast();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  const [currentDate, setCurrentDate] = useState(moment());
+  const [selectedDate, setSelectedDate] = useState(moment());
   const [calendarView, setCalendarView] = useState<CalendarViewType>('month');
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  // const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
 
-  const year = moment(currentDate).format('YYYY');
-  const month = moment(currentDate).format('MM');
-  const week = moment(currentDate).isoWeek();
-  const day = moment(currentDate.toISOString().split('T')[0]);
+  const { tasks } = useSelector((state: RootState) => state.alltasks);
 
+  // Fetch all tasks
   // const fetchTasks = async () => {
   //   try {
-  // //     // if (calendarView === 'month') {
-  // //     //   const response = await axiosInstance(
-  // //     //     `/task/planner/${year}/${month}/${user._id}`
-  // //     //   );
-  // //     //   setTasks(response.data.data);
-  // //     // }
-  // //     // if (calendarView === 'week') {
-  // //     //   const response = await axiosInstance(
-  // //     //     `/task/planner/week/${year}/${week}/${user._id}`
-  // //     //   );
-  // //     //   setTasks(response.data.data);
-  // //     // }
+  //     const result = await dispatch(
+  //       fetchAllTasks({
+  //         userId: user?._id,
+  //         query: {
+  //           isDeleted: false,
+  //           status: 'pending',
 
-  //     if (calendarView === 'day') {
-  //       const formattedDate = moment(currentDate.toISOString().split('T')[0]);
-  //       const response = await axiosInstance(
-  //         `/task/planner/day/${formattedDate}/${user._id}`
-  //       );
-  //       setTasks(response.data.data);
-  //     }
+  //         }
+  //       })
+  //     ).unwrap();
+
+  //     setTasks(result);
   //   } catch (error) {
-  //     console.error('Failed to fetch tasks:', error);
+  //     toast({
+  //       variant: 'destructive',
+  //       title: 'Failed to load tasks',
+  //       description: 'Please try again later'
+  //     });
   //   }
   // };
 
-  // useEffect(() => {
-  //   fetchTasks();
-  // }, [currentDate]);
-
-  const { data: monthTasks, isError: isMonthError } = useFetchPlannerMonthQuery(
-    { year, month, userId: user._id },
-    {
-      pollingInterval: 5000
-    }
-  );
-
-  const {
-    data: weekTasks,
-    refetch,
-    isError: isWeekError
-  } = useFetchPlannerWeekQuery(
-    { year, week, userId: user._id },
-    { pollingInterval: 5000 }
-  );
-
-  const { data: dayTasks, isError: isDayError } = useFetchPlannerDayQuery({
-    day,
-    userId: user._id
-  });
-
   useEffect(() => {
-    const fetchTasks = () => {
-      try {
+    const filterTasks = () => {
+      const baseFiltered = tasks.filter((task) => {
+        if (!task) return false;
+
+        const taskNameMatches = (task.taskName?.toLowerCase() || '').includes(
+          searchTerm.toLowerCase()
+        );
+        const isPending = task.status === 'pending';
+        if (!task.dueDate) return false;
+
+        const dueDate = moment(task.dueDate);
+
+        // Filter based on calendar view
         if (calendarView === 'month') {
-          if (isMonthError) throw new Error('Failed to fetch month tasks');
-          setTasks(monthTasks?.data || []);
+          const monthStart = currentDate.clone().startOf('month');
+          const monthEnd = currentDate.clone().endOf('month');
+          if (!dueDate.isBetween(monthStart, monthEnd, null, '[]'))
+            return false;
         } else if (calendarView === 'week') {
-          if (isWeekError) throw new Error('Failed to fetch week tasks');
-          setTasks(weekTasks?.data || []);
+          const weekStart = currentDate.clone().startOf('week');
+          const weekEnd = currentDate.clone().endOf('week');
+          if (!dueDate.isBetween(weekStart, weekEnd, null, '[]')) return false;
         } else if (calendarView === 'day') {
-          if (isDayError) throw new Error('Failed to fetch day tasks');
-          setTasks(dayTasks?.data || []);
+          if (!dueDate.isSame(currentDate, 'day')) return false;
         }
-      } catch (error) {
-        console.error(error);
-        setTasks([]);
-      }
+
+        return taskNameMatches && isPending;
+      });
+
+      const sorted = baseFiltered.sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+
+      setFilteredTasks(sorted);
     };
 
-    fetchTasks();
-  }, [
-    calendarView,
-    isMonthError,
-    monthTasks,
-    weekTasks,
-    dayTasks,
-    isWeekError,
-    isDayError
-  ]);
+    filterTasks();
+  }, [searchTerm, tasks, currentDate, calendarView]);
 
-  useEffect(() => {
-    if (calendarView === 'week') {
-      refetch();
+  // Polling hook
+  usePollTasks({
+    userId: user._id,
+    tasks,
+    setOptimisticTasks: setFilteredTasks
+  });
+
+
+
+  const openTaskDetails = async (task: any) => {
+      if (user?._id !== task?.author?._id ) {
+        const updatedTasks = filteredTasks.map(t =>
+          t._id === task._id ? { ...t, seen: true } : t
+        );
+        setFilteredTasks(updatedTasks);
+        try {
+          const res = await axiosInstance.patch(`/task/${task._id}`, { seen: true });
+          console.log("PATCH success:", res.data);        navigate(`/dashboard/task-details/${task._id}`);
+        } catch (error) {
+          console.error("Error marking task as seen:", error);
+          setFilteredTasks(filteredTasks);
+        }
+      }
+      navigate(`/dashboard/task-details/${task._id}`);
+  
+    };
+
+
+
+
+  // Navigation functions
+  const nextView = () => {
+    if (calendarView === 'month') {
+      setCurrentDate(currentDate.clone().add(1, 'month'));
+    } else if (calendarView === 'week') {
+      setCurrentDate(currentDate.clone().add(1, 'week'));
+    } else {
+      setCurrentDate(currentDate.clone().add(1, 'day'));
     }
-  }, [weekTasks]);
+  };
 
-  const filteredTasks = (tasks || []).filter((task) =>
-    task.taskName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const prevView = () => {
+    if (calendarView === 'month') {
+      setCurrentDate(currentDate.clone().subtract(1, 'month'));
+    } else if (calendarView === 'week') {
+      setCurrentDate(currentDate.clone().subtract(1, 'week'));
+    } else {
+      setCurrentDate(currentDate.clone().subtract(1, 'day'));
+    }
+  };
 
+  // Render header
   const renderHeader = () => {
     let dateDisplay;
 
     if (calendarView === 'month') {
-      dateDisplay = format(currentDate, 'MMMM yyyy'); // Month view
+      dateDisplay = currentDate.format('MMMM YYYY');
     } else if (calendarView === 'week') {
-      const startDate = startOfWeek(currentDate); // Start of the week
-      const endDate = addDays(startDate, 6); // 7th day (end of the week)
-      dateDisplay = `${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}`;
+      dateDisplay = `${currentDate.clone().startOf('week').format('MMM D, YYYY')} - ${currentDate.clone().endOf('week').format('MMM D, YYYY')}`;
     } else {
-      dateDisplay = format(currentDate, 'EEEE, MMMM d, yyyy'); // Day view
+      dateDisplay = currentDate.format('dddd, MMMM D, YYYY');
     }
 
     return (
@@ -202,196 +229,344 @@ export default function TaskPlanner() {
     );
   };
 
+  // Render days of week for month view
   const renderDays = () => {
-    const dateFormat = 'EEE';
-    const days: React.ReactNode[] = [];
-    let startDate = startOfWeek(currentDate);
+    const days: JSX.Element[] = [];
+    const startDate = currentDate.clone().startOf('week');
+
     for (let i = 0; i < 7; i++) {
       days.push(
         <div key={i} className="text-center font-semibold">
-          {format(addDays(startDate, i), dateFormat)}
+          {startDate.clone().add(i, 'days').format('ddd')}
         </div>
       );
     }
+
     return <div className="mb-2 grid grid-cols-7 gap-2">{days}</div>;
   };
 
-  const nextView = () => {
-    if (calendarView === 'month') {
-      setCurrentDate(addMonths(currentDate, 1));
-    } else if (calendarView === 'week') {
-      setCurrentDate(addDays(currentDate, 7));
-    } else {
-      setCurrentDate(addDays(currentDate, 1));
-    }
-  };
-
-  const prevView = () => {
-    if (calendarView === 'month') {
-      setCurrentDate(addMonths(currentDate, -1));
-    } else if (calendarView === 'week') {
-      setCurrentDate(addDays(currentDate, -7));
-    } else {
-      setCurrentDate(addDays(currentDate, -1));
-    }
-  };
-
-  const onDateClick = (day: Date) => {
-    setSelectedDate(day);
-    setCurrentDate(day);
-  };
-
+  // Render cells for month view
   const renderCells = () => {
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
-    const dateFormat = 'd';
-    const rows: React.ReactNode[] = [];
-    let days: React.ReactNode[] = [];
+    const monthStart = currentDate.clone().startOf('month');
+    const monthEnd = currentDate.clone().endOf('month');
+    const startDate = currentDate.clone().startOf('month').startOf('week');
+    const endDate = currentDate.clone().endOf('month').endOf('week');
+
+    const rows: JSX.Element[] = [];
+    let days: JSX.Element[] = [];
+
     let day = startDate;
-    let formattedDate = '';
+
     while (day <= endDate) {
       for (let i = 0; i < 7; i++) {
-        formattedDate = format(day, dateFormat);
-        const cloneDay = day;
+        const cloneDay = day.clone();
+        const dayTasks = filteredTasks.filter((task) =>
+          moment(task.dueDate).isSame(cloneDay, 'day')
+        );
+
         days.push(
           <div
             key={day.toString()}
-            className={`my-1 rounded-sm border p-2  ${
-              !isSameMonth(day, monthStart)
+            className={`my-1 flex min-h-[80px] flex-col rounded-sm border p-2 ${
+              !day.isSame(monthStart, 'month')
                 ? 'text-gray-400'
-                : isSameDay(day, new Date())
+                : day.isSame(moment(), 'day')
                   ? 'bg-blue-100'
                   : ''
             } cursor-pointer`}
-            onClick={() =>
-              onDateClick(parse(formattedDate, dateFormat, new Date()))
-            }
+            onClick={() => {
+              setCurrentDate(cloneDay);
+              setSelectedDate(cloneDay);
+            }}
           >
-            <span className="float-right">{formattedDate}</span>
-            <ScrollArea className=" mt-2 h-12 ">
-              {filteredTasks
-                .filter((task) => isSameDay(task.dueDate, cloneDay))
-                // .slice(0, 3)
-                .map((task) => (
-                  <div
-                    key={task._id}
-                    className={`mb-1 w-[85%] truncate rounded p-1 text-xs font-semibold  max-lg:hidden ${task?.important ? 'bg-orange-400' : 'bg-green-400'}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedTask(task);
-                    }}
-                  >
-                    {task.taskName}
-                  </div>
-                ))}
-              {/* {filteredTasks.filter((task) => isSameDay(task.dueDate, cloneDay))
-                .length > 3 && (
-                <div className="text-xs font-semibold text-gray-500">
-                  +
-                  {filteredTasks.filter((task) =>
-                    isSameDay(task.dueDate, cloneDay)
-                  ).length - 3}{' '}
-                  more
-                </div>
-              )} */}
-            </ScrollArea>
-          </div>
-        );
-        day = addDays(day, 1);
-      }
-      rows.push(
-        <div key={day.toString()} className="grid grid-cols-7 gap-2">
-          {days}
-        </div>
-      );
-      days = [];
-    }
-    return <div className="mb-4">{rows}</div>;
-  };
-
-  const renderWeekView = () => {
-    const startDate = startOfWeek(currentDate);
-    const endDate = addDays(startDate, 6);
-    const days: React.ReactNode[] = [];
-    for (let i = 0; i < 7; i++) {
-      const day = addDays(startDate, i);
-      days.push(
-        <div key={i} className="p-2 lg:border ">
-          <div className="mb-2 font-semibold max-lg:hidden">
-            {format(day, 'EEE,MMM d,yyyy ')}
-          </div>
-          <ScrollArea className=" lg:h-80">
-            {filteredTasks
-              .filter((task) => isSameDay(task.dueDate, day))
-              .map((task) => (
+            <span className="float-right mb-1">{day.format('D')}</span>
+            <div className="flex-1 overflow-y-auto">
+              {dayTasks.map((task) => (
                 <div
                   key={task._id}
-                  className={`mb-1 rounded p-1 text-xs font-semibold  max-lg:hidden ${task?.important ? 'bg-orange-400' : 'bg-green-400'}`}
+                  className={`mb-1 w-full truncate rounded p-1 text-xs font-semibold max-lg:hidden ${
+                    task.important ? 'bg-orange-400' : 'bg-green-400'
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log(task);
-                    setSelectedTask(task);
+                    // setSelectedTask(task);
+                    navigate(`/dashboard/task-details/${task._id}`);
                   }}
                 >
                   {task.taskName}
                 </div>
               ))}
-          </ScrollArea>
+            </div>
+          </div>
+        );
+        day = day.clone().add(1, 'day');
+      }
+      rows.push(
+        <div
+          key={day.toString()}
+          className="grid grid-cols-7 gap-2"
+          style={{ minHeight: '120px' }} // Minimum height for each row
+        >
+          {days}
+        </div>
+      );
+      days = [];
+    }
+
+    return (
+      <div className="mb-4 max-h-[calc(96vh-300px)] overflow-y-auto">
+        {rows}
+      </div>
+    );
+  };
+
+  // Render week view
+  const renderWeekView = () => {
+    let days: JSX.Element[] = [];
+    const startDate = currentDate.clone().startOf('week');
+
+    for (let i = 0; i < 7; i++) {
+      const day = startDate.clone().add(i, 'days');
+      const dayTasks = filteredTasks.filter((task) =>
+        moment(task.dueDate).isSame(day, 'day')
+      );
+
+      days.push(
+        <div
+          key={i}
+          className={`my-1 flex min-h-[150px] flex-col rounded-sm border p-2 ${
+            !day.isSame(currentDate, 'month')
+              ? 'text-gray-400'
+              : day.isSame(moment(), 'day')
+                ? 'bg-blue-100'
+                : ''
+          } cursor-pointer`}
+          onClick={() => {
+            setCurrentDate(day);
+            setSelectedDate(day);
+          }}
+        >
+          <div className="mb-2 font-semibold max-lg:hidden">
+            {day.format('ddd, MMM D')}
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {dayTasks.map((task) => (
+              <div
+                key={task._id}
+                className={`mb-1 w-full truncate rounded p-1 text-xs font-semibold max-lg:hidden ${
+                  task.important ? 'bg-orange-400' : 'bg-green-400'
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // setSelectedTask(task);
+                  navigate(`/dashboard/task-details/${task._id}`);
+                }}
+              >
+                {task.taskName}
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
-    return <div className="grid grid-cols-7 gap-2">{days}</div>;
+
+    return (
+      <div className="grid max-h-[calc(96vh-300px)] grid-cols-7 gap-2 overflow-y-auto">
+        {days}
+      </div>
+    );
   };
 
+  // Render day view
   const renderDayView = () => {
     return (
-      <ScrollArea className="h-[calc(100vh-200px)] ">
+      <ScrollArea className="max-h-[calc(98vh-280px)] overflow-y-auto">
         {filteredTasks
-          .filter((task) => isSameDay(task.dueDate, currentDate))
+          .filter((task) => moment(task.dueDate).isSame(currentDate, 'day'))
           .map((task) => (
             <Card
               key={task._id}
               className="mb-4 cursor-pointer"
-              onClick={() => setSelectedTask(task)}
+              onClick={() =>
+             openTaskDetails(task)
+                // navigate(`/dashboard/task-details/${task?._id}`)
+              }
             >
-              <CardHeader>
-                <CardTitle className="text-lg">{task.taskName}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="mt-2 flex items-center">
-                  <Clock className="mr-1 h-4 w-4" />
-                  <span className="text-sm">
-                    {format(task.dueDate, 'EEE, MMM d, yyyy')}
-                  </span>
+             <div
+                key={task._id}
+                className={`flex items-center space-x-2 rounded-lg border border-gray-200 p-3 shadow-md
+                  ${!task.seen ? 'bg-blue-100' : task.important ? 'bg-orange-100' : 'bg-white'}
+                `}
+              >
+                <div className=" flex w-full flex-col items-center justify-between gap-2 lg:flex-row ">
+                  <div className="flex w-full flex-row items-center justify-between gap-2">
+                    <div className="flex items-center justify-center gap-2">
+                    
+                      <span
+                        className={`flex-1 max-lg:text-xs ${
+                          task.status === 'completed'
+                            ? 'text-gray-500 line-through '
+                            : ''
+                        }`}
+                      >
+                        {task.taskName}
+                      </span>
+                    </div>
+                    <div className="flex flex-row  gap-8"  >
+                      <div className="flex items-center justify-center gap-2 max-lg:hidden"  onClick={() => openTaskDetails(task)}>
+                        <TooltipProvider >
+                          <Tooltip  >
+                            <TooltipTrigger>
+                              <Badge
+                                variant="outline"
+                                className="flex items-center gap-1 bg-green-100 text-black"
+                              >
+                                <UserRoundCheck className="h-3 w-3" />
+                                <span className="truncate">
+                                  {task?.author?.name}
+                                </span>
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Created By {task?.author?.name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <Badge>
+                          <ArrowRight className="h-3 w-3 " />
+                        </Badge>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge
+                                variant="outline"
+                                className="flex items-center gap-1 bg-purple-100 text-black"
+                              >
+                                <CircleUser className="h-3 w-3" />
+                                <span className="truncate">
+                                  {task?.assigned?.name}
+                                </span>
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Assigned To {task?.assigned?.name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge
+                                variant={'outline'}
+                                className="flex items-center gap-1 bg-red-700 text-white"
+                               
+                              >
+                                <span className="truncate">
+                                  <div className="flex flex-row gap-1">
+                                    {moment(task.dueDate).format(
+                                      'MMM Do YYYY'
+                                    )}{' '}
+                                  </div>
+                                </span>
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Deadline</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                     
+                    </div>
+                  </div>
+                  <div className="flex flex-row items-center justify-center gap-1 lg:hidden">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Badge
+                            variant="outline"
+                            className="flex items-center gap-1 bg-green-100 px-2 py-1 text-[6px] text-black  lg:text-xs"
+                          >
+                            <UserRoundCheck className="h-2.5 w-2.5" />
+                            {task?.author?.name}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">
+                            Created By {task?.author?.name}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <Badge className="flex items-center gap-1 px-2 py-1 text-xs">
+                      <ArrowRight className="h-1.5 w-1.5 lg:h-2.5 lg:w-2.5" />
+                    </Badge>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Badge
+                            variant="outline"
+                            className="flex items-center gap-1  bg-purple-100 px-2 py-1 text-[6px] text-black  lg:text-xs"
+                          >
+                            <CircleUser className="h-2.5 w-2.5" />
+                            {task?.assigned?.name}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">
+                            Assigned To {task?.assigned?.name}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Badge
+                            variant="outline"
+                            className="flex items-center gap-1 bg-red-700 px-2 py-1 text-[6px] text-white  lg:text-xs"
+                            
+                          >
+                            <Calendar className="h-2.5 w-2.5" />
+                            {moment(task.dueDate).format('MMM Do YYYY')}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">Deadline</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
           ))}
       </ScrollArea>
     );
   };
 
-  const renderDueTasksForSmallScreen = () => {
-    let filteredTasksForView: Task[] = [];
+  // Render tasks for mobile view
+  const renderMobileTasks = () => {
+    let filteredTasksForView = [];
 
     if (calendarView === 'month') {
-      // Filter tasks for the entire month
-      const monthStart = startOfMonth(currentDate);
-      const monthEnd = endOfMonth(monthStart);
-      filteredTasksForView = filteredTasks.filter((task) => {
-        const taskDueDate = new Date(task.dueDate); // Convert dueDate to Date object
-        return taskDueDate >= monthStart && taskDueDate <= monthEnd;
-      });
+      const monthStart = currentDate.clone().startOf('month');
+      const monthEnd = currentDate.clone().endOf('month');
+      filteredTasksForView = filteredTasks.filter((task) =>
+        moment(task.dueDate).isBetween(monthStart, monthEnd, null, '[]')
+      );
     } else if (calendarView === 'week') {
-      // Filter tasks for the current week
-      const weekStart = startOfWeek(currentDate);
-      const weekEnd = endOfWeek(currentDate);
-      filteredTasksForView = filteredTasks.filter((task) => {
-        const taskDueDate = new Date(task.dueDate); // Convert dueDate to Date object
-        return taskDueDate >= weekStart && taskDueDate <= weekEnd;
-      });
+      const weekStart = currentDate.clone().startOf('week');
+      const weekEnd = currentDate.clone().endOf('week');
+      filteredTasksForView = filteredTasks.filter((task) =>
+        moment(task.dueDate).isBetween(weekStart, weekEnd, null, '[]')
+      );
     }
 
     return (
@@ -404,7 +579,10 @@ export default function TaskPlanner() {
             <Card
               key={task._id}
               className="mb-4 cursor-pointer"
-              onClick={() => setSelectedTask(task)}
+              onClick={() =>
+                // setSelectedTask(task)
+                navigate(`/dashboard/task-details/${task._id}`)
+              }
             >
               <CardHeader>
                 <CardTitle className="text-md md:text-lg">
@@ -412,10 +590,10 @@ export default function TaskPlanner() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className=" flex items-center">
+                <div className="flex items-center">
                   <Clock className="mr-1 h-4 w-4" />
                   <span className="text-sm">
-                    {format(new Date(task.dueDate), 'EEE, MMM d, yyyy')}{' '}
+                    {moment(task.dueDate).format('ddd, MMM D, YYYY')}
                   </span>
                 </div>
               </CardContent>
@@ -428,9 +606,9 @@ export default function TaskPlanner() {
 
   return (
     <div className="container mx-auto p-2 md:p-8">
-      <div className="mb-4 flex flex-col items-center  justify-between md:flex-row">
+      <div className="mb-4 flex flex-col items-center justify-between md:flex-row">
         <h1 className="text-2xl font-bold">Task Planner</h1>
-        <div className="flex flex-col items-center justify-center gap-2 space-x-2  md:flex-row">
+        <div className="flex flex-col items-center justify-center gap-2 space-x-2 md:flex-row">
           <Tabs
             value={calendarView}
             onValueChange={(value: CalendarViewType) => setCalendarView(value)}
@@ -441,32 +619,21 @@ export default function TaskPlanner() {
               <TabsTrigger value="day">Day</TabsTrigger>
             </TabsList>
           </Tabs>
-          <div className="flex w-full flex-row items-center  justify-between gap-4 max-md:hidden">
-            {/* <Button
-              variant="outline"
-              onClick={() => {
-                const today = new Date();
-                setCurrentDate(today);
-                setSelectedDate(today);
-              }}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              Today
-            </Button> */}
+          <div className="flex w-full flex-row items-center justify-between gap-4 max-md:hidden">
             <Popover>
               <PopoverTrigger>
-                <Button variant="outline" className='h-8'>
+                <Button variant="outline" className="h-8">
                   <CalendarIcon />
                 </Button>
               </PopoverTrigger>
               <PopoverContent>
                 <Calendar
                   mode="single"
-                  selected={selectedDate}
+                  selected={selectedDate.toDate()}
                   onSelect={(date) => {
                     if (date) {
-                      setCurrentDate(date);
-                      setSelectedDate(date);
+                      setCurrentDate(moment(date));
+                      setSelectedDate(moment(date));
                     }
                   }}
                   initialFocus
@@ -476,101 +643,77 @@ export default function TaskPlanner() {
           </div>
         </div>
       </div>
+
       <div className="mb-4 flex space-x-4">
         <div className="flex-1">
           <Input
             placeholder="Search tasks..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
           />
         </div>
       </div>
+
       <div className="flex flex-col">
         {renderHeader()}
-        <div className={calendarView === 'month' ? 'max-md:hidden' : ''}>
-          {calendarView === 'month' && renderDays()}
-          {calendarView === 'month' && renderCells()}
-        </div>
-        {calendarView === 'week' && renderWeekView()}
-
-        {calendarView === 'day' && renderDayView()}
-        {renderDueTasksForSmallScreen()}
-      </div>
-      {/* <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{selectedTask?.taskName}</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            <div className="mb-2 flex items-center gap-3">
-              <Badge
-                variant="outline"
-                className="flex items-center gap-1 bg-indigo-600"
-              >
-                <UserRoundCheck className="h-3 w-3" />
-                {selectedTask?.author?.name}
-              </Badge>
-              <Badge variant="outline" className={'bg-black'}>
-                <ArrowRight className="h-3 w-3 " />
-              </Badge>
-              <Badge
-                variant="outline"
-                className="flex items-center gap-1 bg-sky-600"
-              >
-                <CircleUser className="h-3 w-3" />
-                {selectedTask?.assigned?.name}
-              </Badge>
-              <Badge
-                variant={'outline'}
-                className="flex items-center gap-1 bg-red-700 text-white"
-              >
-                {moment(selectedTask?.dueDate).format('MMM Do YYYY')}
-              </Badge>
-            </div>
+        {/* {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader />
           </div>
-        </DialogContent>
-      </Dialog>
- */}
-      <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
+        ) : ( */}
+        <>
+          {calendarView === 'month' && (
+            <>
+              {renderDays()}
+              {renderCells()}
+            </>
+          )}
+          {calendarView === 'week' && renderWeekView()}
+          {calendarView === 'day' && renderDayView()}
+          {renderMobileTasks()}
+        </>
+        {/* )} */}
+      </div>
+
+      {/* <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Task Details</DialogTitle>
           </DialogHeader>
           <div className="mt-2">
-            {selectedTask?.taskName && (
-              <div  className="flex flex-col">
-                <div  className="flex flex-row gap-2 pb-2 items-center  text-[14px]">
-                  <div className="flex flex-row items-center gap-1 ">
-                    <CircleUser className="h-4 w-4  rounded-full"  />
-                    <h1 className="font-semibold ">
-                      {selectedTask?.author?.name}
-                    </h1>
+            {selectedTask && (
+              <div className="flex flex-col">
+                <div className="flex flex-row gap-2 pb-2 items-center text-[14px]">
+                  <div className="flex flex-row items-center gap-1">
+                    <CircleUser className="h-4 w-4 rounded-full" />
+                    <h1 className="font-semibold">{selectedTask.author?.name}</h1>
                   </div>
                   <div>
-                  <Badge variant="outline" className={'bg-black '}>
-                <ArrowRight className="h-3 w-3 " />
-              </Badge>
+                    <Badge variant="outline" className="bg-black">
+                      <ArrowRight className="h-3 w-3" />
+                    </Badge>
                   </div>
-                  <div className="flex flex-row items-center gap-1 ">
-                    <CircleUser className="h-4 w-4  rounded-full" />
-                    <h1 className="font-semibold ">
-                      {selectedTask?.assigned?.name}
-                    </h1>
+                  <div className="flex flex-row items-center gap-1">
+                    <CircleUser className="h-4 w-4 rounded-full" />
+                    <h1 className="font-semibold">{selectedTask.assigned?.name}</h1>
                   </div>
                 </div>
-                <p className="text-sm text-gray-800">
-                  {selectedTask?.taskName}
-                </p>
+                <p className="text-sm text-gray-800">{selectedTask.taskName}</p>
+                <div className="mt-2 flex items-center">
+                  <Clock className="mr-2 h-4 w-4" />
+                  <span className="text-sm">
+                    {moment(selectedTask.dueDate).format('MMMM Do YYYY, h:mm a')}
+                  </span>
+                </div>
                 <p className="mt-2 text-[12px] font-bold text-gray-500">
-                  {moment(selectedTask?.updatedAt).format(
-                    'MMMM Do YYYY, h:mm:ss a'
-                  )}
+                  Last updated: {moment(selectedTask.updatedAt).format('MMMM Do YYYY, h:mm:ss a')}
                 </p>
               </div>
             )}
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 }

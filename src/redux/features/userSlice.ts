@@ -18,7 +18,7 @@ export const fetchCompanyUsers = createAsyncThunk(
   async (userId: string, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(
-        `${import.meta.env.VITE_API_URL}/users/company/${userId}`
+        `/users/company/${userId}`
       );
 
 
@@ -36,7 +36,7 @@ export const fetchUsers = createAsyncThunk(
   async (userId: string) => {
     try {
       const response = await axiosInstance.get(
-        `${import.meta.env.VITE_API_URL}/users/${userId}`
+        `/users/${userId}`
       );
 
       return response.data.data;

@@ -137,6 +137,7 @@ export default function UserAuthForm() {
                     placeholder="Enter your email..."
                     disabled={loading}
                     {...field}
+                    className='w-full'
                   />
                 </FormControl>
                 <FormMessage />
@@ -156,6 +157,7 @@ export default function UserAuthForm() {
                     placeholder="Enter your password..."
                     disabled={loading}
                     {...field}
+                    className='w-full'
                   />
                 </FormControl>
                 <FormMessage />

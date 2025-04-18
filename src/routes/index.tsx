@@ -28,6 +28,8 @@ import GroupChat from '../pages/group/chat';
 import NotificationsPage from '@/pages/notification';
 import Otp from '@/pages/auth/otp';
 import NewPassword from '@/pages/new-password';
+import AssignedTasksPage from '@/pages/assignedtask';
+import TaskDetailsPage from '@/pages/task-details';
 
 const DashboardLayout = lazy(
   () => import('@/components/layout/dashboard-layout')
@@ -73,7 +75,7 @@ export default function AppRouter() {
         },
         {
           path: 'assignedtask',
-          element: <AssignedTaskPage />
+          element: < AssignedTasksPage/>
         },
         {
           path: 'duetask',
@@ -134,6 +136,10 @@ export default function AppRouter() {
         {
           path: 'task/:id',
           element: <TaskPage />
+        },
+        {
+          path: 'task-details/:id',
+          element: <TaskDetailsPage />
         },
         {
           path: 'notifications',

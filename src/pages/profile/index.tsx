@@ -18,13 +18,13 @@ import { Label } from '@/components/ui/label';
 import { useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import axiosInstance from '../../lib/axios';
-import { ImageUploader } from '@/components/shared/image-uploader';
 
 import { useToast } from '@/components/ui/use-toast';
 import { OutputFileEntry } from '@uploadcare/react-uploader';
 import { fetchUsers } from '@/redux/features/userSlice';
-import { useDispatch} from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/redux/store';
+import { ImageUploader } from './components/userImage-uploader';
 
 const profileFormSchema = z.object({
   name: z.string().nonempty('Name is required'),
@@ -81,11 +81,11 @@ export default function ProfilePage() {
     try {
       // Dispatch the fetchUsers action to get the data
       const response = await dispatch(fetchUsers(user?._id));
-  
+
       if (fetchUsers.fulfilled.match(response)) {
         const data = response.payload;
         setProfileData(data); // Set the profile data once fetched
-        form.reset(data); 
+        form.reset(data);
       } else {
         console.error('Error fetching users:', response.payload);
       }
@@ -103,20 +103,16 @@ export default function ProfilePage() {
     return () => clearInterval(interval);
   }, [userId, dispatch]);
 
-
-
   const onSubmit = async (data: ProfileFormValues) => {
     try {
-      // Add the uploaded image file ID to the profile data if available
       const updatedData = {
         ...data,
-        image: files.length > 0 ? files[0].data.id : user?.image
+        
       };
 
       await axiosInstance.patch(`/users/${userId}`, updatedData);
       toast({
-        title: 'Profile Updated',
-    
+        title: 'Profile Updated'
       });
     } catch (error) {
       toast({
@@ -127,9 +123,13 @@ export default function ProfilePage() {
     }
   };
 
- 
+  const handleUploadComplete = (data) => {
+    setIsImageUploaderOpen(false);
+    fetchProfileData();
+  };
+
   return (
-    <div className="space-y-4 p-4 md:p-8  h-[calc(100vh-7rem)] overflow-y-auto">
+    <div className="h-[calc(100vh-7rem)] space-y-4 overflow-y-auto  p-4 md:p-8">
       <PageHead title="Profile Page" />
       <Breadcrumbs
         items={[
@@ -140,9 +140,9 @@ export default function ProfilePage() {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex  flex-col items-center justify-center lg:space-y-8 space-y-4 "
+          className="flex  flex-col items-center justify-center space-y-4 lg:space-y-8 "
         >
-          <div className="flex flex-col items-center lg:space-y-4 space-y-2">
+          <div className="flex flex-col items-center space-y-2 lg:space-y-4">
             <Avatar className="h-32 w-32">
               <AvatarImage src={profileData?.image} alt="Profile picture" />
               <AvatarFallback>
@@ -240,47 +240,52 @@ export default function ProfilePage() {
             )}
           />
           <Button
-            className=" lg:h-[50px] lg:w-[400px] w-[200px] relative "
+            className=" relative w-[200px] lg:h-[50px] lg:w-[400px] "
             variant="outline"
             type="submit"
           >
             Update profile
           </Button>
         </form>
-        <ImageUploader
-            open={isImageUploaderOpen}
-            onOpenChange={setIsImageUploaderOpen}
-            multiple={false}
-            onUploadComplete={ async (uploadedFiles) => {
-
-             if(uploadedFiles?.data?.file_url){
+        {/* <ImageUploader
+          open={isImageUploaderOpen}
+          onOpenChange={setIsImageUploaderOpen}
+          multiple={false}
+          onUploadComplete={async (uploadedFiles) => {
+            if (uploadedFiles?.data?.file_url) {
               try {
                 const updatedData = {
                   ...user,
-                  image: uploadedFiles.data.file_url, 
+                  image: uploadedFiles.data.file_url
                 };
-        
+
                 // Send the  request to the backend
                 await axiosInstance.patch(`/users/${userId}`, updatedData);
-        
+
                 // Show success toast
                 toast({
-                  title: "Profile Updated",
-                  description: "Your profile image has been updated.",
+                  title: 'Profile Updated',
+                  description: 'Your profile image has been updated.'
                 });
               } catch (error) {
                 // Show error toast
                 toast({
-                  title: "Error",
-                  description: "Failed to update profile image.",
-                  variant: "destructive",
+                  title: 'Error',
+                  description: 'Failed to update profile image.',
+                  variant: 'destructive'
                 });
               }
-             }
-              
-            }}
-            className="uc-light"
-          />
+            }
+          }}
+          className="uc-light"
+        /> */}
+
+        <ImageUploader
+          open={isImageUploaderOpen}
+          onOpenChange={setIsImageUploaderOpen}
+          onUploadComplete={handleUploadComplete}
+          entityId={user?._id}
+        />
       </Form>
     </div>
   );
