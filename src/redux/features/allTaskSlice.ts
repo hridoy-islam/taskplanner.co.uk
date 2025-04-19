@@ -16,7 +16,8 @@ interface TTask {
   createdAt: Date;
   updatedAt: Date;
   seen: boolean;
-  tempId?: string; // Add to track optimistic updates
+  tempId?: string; 
+  importantBy:string
 }
 
 interface TaskState {

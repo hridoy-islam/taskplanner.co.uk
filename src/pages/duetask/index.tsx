@@ -69,16 +69,14 @@ export default function DueTasks() {
   usePollTasks({
     userId: user._id,
     tasks,
-    filteredTasks
+    setOptimisticTasks: setFilteredTasks
   });
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
-  // In parent component
 const handleMarkAsImportant = async (taskId: string) => {
-  // Create a copy of current tasks
   const originalTasks = [...tasks];
 
   // Find the current task
@@ -86,23 +84,25 @@ const handleMarkAsImportant = async (taskId: string) => {
   if (!currentTask) return;
 
   // Optimistic update while preserving all nested objects
-  setFilteredTasks(prev =>
-    prev.map(task => {
+  setFilteredTasks(prev => {
+    // Ensure prev is always treated as an array
+    const previousTasks = Array.isArray(prev) ? prev : [];
+    return previousTasks.map(task => {
       if (task._id === taskId) {
         return {
           ...task,  
-          important: !task.important 
+          important: !task.important ,
+          importantBy: user?._id
         };
       }
       return task;
-    })
-  );
-
+    });
+  });
   try {
     await dispatch(
       updateTask({
         taskId,
-        taskData: { important: !currentTask.important },
+        taskData: { important: !currentTask.important, importantBy: user?._id },
       })
     ).unwrap();
   } catch (error) {

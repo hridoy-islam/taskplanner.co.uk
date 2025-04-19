@@ -101,7 +101,7 @@ export function EditTaskDialog({ open, onOpenChange, task, onSave }: EditTaskDia
             <label className="text-sm font-medium">Due Date</label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                <Button variant="default" className="w-full justify-start text-left border font-normal">
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {editedTask.dueDate ? moment(editedTask.dueDate).format("MMM DD, YYYY") : "Pick a date"}
                 </Button>
@@ -112,6 +112,7 @@ export function EditTaskDialog({ open, onOpenChange, task, onSave }: EditTaskDia
                   selected={editedTask.dueDate ? new Date(editedTask.dueDate) : undefined}
                   onSelect={handleDateChange}
                   initialFocus
+              
                 />
               </PopoverContent>
             </Popover>

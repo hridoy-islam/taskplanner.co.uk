@@ -260,9 +260,10 @@ export default function TaskPlanner() {
     while (day <= endDate) {
       for (let i = 0; i < 7; i++) {
         const cloneDay = day.clone();
-        const dayTasks = filteredTasks.filter((task) =>
-          moment(task.dueDate).isSame(cloneDay, 'day')
-        );
+        const dayTasks = Array.isArray(filteredTasks)
+        ? filteredTasks.filter((task) =>
+          task?.dueDate && moment(task.dueDate).isSame(cloneDay, 'day')
+        ):[];
 
         days.push(
           <div
@@ -327,9 +328,10 @@ export default function TaskPlanner() {
 
     for (let i = 0; i < 7; i++) {
       const day = startDate.clone().add(i, 'days');
-      const dayTasks = filteredTasks.filter((task) =>
+      const dayTasks = Array.isArray(filteredTasks)
+      ? filteredTasks.filter((task) =>
         moment(task.dueDate).isSame(day, 'day')
-      );
+      ):[];
 
       days.push(
         <div
@@ -381,9 +383,10 @@ export default function TaskPlanner() {
   const renderDayView = () => {
     return (
       <ScrollArea className="max-h-[calc(98vh-280px)] overflow-y-auto">
-        {filteredTasks
-          .filter((task) => moment(task.dueDate).isSame(currentDate, 'day'))
-          .map((task) => (
+        {Array.isArray(filteredTasks) &&
+  filteredTasks
+    .filter((task) => moment(task.dueDate).isSame(currentDate, 'day'))
+    .map((task) => (
             <Card
               key={task._id}
               className="mb-4 cursor-pointer"
@@ -552,22 +555,31 @@ export default function TaskPlanner() {
   };
 
   // Render tasks for mobile view
-  const renderMobileTasks = () => {
-    let filteredTasksForView = [];
+ const renderMobileTasks = () => {
+  let filteredTasksForView = [];
 
+  if (Array.isArray(filteredTasks)) {
     if (calendarView === 'month') {
       const monthStart = currentDate.clone().startOf('month');
       const monthEnd = currentDate.clone().endOf('month');
-      filteredTasksForView = filteredTasks.filter((task) =>
-        moment(task.dueDate).isBetween(monthStart, monthEnd, null, '[]')
+
+      filteredTasksForView = filteredTasks.filter(
+        (task) =>
+          moment(task.dueDate).isSame(currentDate, 'day') &&
+          moment(task.dueDate).isBetween(monthStart, monthEnd, null, '[]')
       );
     } else if (calendarView === 'week') {
       const weekStart = currentDate.clone().startOf('week');
       const weekEnd = currentDate.clone().endOf('week');
-      filteredTasksForView = filteredTasks.filter((task) =>
-        moment(task.dueDate).isBetween(weekStart, weekEnd, null, '[]')
+
+      filteredTasksForView = filteredTasks.filter(
+        (task) =>
+          moment(task.dueDate).isSame(currentDate, 'day') &&
+          moment(task.dueDate).isBetween(weekStart, weekEnd, null, '[]')
       );
     }
+  }
+
 
     return (
       <div className="lg:hidden">

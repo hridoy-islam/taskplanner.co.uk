@@ -108,7 +108,6 @@ export default function GroupPage() {
     try {
       const response = await axiosInstance.get(`/users/company/${user?._id}`);
 
-      console.log('response', response.data.data);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching members:', error);
@@ -141,7 +140,6 @@ export default function GroupPage() {
     loadMembers();
   }, [user?._id]);
 
-  console.log('initial', initialMembers);
 
   const fetchGroups = async () => {
     try {
@@ -347,7 +345,6 @@ export default function GroupPage() {
       return dateB.getTime() - dateA.getTime();
     });
 
-  console.log('members', filteredMembers);
   return (
     <div className=" mx-auto h-full overflow-auto p-4">
       <h1 className="mb-4 text-2xl font-bold">Groups</h1>

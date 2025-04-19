@@ -37,6 +37,8 @@ import {
 } from 'lucide-react';
 import { ImageUploader } from '@/components/shared/image-uploader';
 import axios from 'axios';
+import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 UC.defineComponents(UC);
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
@@ -65,6 +67,7 @@ export default function TaskChat({ task }: TaskChatProps) {
   const [displayedComments, setDisplayedComments] = useState<any[]>([]);
   const [maxComments, setMaxComments] = useState(50);
   const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (commentsEndRef.current) {
@@ -194,6 +197,9 @@ export default function TaskChat({ task }: TaskChatProps) {
       console.error(data, 'Content is required to submit a comment.');
       return;
     }
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       socket.emit('stop typing', task._id);
       data.taskId = task?._id;
@@ -228,6 +234,7 @@ export default function TaskChat({ task }: TaskChatProps) {
       socket.emit('stop typing', task._id);
     } finally {
       setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -307,236 +314,225 @@ export default function TaskChat({ task }: TaskChatProps) {
     return <div>Loading...</div>;
   }
   return (
-    <div className='flex flex-col justify-between h-full '>
-      <div className="flex basis-6/7 w-full overflow-y-auto flex-col py-4 ">
-        <div ref={commentsEndRef} className=" flex-1 overflow-y-auto  p-6">
-          <div className="space-y-4">
-            {comments.length > displayedComments.length && (
-              <div className="text-center">
-                <Button onClick={handleLoadMoreComments} variant={'ghost'}>
-                  Load More Comments <ArrowUp className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            )}
-            {displayedComments?.map((comment: any) => {
-              const isFile = comment.isFile;
-              let parsedContent = comment.content;
+    <div className='flex flex-col justify-between h-full'>
+  <div className="flex basis-6/7 w-full flex-col py-4">
+    <ScrollArea className="h-[calc(100vh-270px)] p-6">
+      <div ref={commentsEndRef} className="space-y-4">
+        {comments.length > displayedComments.length && (
+          <div className="text-center">
+            <Button onClick={handleLoadMoreComments} variant={'ghost'}>
+              Load More Comments <ArrowUp className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        )}
+        {displayedComments?.map((comment: any) => {
+          const isFile = comment.isFile;
+          let parsedContent = comment.content;
 
-              if (isFile) {
-                try {
-                  parsedContent = JSON.parse(comment.content);
-                } catch (error) {
-                  console.error('Failed to parse file content:', error);
-                }
-              }
+          if (isFile) {
+            try {
+              parsedContent = JSON.parse(comment.content);
+            } catch (error) {
+              console.error('Failed to parse file content:', error);
+            }
+          }
 
-              return (
+          return (
+            <div
+              key={comment._id}
+              className={`flex w-full flex-row ${
+                comment.authorId._id === user?._id
+                  ? 'justify-end'
+                  : 'justify-start'
+              }`}
+            >
+              <div
+                className={`flex max-w-80 flex-col items-end justify-end xl:max-w-60 ${
+                  comment.authorId._id === user?._id
+                    ? 'flex-row-reverse'
+                    : 'flex-row'
+                } items-center space-x-2`}
+                style={{
+                  wordWrap: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                  overflowWrap: 'break-word'
+                }}
+              >
                 <div
-                  key={comment._id}
-                  className={`flex w-full flex-row ${
-                    comment.authorId._id === user?._id
-                      ? 'justify-end'
-                      : 'justify-start'
+                  className={`max-w-[90%] ${
+                    comment.authorId?._id === user?._id ? 'mr-2' : 'ml-2'
                   }`}
                 >
                   <div
-                    className={`flex max-w-80 flex-col items-end justify-end xl:max-w-60 ${
-                      comment.authorId._id === user?._id
-                        ? 'flex-row-reverse'
-                        : 'flex-row'
-                    } items-center space-x-2`}
+                    className={`flex min-w-[150px] flex-col rounded-lg ${
+                      isFile
+                        ? comment.authorId?._id === user?._id
+                          ? 'bg-[#002055] p-2 text-white ' // For the current user
+                          : 'bg-[#9333ea]  p-2 text-white ' // For others
+                        : comment.authorId?._id === user?._id
+                          ? 'bg-[#002055] p-2 text-white'
+                          : 'bg-[#9333ea]  p-2 text-white'
+                    }`}
                     style={{
                       wordWrap: 'break-word',
                       whiteSpace: 'pre-wrap',
                       overflowWrap: 'break-word'
                     }}
                   >
-                    <div
-                      className={`max-w-[90%] ${
-                        comment.authorId?._id === user?._id ? 'mr-2' : 'ml-2'
-                      }`}
-                    >
+                    <span className="inline-block items-center overflow-hidden text-ellipsis whitespace-nowrap pb-1 text-xs md:text-xs md:font-semibold">
+                      {comment?.authorId?.name}
+                    </span>
+                    {isFile ? (
                       <div
-                        className={`flex min-w-[150px] flex-col rounded-lg ${
-                          isFile
-                            ? comment.authorId?._id === user?._id
-                              ? 'bg-[#002055] p-2 text-white ' // For the current user
-                              : 'bg-[#9333ea]  p-2 text-white ' // For others
-                            : comment.authorId?._id === user?._id
-                              ? 'bg-[#002055] p-2 text-white'
-                              : 'bg-[#9333ea]  p-2 text-white'
+                        className={`flex items-center space-x-2 rounded-lg ${
+                          comment.authorId?._id === user?._id
+                            ? 'bg-gray-600 p-2'
+                            : 'bg-gray-600 p-2'
                         }`}
-                        style={{
-                          wordWrap: 'break-word',
-                          whiteSpace: 'pre-wrap',
-                          overflowWrap: 'break-word'
-                        }}
                       >
-                        <span className="inline-block items-center overflow-hidden text-ellipsis whitespace-nowrap pb-1 text-xs md:text-xs md:font-semibold">
-                          {comment?.authorId?.name}
-                        </span>
-                        {isFile ? (
-                          <div
-                            className={`flex items-center space-x-2 rounded-lg ${
-                              comment.authorId?._id === user?._id
-                                ? 'bg-gray-600 p-2'
-                                : 'bg-gray-600 p-2'
-                            }`}
-                          >
-                            {parsedContent.mimeType?.startsWith('image/') ? (
-                              <div className="flex items-end space-x-2">
-                                <img
-                                  src={parsedContent}
-                                  alt={parsedContent || 'Preview'}
-                                  className="max-h-32 max-w-full rounded shadow-sm"
-                                />
-                                <a
-                                  href={parsedContent}
-                                  download={parsedContent}
-                                  className="text-blue-600 hover:underline"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <ArrowUpRightFromSquare className="h-4 w-4 font-extralight" />
-                                </a>
-                              </div>
-                            ) : (
-                              <div className="flex items-end space-x-2 overflow-hidden text-ellipsis whitespace-pre-wrap break-words">
-                                <span className="overflow-hidden">
-                                  {parsedContent.originalFilename || 'File'}
-                                </span>
-                                <a
-                                  href={parsedContent}
-                                  download={parsedContent}
-                                  className="text-blue-600 hover:underline"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <DownloadIcon className="h-4 w-4" />
-                                </a>
-                              </div>
-                            )}
+                        {parsedContent.mimeType?.startsWith('image/') ? (
+                          <div className="flex items-end space-x-2">
+                            <img
+                              src={parsedContent}
+                              alt={parsedContent || 'Preview'}
+                              className="max-h-32 max-w-full rounded shadow-sm"
+                            />
+                            <a
+                              href={parsedContent}
+                              download={parsedContent}
+                              className="text-blue-600 hover:underline"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ArrowUpRightFromSquare className="h-4 w-4 font-extralight" />
+                            </a>
                           </div>
                         ) : (
-                          <Linkify
-                            componentDecorator={(
-                              decoratedHref,
-                              decoratedText,
-                              key
-                            ) => (
-                              <a
-                                href={decoratedHref}
-                                key={key}
-                                style={{
-                                  textDecoration: 'underline',
-                                  color: 'inherit'
-                                }}
-                              >
-                                {decoratedText}
-                              </a>
-                            )}
-                          >
-                            {comment.content}
-                          </Linkify>
+                          <div className="flex items-end space-x-2 overflow-hidden text-ellipsis whitespace-pre-wrap break-words">
+                            <span className="overflow-hidden">
+                              {parsedContent.originalFilename || 'File'}
+                            </span>
+                            <a
+                              href={parsedContent}
+                              download={parsedContent}
+                              className="text-blue-600 hover:underline"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <DownloadIcon className="h-4 w-4" />
+                            </a>
+                          </div>
                         )}
                       </div>
-                      <div className="flex flex-row items-center justify-between gap-2 p-1">
-                        <div className="flex flex-row items-center gap-1">
-                          {comment.authorId?._id === user?._id && (
-                            <p className="text-xs text-gray-500">
-                              {comment.seenBy?.length > 1
-                                ? 'Seen'
-                                : 'Delivered'}
-                            </p>
-                          )}
+                    ) : (
+                      <Linkify
+                        componentDecorator={(
+                          decoratedHref,
+                          decoratedText,
+                          key
+                        ) => (
+                          <a
+                            href={decoratedHref}
+                            key={key}
+                            style={{
+                              textDecoration: 'underline',
+                              color: 'inherit'
+                            }}
+                          >
+                            {decoratedText}
+                          </a>
+                        )}
+                      >
+                        {comment.content}
+                      </Linkify>
+                    )}
+                  </div>
+                  <div className="flex flex-row items-center justify-between gap-2 p-1">
+                    <div className="flex flex-row items-center gap-1">
+                      {comment.authorId?._id === user?._id && (
+                        <p className="text-xs text-gray-500">
+                          {comment.seenBy?.length > 1
+                            ? 'Seen'
+                            : 'Delivered'}
+                        </p>
+                      )}
 
-                          {comment.authorId?._id === user?._id && (
-                            <img
-                              src={
-                                comment.seenBy?.length > 1 ? seen : delivered
-                              }
-                              alt={
-                                comment.seenBy?.length > 1
-                                  ? 'seen'
-                                  : 'delivered'
-                              }
-                              className="h-2.5 w-2.5"
-                            />
-                          )}
-                        </div>
-
-                        <span className="text-[10px] opacity-70">
-                          {moment(comment?.createdAt).isSame(moment(), 'day')
-                            ? moment(comment?.createdAt).format('hh:mm A')
-                            : moment(comment?.createdAt).format('DD/MM/YYYY')}
-                        </span>
-                      </div>
+                      {/* {comment.authorId?._id === user?._id && (
+                        <img
+                          src={
+                            comment.seenBy?.length > 1 ? seen : delivered
+                          }
+                          alt={
+                            comment.seenBy?.length > 1
+                              ? 'seen'
+                              : 'delivered'
+                          }
+                          className="h-2.5 w-2.5"
+                        />
+                      )} */}
                     </div>
+
+                    <span className="text-[10px] opacity-70">
+                      {moment(comment?.createdAt).isSame(moment(), 'day')
+                        ? moment(comment?.createdAt).format('hh:mm A')
+                        : moment(comment?.createdAt).format('DD/MM/YYYY')}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-      <div className=" sticky basis-1/7 bottom-0 border-t border-gray-200 bg-gray-50 p-6">
-        {/* {typing && (
-            <div className="relative bottom-5 flex h-[5px] items-center space-x-2 p-2 text-xs">
-              <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
-              <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
-              <div className="h-1 w-1 animate-ping rounded-full bg-gray-400"></div>
-              <span>Typing...</span>
+              </div>
             </div>
-          )} */}
-        <form
-          onSubmit={handleSubmit(handleCommentSubmit)}
-          className="grid gap-2"
-        >
-          <Label htmlFor="comment" className="sr-only">
-            Add Comment
-          </Label>
-          {files?.length === 0 && (
-            <Textarea
-              id="comment"
-              {...register('content', { required: true })}
-              placeholder="Type your comment here..."
-              className="resize-none"
-              rows={3}
-              onKeyDown={handleKeyDown}
-            />
-          )}
-          <div className="flex flex-row items-center justify-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="default"
-              onClick={() => setIsImageUploaderOpen(true)}
-            >
-              <Paperclip className="mr-2 h-4 w-4" /> Upload
-            </Button>
-
-            <Button type="submit" className="w-full" variant={'outline'}>
-              Submit
-            </Button>
-          </div>
-        </form>
-        <ImageUploader
-          open={isImageUploaderOpen}
-          onOpenChange={setIsImageUploaderOpen}
-          multiple={false}
-          onUploadComplete={(uploadedFiles) => {
-            // if (uploadedFiles?.file_url) {
-
-            handleCommentSubmit({
-              content: uploadedFiles.data.file_url,
-              isFile: true
-            });
-
-            // }
-          }}
-          className="uc-light"
-        />
+          );
+        })}
       </div>
-    </div>
+    </ScrollArea>
+  </div>
+  <div className="sticky basis-1/7 bottom-0 border-t border-gray-200 bg-gray-50 p-6">
+    <form
+      onSubmit={handleSubmit(handleCommentSubmit)}
+      className="grid gap-2"
+    >
+      <Label htmlFor="comment" className="sr-only">
+        Add Comment
+      </Label>
+      {files?.length === 0 && (
+        <Textarea
+          id="comment"
+          {...register('content', { required: true })}
+          placeholder="Type your comment here..."
+          className="resize-none"
+          rows={3}
+          onKeyDown={handleKeyDown}
+          disabled={isSubmitting}
+        />
+      )}
+      <div className="flex flex-row items-center justify-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="default"
+          onClick={() => setIsImageUploaderOpen(true)}
+        >
+          <Paperclip className="mr-2 h-4 w-4" /> Upload
+        </Button>
+
+        <Button type="submit" className="w-full" variant={'outline'}>
+          Submit
+        </Button>
+      </div>
+    </form>
+    <ImageUploader
+      open={isImageUploaderOpen}
+      onOpenChange={setIsImageUploaderOpen}
+      multiple={false}
+      onUploadComplete={(uploadedFiles) => {
+        handleCommentSubmit({
+          content: uploadedFiles.data.file_url,
+          isFile: true
+        });
+      }}
+      className="uc-light"
+    />
+  </div>
+</div>
   );
 }

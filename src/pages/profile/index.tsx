@@ -106,8 +106,7 @@ export default function ProfilePage() {
   const onSubmit = async (data: ProfileFormValues) => {
     try {
       const updatedData = {
-        ...data,
-        
+        ...data
       };
 
       await axiosInstance.patch(`/users/${userId}`, updatedData);
@@ -129,164 +128,147 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="h-[calc(100vh-7rem)] space-y-4 overflow-y-auto  p-4 md:p-8">
-      <PageHead title="Profile Page" />
-      <Breadcrumbs
-        items={[
-          { title: 'Dashboard', link: '/dashboard' },
-          { title: 'Profile', link: '/profile' }
-        ]}
-      />
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex  flex-col items-center justify-center space-y-4 lg:space-y-8 "
-        >
-          <div className="flex flex-col items-center space-y-2 lg:space-y-4">
-            <Avatar className="h-32 w-32">
-              <AvatarImage src={profileData?.image} alt="Profile picture" />
-              <AvatarFallback>
-                {user?.name
-                  ?.split(' ')
-                  .map((n) => n[0])
-                  .join('') || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <Input
-                id="avatar"
-                type="file"
-                accept="image/*"
-                className="hidden"
-              />
-              <Label htmlFor="avatar" className="cursor-pointer">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="default"
-                  onClick={() => setIsImageUploaderOpen(true)}
-                >
-                  Update Image
-                </Button>
-              </Label>
-            </div>
+    <div className="flex h-[calc(100vh-7rem)] flex-col overflow-y-auto p-4 md:p-8">
+  <div className="w-full mb-4">
+    <Breadcrumbs
+      items={[
+        { title: 'Dashboard', link: '/dashboard' },
+        { title: 'Profile', link: '/profile' }
+      ]}
+    />
+  </div>
+
+  <PageHead title="Profile Page" />
+
+  <div className="flex w-full flex-col items-center justify-center space-y-4">
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="grid w-[40vw] grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-6"
+      >
+        <div className="flex flex-col items-center justify-start space-y-2 lg:col-span-2 lg:items-start lg:space-y-4">
+          <Avatar className="h-32 w-32">
+            <AvatarImage src={profileData?.image} alt="Profile picture" />
+            <AvatarFallback>
+              {user?.name
+                ?.split(' ')
+                .map((n) => n[0])
+                .join('') || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <Input
+              id="avatar"
+              type="file"
+              accept="image/*"
+              className="hidden"
+            />
+            <Label htmlFor="avatar" className="cursor-pointer">
+              <Button
+                type="button"
+                variant="outline"
+                size="default"
+                onClick={() => setIsImageUploaderOpen(true)}
+              >
+                Update Image
+              </Button>
+            </Label>
           </div>
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input
-                    className="lg:h-[50px] lg:w-[400px]  "
-                    placeholder="Enter Your Name..."
-                    {...field}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                    className="lg:h-[50px] lg:w-[400px]  "
-                    placeholder="example@example.com"
-                    disabled
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone</FormLabel>
-                <FormControl>
-                  <Input
-                    className="lg:h-[50px] lg:w-[400px] "
-                    placeholder="Phone"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address</FormLabel>
-                <FormControl>
-                  <Input
-                    className="lg:h-[50px] lg:w-[400px] "
-                    placeholder="Enter Your Address"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button
-            className=" relative w-[200px] lg:h-[50px] lg:w-[400px] "
-            variant="outline"
-            type="submit"
-          >
+        </div>
+
+        {/* Name */}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input
+                  className="w-full lg:h-[50px]"
+                  placeholder="Enter Your Name..."
+                  {...field}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        {/* Email */}
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  className="w-full lg:h-[50px]"
+                  placeholder="example@example.com"
+                  disabled
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Phone */}
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone</FormLabel>
+              <FormControl>
+                <Input
+                  className="w-full lg:h-[50px]"
+                  placeholder="Phone"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Address */}
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Address</FormLabel>
+              <FormControl>
+                <Input
+                  className="w-full lg:h-[50px]"
+                  placeholder="Enter Your Address"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Submit button */}
+        <div className="flex flex-col items-center justify-end space-y-2 lg:col-span-2 lg:items-end lg:space-y-4">
+          <Button className="" variant="outline" type="submit">
             Update profile
           </Button>
-        </form>
-        {/* <ImageUploader
-          open={isImageUploaderOpen}
-          onOpenChange={setIsImageUploaderOpen}
-          multiple={false}
-          onUploadComplete={async (uploadedFiles) => {
-            if (uploadedFiles?.data?.file_url) {
-              try {
-                const updatedData = {
-                  ...user,
-                  image: uploadedFiles.data.file_url
-                };
+        </div>
+      </form>
 
-                // Send the  request to the backend
-                await axiosInstance.patch(`/users/${userId}`, updatedData);
+      <ImageUploader
+        open={isImageUploaderOpen}
+        onOpenChange={setIsImageUploaderOpen}
+        onUploadComplete={handleUploadComplete}
+        entityId={user?._id}
+      />
+    </Form>
+  </div>
+</div>
 
-                // Show success toast
-                toast({
-                  title: 'Profile Updated',
-                  description: 'Your profile image has been updated.'
-                });
-              } catch (error) {
-                // Show error toast
-                toast({
-                  title: 'Error',
-                  description: 'Failed to update profile image.',
-                  variant: 'destructive'
-                });
-              }
-            }
-          }}
-          className="uc-light"
-        /> */}
-
-        <ImageUploader
-          open={isImageUploaderOpen}
-          onOpenChange={setIsImageUploaderOpen}
-          onUploadComplete={handleUploadComplete}
-          entityId={user?._id}
-        />
-      </Form>
-    </div>
   );
 }

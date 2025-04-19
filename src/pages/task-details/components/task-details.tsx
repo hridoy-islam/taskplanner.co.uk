@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import moment from 'moment';
 import { EditTaskDialog } from './EditTaskDialog';
+import { useSelector } from 'react-redux';
 
 interface User {
   id?: string;
@@ -34,6 +35,7 @@ interface TaskDetailsProps {
 export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [localTask, setLocalTask] = useState(task);
+  const user = useSelector((state: any) => state.auth.user);
 
   useEffect(() => {
     setLocalTask(task);
@@ -45,11 +47,10 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
 
   const handleMarkAsImportant = async () => {
     try {
-      const updated = { important: !localTask.important };
+      const updated = { important: !localTask.important,importantBy:user?._id };
       const result = await onUpdate(updated);
-      // Only update local state if the API call was successful
       if (result && result.data) {
-        setLocalTask(prev => prev ? { ...prev, ...updated } : prev);
+        setLocalTask((prev) => (prev ? { ...prev, ...updated } : prev));
       }
     } catch (error) {
       console.error('Failed to update importance:', error);
@@ -65,11 +66,15 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
       const result = await onUpdate(updatedData);
       // Only update local state if the API call was successful
       if (result && result.data) {
-        setLocalTask(prev => prev ? { 
-          ...prev, 
-          ...updatedData, 
-          updatedAt: new Date().toISOString() 
-        } : prev);
+        setLocalTask((prev) =>
+          prev
+            ? {
+                ...prev,
+                ...updatedData,
+                updatedAt: new Date().toISOString()
+              }
+            : prev
+        );
       }
     } catch (error) {
       console.error('Failed to update task:', error);
@@ -105,27 +110,28 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         task={{
           taskName: localTask.taskName,
           description: localTask.description || '',
-          dueDate: localTask.dueDate,
+          dueDate: localTask.dueDate
         }}
         onSave={handleSave}
       />
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={handleMarkAsImportant}>
-            <Star className={`h-4 w-4 ${localTask.important ? 'text-orange-600 fill-orange-600' : ''}`} />
-          </Button>
-          <label htmlFor="mark-done" className="text-sm text-gray-500">Mark as Important</label>
-        </div>
-        <Button variant="ghost" size="icon" onClick={() => setEditDialogOpen(true)}>
+      <div className="flex items-center justify-end">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setEditDialogOpen(true)}
+        >
           <Edit className="h-4 w-4" />
         </Button>
       </div>
 
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold text-gray-900">{localTask.taskName}</h1>
+        <h1 className="text-xl font-semibold text-gray-900">
+          {localTask.taskName}
+        </h1>
         <p className="text-sm text-gray-500">
-          Created on {moment(localTask.createdAt).format('MMM DD, YYYY')}, last updated {moment(localTask.updatedAt).fromNow()}
+          Created on {moment(localTask.createdAt).format('MMM DD, YYYY')}, last
+          updated {moment(localTask.updatedAt).fromNow()}
         </p>
       </div>
 
@@ -134,7 +140,9 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           <h2 className="text-sm font-medium text-gray-700">Description</h2>
           <Info className="h-4 w-4 text-gray-400" />
         </div>
-        <p className="text-sm text-gray-600">{localTask.description || 'No description provided.'}</p>
+        <p className="text-sm text-gray-600">
+          {localTask.description || 'No description provided.'}
+        </p>
       </div>
 
       <div className="grid grid-cols-3 gap-6">
@@ -142,12 +150,17 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           <h3 className="text-sm text-gray-500">Author</h3>
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6 border-2 border-white">
-              <AvatarImage src={getUserImage(localTask.author) || "/placeholder.svg"} alt="Author Image" />
+              <AvatarImage
+                src={getUserImage(localTask.author) || '/placeholder.svg'}
+                alt="Author Image"
+              />
               <AvatarFallback className="bg-blue-500 text-xs text-white">
                 {getInitials(localTask.author)}
               </AvatarFallback>
             </Avatar>
-            <span className='text-xs font-medium'>{getUserName(localTask.author)}</span>
+            <span className="text-xs font-medium">
+              {getUserName(localTask.author)}
+            </span>
           </div>
         </div>
 
@@ -155,12 +168,17 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           <h3 className="text-sm text-gray-500">Assigned</h3>
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6 border-2 border-white">
-              <AvatarImage src={getUserImage(localTask.assigned) || "/placeholder.svg"} alt="Assigned Image" />
+              <AvatarImage
+                src={getUserImage(localTask.assigned) || '/placeholder.svg'}
+                alt="Assigned Image"
+              />
               <AvatarFallback className="bg-blue-500 text-xs text-white">
                 {getInitials(localTask.assigned)}
               </AvatarFallback>
             </Avatar>
-            <span className='text-xs font-medium'>{getUserName(localTask.assigned)}</span>
+            <span className="text-xs font-medium">
+              {getUserName(localTask.assigned)}
+            </span>
           </div>
         </div>
 
@@ -168,8 +186,8 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           <h3 className="text-sm text-gray-500">Status</h3>
           <div className="flex items-center">
             <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-            {localTask.status.charAt(0).toUpperCase() + localTask.status.slice(1)}
-
+              {localTask.status.charAt(0).toUpperCase() +
+                localTask.status.slice(1)}
             </span>
           </div>
         </div>
@@ -181,18 +199,55 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           <div className="flex items-center gap-1 text-sm">
             <CalendarIcon className="h-4 w-4 text-orange-500" />
             <span className="rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800">
-              {localTask.dueDate ? moment(localTask.dueDate).format('MMM DD, YYYY') : 'No due date'}
+              {localTask.dueDate
+                ? moment(localTask.dueDate).format('MMM DD, YYYY')
+                : 'No due date'}
             </span>
           </div>
         </div>
 
+        <div className="space-y-3">
+  <h3 className="text-xs font-medium uppercase tracking-wider text-gray-400">
+    Task Priority
+  </h3>
+  <div className="flex items-center gap-3">
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={handleMarkAsImportant}
+      className={`group rounded-full p-2 transition-all hover:bg-amber-50 hover:shadow-sm ${
+        localTask.important ? 'bg-amber-50' : ''
+      }`}
+      aria-label={
+        localTask.important ? 'Unmark as important' : 'Mark as important'
+      }
+    >
+      <Star
+        className={`h-5 w-5 transition-all ${
+          localTask.important
+            ? 'fill-amber-500 text-amber-500'
+            : 'text-gray-400 group-hover:text-amber-400'
+        }`}
+      />
+    </Button>
+    <span className="text-sm font-medium text-gray-600">
+      {localTask.important ? 'Important Task' : 'Normal Priority'}
+    </span>
+  </div>
+</div>
+
         <div className="space-y-2">
           <h3 className="text-sm text-gray-500">Complete Task</h3>
           <div className="flex items-center">
-            <Button 
+            <Button
               variant="secondary"
-              size='default'
-              onClick={() => onUpdate({ status: localTask.status === 'completed' ? 'pending' : 'completed' })}
+              size="default"
+              onClick={() =>
+                onUpdate({
+                  status:
+                    localTask.status === 'completed' ? 'pending' : 'completed'
+                })
+              }
             >
               {localTask.status === 'completed' ? 'Reopen' : 'Done'}
             </Button>

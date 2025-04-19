@@ -95,7 +95,7 @@ export default function GroupChat() {
   const router = useRouter();
   const [socketConnected, setSocketConnected] = useState(false);
   const currentPath = router?.location?.pathname?.split('/')[3] || 'null';
-  const { id:groupId } = useParams<{ groupId: string }>();
+  const { id: groupId } = useParams<{ groupId: string }>();
   const [groupDetails, setGroupDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const { register, handleSubmit, reset } = useForm();
@@ -154,9 +154,6 @@ export default function GroupChat() {
       return [];
     }
   };
-
-
- 
 
   const handleMemberDialog = () => {
     setIsAddMemberOpen(true);
@@ -265,8 +262,6 @@ export default function GroupChat() {
       console.error('Error updating last read message:', error);
     }
   };
-
-
 
   // Append a new comment and update the last read message
   const appendComment = (newComment) => {
@@ -922,7 +917,7 @@ export default function GroupChat() {
                 >
                   <div className="flex flex-col items-end justify-end">
                     <div
-                      className={`flex flex-col min-w-[150px] max-w-[300px] ${
+                      className={`flex min-w-[150px] max-w-[300px] flex-col ${
                         comment.authorId._id === user?._id
                           ? 'bg-[#151261] text-white'
                           : 'bg-[#9333ea]  text-white'
@@ -996,88 +991,100 @@ export default function GroupChat() {
                             ) : (
                               <div className="flex items-center justify-between space-x-2">
                                 <span className="overflow-hidden">
-                                {parsedContent.originalFilename || 'File'}
-                              </span>
-                              <a
-                                href={parsedContent}
-                                download={parsedContent}
-                                className="text-blue-600 hover:underline"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <DownloadIcon className="h-4 w-4" />
-                              </a>
+                                  {parsedContent.originalFilename || 'File'}
+                                </span>
+                                <a
+                                  href={parsedContent}
+                                  download={parsedContent}
+                                  className="text-blue-600 hover:underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <DownloadIcon className="h-4 w-4" />
+                                </a>
                               </div>
                             )}
                           </div>
                         ) : (
                           <Linkify
-                          componentDecorator={(decoratedHref, decoratedText, key) => (
-                            <a
-                              href={decoratedHref}
-                              key={key}
-                              style={{
-                                textDecoration: 'underline',
-                                color: 'inherit'
-                              }}
-                            >
-                              {decoratedText}
-                            </a>
-                          )}
-                        >
-                          {comment.content}
+                            componentDecorator={(
+                              decoratedHref,
+                              decoratedText,
+                              key
+                            ) => (
+                              <a
+                                href={decoratedHref}
+                                key={key}
+                                style={{
+                                  textDecoration: 'underline',
+                                  color: 'inherit'
+                                }}
+                              >
+                                {decoratedText}
+                              </a>
+                            )}
+                          >
+                            {comment.content}
                           </Linkify>
                         )}
                       </div>
                     </div>
                     <div
-  className={`flex w-full flex-row items-center gap-1 ${
-    comment?.authorId?._id !== user?._id ? 'justify-end' : 'justify-between'
-  }`}
->
-  {comment?.authorId?._id === user?._id && (
-    <p className="text-xs text-gray-500">
-      {comment?.seenBy?.length === groupDetails?.members?.length
-        ? 'Seen by All'
-        : comment?.seenBy?.length > 1
-        ? 'Seen by'
-        : 'Delivered'}
-    </p>
-  )}
+                      className={`flex w-full flex-row items-center gap-1 ${
+                        comment?.authorId?._id !== user?._id
+                          ? 'justify-end'
+                          : 'justify-between'
+                      }`}
+                    >
+                      {comment?.authorId?._id === user?._id && (
+                        <p className="text-xs text-gray-500">
+                          {comment?.seenBy?.length ===
+                          groupDetails?.members?.length
+                            ? 'Seen by All'
+                            : comment?.seenBy?.length > 1
+                              ? 'Seen by'
+                              : 'Delivered'}
+                        </p>
+                      )}
 
-  <span className="text-[10px] opacity-70">
-    {moment(comment?.createdAt).isSame(moment(), 'day')
-      ? moment(comment?.createdAt).format('hh:mm A')
-      : moment(comment?.createdAt).format('YYYY-MM-DD')}
-  </span>
-</div>
+                      <span className="text-[10px] opacity-70">
+                        {moment(comment?.createdAt).isSame(moment(), 'day')
+                          ? moment(comment?.createdAt).format('hh:mm A')
+                          : moment(comment?.createdAt).format('YYYY-MM-DD')}
+                      </span>
+                    </div>
 
-{comment?.authorId?._id === user?._id && groupDetails?.members && (
-  <div
-    className={`flex w-full flex-row items-center ${
-      comment?.authorId?._id === user?._id ? '' : 'justify-end'
-    }`}
-  >
-    {(() => {
-      const filteredMembers =
-        groupDetails.members?.filter(
-          (member) =>
-            member.lastMessageReadId === comment?._id &&
-            member._id !== comment?.creatorId &&
-            member._id !== user?._id
-        ) || [];
+                    {comment?.authorId?._id === user?._id &&
+                      groupDetails?.members && (
+                        <div
+                          className={`flex w-full flex-row items-center ${
+                            comment?.authorId?._id === user?._id
+                              ? ''
+                              : 'justify-end'
+                          }`}
+                        >
+                          {(() => {
+                            const filteredMembers =
+                              groupDetails.members?.filter(
+                                (member) =>
+                                  member.lastMessageReadId === comment?._id &&
+                                  member._id !== comment?.creatorId &&
+                                  member._id !== user?._id
+                              ) || [];
 
-      return filteredMembers.length === groupDetails.members.length - 1 ? (
-        <p className="text-[12px]"></p>
-      ) : filteredMembers.length > 0 ? (
-        <p className="text-[12px]">
-          {filteredMembers.map((item) => item.name).join(', ')}
-        </p>
-      ) : null;
-    })()}
-  </div>
-)}
-
+                            return filteredMembers.length ===
+                              groupDetails.members.length - 1 ? (
+                              <p className="text-[12px]"></p>
+                            ) : filteredMembers.length > 0 ? (
+                              <p className="text-[12px]">
+                                {filteredMembers
+                                  .map((item) => item.name)
+                                  .join(', ')}
+                              </p>
+                            ) : null;
+                          })()}
+                        </div>
+                      )}
 
                     <div className="flex w-full flex-row-reverse items-center justify-between py-1"></div>
                   </div>
@@ -1167,7 +1174,10 @@ export default function GroupChat() {
             onOpenChange={setIsImageUploaderOpen}
             multiple={false}
             onUploadComplete={(uploadedFiles) => {
-              handleCommentSubmit({ content: uploadedFiles.data.file_url, isFile: true });
+              handleCommentSubmit({
+                content: uploadedFiles.data.file_url,
+                isFile: true
+              });
             }}
             entityId={groupId}
             className="uc-light"

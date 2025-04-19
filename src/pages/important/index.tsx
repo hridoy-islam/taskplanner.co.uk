@@ -346,22 +346,27 @@ export default function ImportantPage() {
       const filtered = tasks
         .filter((task) => {
           if (!task) return false;
+    
           const matchesSearch = (task.taskName?.toLowerCase() || '').includes(
-                    searchTerm.toLowerCase()
-                  );
-                  const isPending = task.status === 'pending';
-                  const isImportant = task.important === true;
-              
-                  return matchesSearch && isPending && isImportant;
+            searchTerm.toLowerCase()
+          );
+    
+          const isPending = task.status === 'pending';
+          const isImportant = task.important === true;
+          const isMarkedByUser =
+            Array.isArray(task.importantBy) && task.importantBy.includes(user._id);
+    
+          return matchesSearch && isPending && isImportant && isMarkedByUser;
         })
         .sort((a, b) => {
           return (
             new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
           );
         });
-
+    
       setFilteredTasks(filtered);
     };
+    
 
     filterTasks();
   }, [searchTerm, tasks, user._id]);
@@ -370,7 +375,8 @@ export default function ImportantPage() {
   usePollTasks({
     userId: user._id,
     tasks,
-    filteredTasks
+    setOptimisticTasks: setFilteredTasks
+
   });
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -391,7 +397,8 @@ export default function ImportantPage() {
         if (task._id === taskId) {
           return {
             ...task,
-            important: !task.important
+            important: !task.important,
+            importantBy: user?._id
           };
         }
         return task;
@@ -402,7 +409,7 @@ export default function ImportantPage() {
       await dispatch(
         updateTask({
           taskId,
-          taskData: { important: !currentTask.important }
+          taskData: { important: !currentTask.important,importantBy: user?._id }
         })
       ).unwrap();
     } catch (error) {

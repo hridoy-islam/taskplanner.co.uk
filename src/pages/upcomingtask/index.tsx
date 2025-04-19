@@ -78,7 +78,7 @@ export default function UpcomingTasksPage() {
   usePollTasks({
     userId: user._id,
     tasks,
-    filteredTasks
+    setOptimisticTasks: setFilteredTasks
   });
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,7 +99,8 @@ const handleMarkAsImportant = async (taskId: string) => {
       if (task._id === taskId) {
         return {
           ...task,  
-          important: !task.important 
+          important: !task.important ,
+          importantBy: user?._id
         };
       }
       return task;
@@ -110,7 +111,7 @@ const handleMarkAsImportant = async (taskId: string) => {
     await dispatch(
       updateTask({
         taskId,
-        taskData: { important: !currentTask.important },
+        taskData: { important: !currentTask.important, importantBy: user?._id },
       })
     ).unwrap();
   } catch (error) {

@@ -99,6 +99,7 @@ export const loginUser = createAsyncThunk<UserResponse, UserCredentials>(
       `${import.meta.env.VITE_API_URL}/auth/login`,
       userCredentials,
       {
+        withCredentials: true ,
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Content-Type': 'application/json' //this line solved cors
@@ -110,10 +111,7 @@ export const loginUser = createAsyncThunk<UserResponse, UserCredentials>(
       'taskplanner',
       JSON.stringify(response.data.accessToken)
     );
-    localStorage.setItem(
-      'taskplannerRefresh',
-      JSON.stringify(response.data.refreshToken)
-    );
+    
     return response;
   }
 );

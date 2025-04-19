@@ -1,83 +1,71 @@
+
+
 import axios from 'axios';
+import { logout } from '../redux/features/authSlice';
+import store from '../redux/store';
 
-
-// Create an instance of axios with custom configurations
+// Create Axios instance
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true, // Allows cookies (for refresh token) to be sent
 });
 
-// Add a request interceptor to attach the bearer token to all requests
+// Request interceptor: Attach access token to all outgoing requests
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Parse token from localStorage
-    const token = JSON.parse(localStorage.getItem('taskplanner')); // Use JSON.parse
-
+    const token = JSON.parse(localStorage.getItem('taskplanner')); // Access token
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-
-// // Function to refresh the token
+// Refresh token function
 const refreshToken = async () => {
   try {
-    const refreshToken = JSON.parse(localStorage.getItem('taskplannerRefresh'));
-
-    if (!refreshToken) {
-   
-      return null;
-    }
-
     const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/auth/refreshtoken`,
-      { refreshToken }
+      `${import.meta.env.VITE_API_URL}/auth/refreshToken`,
+      {},
+      { withCredentials: true } // Include refresh token from cookie
     );
 
+    const accessToken = response?.data?.data?.accessToken;
 
-
-    if (response.data && response.data.data) {
-      const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-
+    if (accessToken) {
       localStorage.setItem('taskplanner', JSON.stringify(accessToken));
-      localStorage.setItem('taskplannerRefresh', JSON.stringify(newRefreshToken));
-
-      
-      return {accessToken, newRefreshToken};
-    } else {
-      return null;
+      return accessToken;
     }
+
+    return null;
   } catch (error) {
-
+    // Token refresh failed — clean up and logout
     localStorage.removeItem('taskplanner');
-    localStorage.removeItem('taskplannerRefresh');
-
     store.dispatch(logout());
-
     return null;
   }
 };
 
-// Response Interceptor: Handle token expiration and refresh
+// Response interceptor: Handle JWT expiration and retry request
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response && (error.response.status === 500 || error.response.status === 400)) {
-      if (!originalRequest._retry) {
-        originalRequest._retry = true;
+    // Only retry once and only if JWT has expired
+    if (
+      error.response?.status === 401 &&
+      error.response?.data?.message === 'JWT Expired' &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
 
-        const newToken = await refreshToken();
-        if (newToken) {
-          originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-          return axiosInstance(originalRequest);
-        }
+      const newToken = await refreshToken();
+
+      if (newToken) {
+        originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+        return axiosInstance(originalRequest);
       }
     }
 

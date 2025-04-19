@@ -60,75 +60,96 @@ export default function TaskPage() {
   const [optimisticTasks, setOptimisticTasks] = useState<Record<string, Task>>({});
 
   useEffect(() => {
-    const enrichedServerTasks = tasks.map(serverTask => {
-      const needsEnrichment = 
-        (typeof serverTask.author === 'string' || !serverTask.author?.name) ||
-        (typeof serverTask.assigned === 'string' || !serverTask.assigned?.name);
-      
+    const currentOptimisticTasks =
+      optimisticTasks && typeof optimisticTasks === 'object'
+        ? optimisticTasks
+        : {};
+  
+    const enrichedServerTasks = tasks.map((serverTask) => {
+      const needsEnrichment =
+        typeof serverTask.author === 'string' || !serverTask.author?.name ||
+        typeof serverTask.assigned === 'string' || !serverTask.assigned?.name;
+  
       if (!needsEnrichment) return serverTask;
-      
-      const matchingOptimisticTask = Object.values(optimisticTasks).find(optTask => 
-        (optTask.taskName === serverTask.taskName && 
-         ((typeof optTask.assigned === 'object' && typeof serverTask.assigned === 'object')
-           ? optTask.assigned?._id === serverTask.assigned?._id
-           : (typeof optTask.assigned === 'object' && typeof serverTask.assigned === 'string')
-           ? optTask.assigned?._id === serverTask.assigned
-           : false)) ||
-        (serverTask.tempId && serverTask.tempId === optTask.tempId)
-      );
-      
+  
+      const matchingOptimisticTask = Object.values(currentOptimisticTasks).find((optTask) => {
+        if (!optTask) return false;
+  
+        const nameMatch = optTask.taskName === serverTask.taskName;
+        const tempIdMatch = serverTask.tempId && serverTask.tempId === optTask.tempId;
+  
+        const assignedMatch =
+          typeof optTask.assigned === 'object' &&
+          (
+            (typeof serverTask.assigned === 'object' &&
+              optTask.assigned?._id === serverTask.assigned?._id) ||
+            (typeof serverTask.assigned === 'string' &&
+              optTask.assigned?._id === serverTask.assigned)
+          );
+  
+        return (nameMatch && assignedMatch) || tempIdMatch;
+      });
+  
       if (!matchingOptimisticTask) return serverTask;
-      
+  
       return {
         ...serverTask,
-        author: typeof serverTask.author === 'string' && typeof matchingOptimisticTask.author === 'object'
-          ? { _id: serverTask.author, name: matchingOptimisticTask.author.name }
-          : serverTask.author,
-        assigned: typeof serverTask.assigned === 'string' && typeof matchingOptimisticTask.assigned === 'object'
-          ? { _id: serverTask.assigned, name: matchingOptimisticTask.assigned.name }
-          : serverTask.assigned
+        author:
+          typeof serverTask.author === 'string' &&
+          typeof matchingOptimisticTask.author === 'object'
+            ? { _id: serverTask.author, name: matchingOptimisticTask.author.name }
+            : serverTask.author,
+        assigned:
+          typeof serverTask.assigned === 'string' &&
+          typeof matchingOptimisticTask.assigned === 'object'
+            ? { _id: serverTask.assigned, name: matchingOptimisticTask.assigned.name }
+            : serverTask.assigned,
       };
     });
-    
-    const optimisticIds = Object.values(optimisticTasks).map(task => {
-      return {
+  
+    const optimisticIds = Object.values(currentOptimisticTasks)
+      .filter(Boolean)
+      .map((task) => ({
         tempId: task._id,
         taskName: task.taskName,
-        assignedId: typeof task.assigned === 'object' ? task.assigned._id : task.assigned
-      };
-    });
-    
-    const serverTasks = enrichedServerTasks.filter(serverTask => {
-      return !optimisticIds.some(opt => 
-        serverTask.taskName === opt.taskName && 
-        (typeof serverTask.assigned === 'object' 
+        assignedId: typeof task.assigned === 'object' ? task.assigned._id : task.assigned,
+      }));
+  
+    const serverTasks = enrichedServerTasks.filter((serverTask) => {
+      return !optimisticIds.some((opt) =>
+        serverTask.taskName === opt.taskName &&
+        (typeof serverTask.assigned === 'object'
           ? serverTask.assigned?._id === opt.assignedId
           : serverTask.assigned === opt.assignedId) &&
         new Date(serverTask.updatedAt).getTime() > Date.now() - 5000
       );
     });
-    
-    const merged = [...Object.values(optimisticTasks), ...serverTasks];
+  
+    const merged = [
+      ...Object.values(currentOptimisticTasks || {}).filter(Boolean),
+      ...serverTasks,
+    ];
   
     const filtered = merged
-  .filter((task) => {
-    if (!task || !task?.assigned || !task?.author) return false;
-
-    const matchesSearch = (task.taskName?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const isPending = task.status === 'pending';
-
-    const authorId = typeof task.author === 'object' ? task.author._id : task.author;
-    const assignedId = typeof task.assigned === 'object' ? task.assigned._id : task.assigned;
-
-    const condition1 = authorId === id && assignedId === user._id;
-    const condition2 = authorId === user._id && assignedId === id;
-
-    return matchesSearch && isPending && (condition1 || condition2);
-  })
-  .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-
+      .filter((task) => {
+        if (!task || !task?.assigned || !task?.author) return false;
+  
+        const matchesSearch = (task.taskName?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+        const isPending = task.status === 'pending';
+  
+        const authorId = typeof task.author === 'object' ? task.author._id : task.author;
+        const assignedId = typeof task.assigned === 'object' ? task.assigned._id : task.assigned;
+  
+        const condition1 = authorId === id && assignedId === user._id;
+        const condition2 = authorId === user._id && assignedId === id;
+  
+        return matchesSearch && isPending && (condition1 || condition2);
+      })
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  
     setFilteredTasks(filtered);
   }, [searchTerm, tasks, id, optimisticTasks, user]);
+  
   
   usePollTasks({
     userId: user?._id,
@@ -244,6 +265,7 @@ export default function TaskPage() {
           return {
             ...task,
             important: !task.important,
+            importantBy: user?._id
           };
         }
         return task;
@@ -254,7 +276,7 @@ export default function TaskPage() {
       await dispatch(
         updateTask({
           taskId,
-          taskData: { important: !currentTask.important },
+          taskData: { important: !currentTask.important, importantBy: user?._id },
         })
       ).unwrap();
     } catch (error) {

@@ -10,7 +10,7 @@ import taskplan from '@/assets/imges/home/otp.png';
 import logo from '@/assets/imges/home/logos/tlogo.png';
 import { Link } from 'react-router-dom';
 
-export default function Otp() {
+export default function Verify() {
   const [otp, setOtp] = useState(Array(4).fill(''));
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(30);

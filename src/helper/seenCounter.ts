@@ -16,8 +16,8 @@ interface Task {
     assignedId: string,
   ): TaskCountResult => {
 
-    // console.log(tasks,"ahsh")
-    const filteredTasks = tasks.filter(
+    
+    const filteredTasks = tasks?.filter(
       task => task?.author?._id === authorId && task?.assigned?._id === assignedId
     );
   

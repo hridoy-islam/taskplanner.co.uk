@@ -6,7 +6,6 @@ import {
   stopPolling 
 } from '@/redux/features/allTaskSlice';
 
-// Improved polling hook that helps with task deduplication
 export const usePollTasks = ({ 
   userId, 
   tasks, 
@@ -17,10 +16,8 @@ export const usePollTasks = ({
   useEffect(() => {
     if (!userId) return;
 
-    // Initial fetch
     dispatch(fetchAllTasks({ userId }));
     
-    // Start polling
     dispatch(startPolling());
     
     const intervalId = setInterval(() => {
@@ -31,11 +28,8 @@ export const usePollTasks = ({
             const optimisticTasksCopy = { ...prev };
             const optimisticTaskArray = Object.values(optimisticTasksCopy);
             
-            // Identify tasks that have been created on the server
             for (const optimisticTask of optimisticTaskArray) {
-              // Look for a matching task in the fetched server tasks
-              const matchingTask = newTasks.find(serverTask => 
-                // Match by name and assigned user
+              const matchingTask = newTasks?.find(serverTask => 
                 serverTask.taskName === optimisticTask.taskName &&
                 (
                   (typeof serverTask.assigned === 'object' && typeof optimisticTask.assigned === 'object'
@@ -45,20 +39,16 @@ export const usePollTasks = ({
                     ? serverTask.assigned === optimisticTask.assigned?._id
                     : false)
                 ) &&
-                // Only match recently created tasks (within last 30 seconds)
                 new Date(serverTask.updatedAt).getTime() > Date.now() - 30000
               );
               
               if (matchingTask) {
-                // Task exists on server - we can remove the optimistic version
                 delete optimisticTasksCopy[optimisticTask._id];
                 
-                // Also transfer any missing name information to the server task
                 if (matchingTask && 
                     (typeof matchingTask.author === 'string' || 
                      typeof matchingTask.assigned === 'string')) {
                   
-                  // Copy the author and assigned name information if available
                   if (typeof matchingTask.author === 'string' && 
                       typeof optimisticTask.author === 'object') {
                     matchingTask.author = {
@@ -81,7 +71,7 @@ export const usePollTasks = ({
             return optimisticTasksCopy;
           });
         });
-    }, 10000); // Poll every 5 seconds
+    }, 10000); 
     
     return () => {
       clearInterval(intervalId);
