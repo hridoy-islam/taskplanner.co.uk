@@ -127,9 +127,11 @@ export default function Otp() {
           background: `url(${taskplan}) center/contain no-repeat, white`
         }}
       >
-        <div className="relative right-10 z-20 -mt-20 flex scale-90 items-center text-lg font-semibold">
-          <img src={logo} alt="logo" />
-        </div>
+        <Link to="/">
+          <div className="relative right-10 z-20 -mt-20 flex scale-90 cursor-pointer items-center text-lg font-semibold">
+            <img src={logo} alt="logo" />
+          </div>
+        </Link>
       </div>
 
       {/* Right Form Panel */}

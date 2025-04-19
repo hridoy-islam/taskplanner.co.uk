@@ -20,16 +20,17 @@ export default function SignInPage() {
 
   return (
     <div className="relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
-     
       <div
         className="relative hidden h-full flex-col border-gray-200 p-8 text-black dark:border-r lg:flex"
         style={{
           background: `url(${taskplan}) center/contain no-repeat, white`
         }}
       >
-        <div className="relative right-10 z-20 -mt-20 flex scale-90 items-center text-lg font-semibold">
-          <img src={logo} alt="logo" />
-        </div>
+        <Link to="/">
+          <div className="relative right-10 z-20 -mt-20 flex scale-90 cursor-pointer items-center text-lg font-semibold">
+            <img src={logo} alt="logo" />
+          </div>
+        </Link>
 
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
@@ -55,14 +56,14 @@ export default function SignInPage() {
             By clicking continue, you agree to our{' '}
             <Link
               to="/terms"
-              className="underline underline-offset-4 hover:pointer"
+              className="hover:pointer underline underline-offset-4"
             >
               Terms of Service
             </Link>{' '}
             and{' '}
             <Link
               to="/privacy"
-              className="underline underline-offset-4 hover:pointer"
+              className="hover:pointer underline underline-offset-4"
             >
               Privacy Policy
             </Link>

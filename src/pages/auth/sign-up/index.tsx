@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { SignUpForm } from './components/sign-up-form';
-import taskplan from '@/assets/imges/home/regimg.png';
+import taskplan from '@/assets/imges/home/taskplan.jpg';
 import logo from '@/assets/imges/home/logos/tlogo.png';
 
 export default function SignUpPage() {
@@ -13,9 +13,11 @@ export default function SignUpPage() {
           background: `url(${taskplan}) center/contain no-repeat, white`,
         }}
       >
-        <div className="z-20 flex scale-90 items-center text-lg font-semibold -mt-20 right-10 relative">
-          <img src={logo} alt="logo" />
-        </div>
+        <Link to="/">
+          <div className="relative right-10 z-20 -mt-20 flex scale-90 cursor-pointer items-center text-lg font-semibold">
+            <img src={logo} alt="logo" />
+          </div>
+        </Link>
 
         <div className="z-20 mt-auto">
           <blockquote className="space-y-2">

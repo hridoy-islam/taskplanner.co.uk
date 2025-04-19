@@ -33,24 +33,6 @@ export default function Sidebar({ className }: SidebarProps) {
   // Dispatch function
   const dispatch = useDispatch<AppDispatch>();
 
-  // const fetchUsers = async () => {
-  //   try {
-  //     const response = await axiosInstance.get(`/users/company/${user?._id}`);
-
-  //     setTeams(response.data.data);
-  //   } catch (error) {
-  //     console.error('Error fetching users:', error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchUsers(); // Fetch users on component mount
-  // }, []);
-
-  // const { data, isLoading , isFetching, refetch ,error} = useFetchUsersQuery({
-  //   userId: user?._id,
-
-  // })
 
   const fetchData = async () => {
     try {
@@ -78,14 +60,7 @@ export default function Sidebar({ className }: SidebarProps) {
     }
   }, [users]);
 
-  // useEffect(() => {
-  //   if(data){
-  //     setTeams(data)
-  //   }
-
-  //   console.log("Users Data:", data);
-
-  // }, [data]);
+ 
 
   const filteredNavItems = navItems.filter((item) =>
     item.roles.includes(user?.role)

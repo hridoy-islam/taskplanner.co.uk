@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ScrollArea } from '../ui/scroll-area';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -11,13 +11,14 @@ import { usePollTasks } from '@/hooks/usePolling';
 
 export default function UserList({ user, filteredUsers }) {
   const { tasks } = useSelector((state: RootState) => state.alltasks);
-  const [unseenCounts, setUnseenCounts] = useState<{[key: string]: number}>({});
+  const [unseenCounts, setUnseenCounts] = useState<{ [key: string]: number }>({});
+  const [sortedUsers, setSortedUsers] = useState(filteredUsers);
   const [filteredTasks, setFilteredTasks] = useState(tasks);
-console.log(filteredTasks)
+
   useEffect(() => {
-    const newUnseenCounts: {[key: string]: number} = {};
-    
-    filteredUsers.forEach(filteredUser => {
+    const newUnseenCounts: { [key: string]: number } = {};
+  
+    filteredUsers.forEach((filteredUser) => {
       const { unseenTasks } = countUnseenTasks(
         tasks,
         filteredUser?._id,
@@ -25,18 +26,36 @@ console.log(filteredTasks)
       );
       newUnseenCounts[filteredUser._id] = unseenTasks;
     });
-
+  
     setUnseenCounts(newUnseenCounts);
+  
+    const sorted = [...filteredUsers].sort((a, b) => {
+      if (a?._id === user?._id) return -1;
+      if (b?._id === user?._id) return 1;
+  
+      const aCount = newUnseenCounts[a?._id] || 0;
+      const bCount = newUnseenCounts[b?._id] || 0;
+  
+      if (bCount !== aCount) {
+        return bCount - aCount;
+      }
+  
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  
+    setSortedUsers(sorted);
   }, [tasks, filteredUsers, user?._id]);
-usePollTasks({
+  
+
+  usePollTasks({
     userId: user?._id,
     tasks,
     setOptimisticTasks: setFilteredTasks
-
   });
+
   return (
     <ScrollArea className="h-full max-h-[220px] overflow-auto">
-      {filteredUsers.map((filteredUser) => (
+      {sortedUsers.map((filteredUser) => (
         <Link
           key={filteredUser?._id}
           to={`/dashboard/task/${filteredUser?._id}`}
@@ -44,10 +63,7 @@ usePollTasks({
           <Button variant="ghost" className="mb-2 w-full justify-between">
             <div className="flex flex-row items-center justify-start">
               <Avatar className="mr-2 h-6 w-6 rounded-full">
-                <AvatarImage
-                  src={filteredUser?.image}
-                  alt="Profile picture"
-                />
+                <AvatarImage src={filteredUser?.image} alt="Profile picture" />
                 <AvatarFallback>
                   {filteredUser?.name
                     .split(' ')
@@ -64,10 +80,10 @@ usePollTasks({
               </div>
             </div>
 
-            {unseenCounts[filteredUser._id] > 0 && (
+            {unseenCounts[filteredUser?._id] > 0 && (
               <Badge className="flex h-4 w-4 flex-row items-center justify-center rounded-full bg-red-800">
                 <span className="text-left text-xs font-semibold text-white">
-                  {unseenCounts[filteredUser._id]}
+                  {unseenCounts[filteredUser?._id]}
                 </span>
               </Badge>
             )}
