@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import {
@@ -16,7 +15,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Star,
   UserRoundCheck,
-
   MessageSquareText
 } from 'lucide-react';
 
@@ -46,7 +44,7 @@ import {
 import { usePollTasks } from '@/hooks/usePolling';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '@/lib/axios';
-
+import { updateTask } from '@/redux/features/allTaskSlice';
 
 type Task = {
   _id: string;
@@ -61,6 +59,7 @@ type Task = {
   };
   updatedAt: string;
   status: string;
+  seen?: boolean;
 };
 
 type CalendarViewType = 'month' | 'week' | 'day';
@@ -74,39 +73,28 @@ export default function TaskPlanner() {
   const [currentDate, setCurrentDate] = useState(moment());
   const [selectedDate, setSelectedDate] = useState(moment());
   const [calendarView, setCalendarView] = useState<CalendarViewType>('month');
-  // const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  const [optimisticTasks, setOptimisticTasks] = useState<Record<string, Partial<Task>>>({});
 
   const { tasks } = useSelector((state: RootState) => state.alltasks);
 
-  // Fetch all tasks
-  // const fetchTasks = async () => {
-  //   try {
-  //     const result = await dispatch(
-  //       fetchAllTasks({
-  //         userId: user?._id,
-  //         query: {
-  //           isDeleted: false,
-  //           status: 'pending',
+  // Apply optimistic updates to tasks
+  const tasksWithOptimisticUpdates = useMemo(() => {
+    if (!Array.isArray(tasks)) return [];
+    
+    return tasks.map(task => {
+      if (optimisticTasks[task._id]) {
+        return { ...task, ...optimisticTasks[task._id] };
+      }
+      return task;
+    });
+  }, [tasks, optimisticTasks]);
 
-  //         }
-  //       })
-  //     ).unwrap();
-
-  //     setTasks(result);
-  //   } catch (error) {
-  //     toast({
-  //       variant: 'destructive',
-  //       title: 'Failed to load tasks',
-  //       description: 'Please try again later'
-  //     });
-  //   }
-  // };
-
+  // Filtering tasks with optimistic updates applied
   useEffect(() => {
     const filterTasks = () => {
-      const baseFiltered = tasks.filter((task) => {
+      const baseFiltered = tasksWithOptimisticUpdates.filter((task) => {
         if (!task) return false;
 
         const taskNameMatches = (task.taskName?.toLowerCase() || '').includes(
@@ -143,37 +131,54 @@ export default function TaskPlanner() {
     };
 
     filterTasks();
-  }, [searchTerm, tasks, currentDate, calendarView]);
+  }, [searchTerm, tasksWithOptimisticUpdates, currentDate, calendarView]);
 
-  // Polling hook
+  // Polling hook with optimistic updates
   usePollTasks({
     userId: user._id,
     tasks,
-    setOptimisticTasks: setFilteredTasks
+    setOptimisticTasks,
   });
 
+  // Update task with optimistic UI
+  const updateTaskOptimistically = useCallback((taskId: string, updates: Partial<Task>) => {
+    setOptimisticTasks(prev => ({
+      ...prev,
+      [taskId]: { ...prev[taskId], ...updates }
+    }));
+  }, []);
 
+  // Open task details with optimistic UI update
+  const openTaskDetails = async (task: Task) => {
+    // Only need to mark as seen if the user is not the author
+    if (user?._id !== task?.author?._id && !task.seen) {
+      updateTaskOptimistically(task._id, { seen: true });
+      
+      try {
 
-  const openTaskDetails = async (task: any) => {
-      if (user?._id !== task?.author?._id ) {
-        const updatedTasks = filteredTasks.map(t =>
-          t._id === task._id ? { ...t, seen: true } : t
-        );
-        setFilteredTasks(updatedTasks);
-        try {
-          const res = await axiosInstance.patch(`/task/${task._id}`, { seen: true });
-          console.log("PATCH success:", res.data);        navigate(`/dashboard/task-details/${task._id}`);
-        } catch (error) {
-          console.error("Error marking task as seen:", error);
-          setFilteredTasks(filteredTasks);
-        }
+        await dispatch(updateTask({
+                  taskId: task?._id.toString(),
+                  taskData: { seen: true }
+                })).unwrap();;
+      } catch (error) {
+        console.error("Error marking task as seen:", error);
+        setOptimisticTasks(prev => {
+          const newOptimistic = { ...prev };
+          delete newOptimistic[task._id];
+          return newOptimistic;
+        });
+        
+        toast({
+          variant: 'destructive',
+          title: 'Failed to update task',
+          description: 'Please try again'
+        });
       }
-      navigate(`/dashboard/task-details/${task._id}`);
-  
-    };
-
-
-
+    }
+    
+    // Navigate to task details
+    navigate(`/dashboard/task-details/${task._id}`);
+  };
 
   // Navigation functions
   const nextView = () => {
@@ -263,7 +268,7 @@ export default function TaskPlanner() {
         const dayTasks = Array.isArray(filteredTasks)
         ? filteredTasks.filter((task) =>
           task?.dueDate && moment(task.dueDate).isSame(cloneDay, 'day')
-        ):[];
+        ): [];
 
         days.push(
           <div
@@ -290,8 +295,7 @@ export default function TaskPlanner() {
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    // setSelectedTask(task);
-                    navigate(`/dashboard/task-details/${task._id}`);
+                    openTaskDetails(task);
                   }}
                 >
                   {task.taskName}
@@ -331,7 +335,7 @@ export default function TaskPlanner() {
       const dayTasks = Array.isArray(filteredTasks)
       ? filteredTasks.filter((task) =>
         moment(task.dueDate).isSame(day, 'day')
-      ):[];
+      ): [];
 
       days.push(
         <div
@@ -360,8 +364,7 @@ export default function TaskPlanner() {
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  // setSelectedTask(task);
-                  navigate(`/dashboard/task-details/${task._id}`);
+                  openTaskDetails(task);
                 }}
               >
                 {task.taskName}
@@ -384,202 +387,193 @@ export default function TaskPlanner() {
     return (
       <ScrollArea className="max-h-[calc(98vh-280px)] overflow-y-auto">
         {Array.isArray(filteredTasks) &&
-  filteredTasks
-    .filter((task) => moment(task.dueDate).isSame(currentDate, 'day'))
-    .map((task) => (
-            <Card
-              key={task._id}
-              className="mb-4 cursor-pointer"
-              onClick={() =>
-             openTaskDetails(task)
-                // navigate(`/dashboard/task-details/${task?._id}`)
-              }
-            >
-             <div
+          filteredTasks
+            .filter((task) => moment(task.dueDate).isSame(currentDate, 'day'))
+            .map((task) => (
+              <Card
                 key={task._id}
-                className={`flex items-center space-x-2 rounded-lg border border-gray-200 p-3 shadow-md
-                  ${!task.seen ? 'bg-blue-100' : task.important ? 'bg-orange-100' : 'bg-white'}
-                `}
+                className="mb-4 cursor-pointer"
+                onClick={() => openTaskDetails(task)}
               >
-                <div className=" flex w-full flex-col items-center justify-between gap-2 lg:flex-row ">
-                  <div className="flex w-full flex-row items-center justify-between gap-2">
-                    <div className="flex items-center justify-center gap-2">
-                    
-                      <span
-                        className={`flex-1 max-lg:text-xs ${
-                          task.status === 'completed'
-                            ? 'text-gray-500 line-through '
-                            : ''
-                        }`}
-                      >
-                        {task.taskName}
-                      </span>
-                    </div>
-                    <div className="flex flex-row  gap-8"  >
-                      <div className="flex items-center justify-center gap-2 max-lg:hidden"  onClick={() => openTaskDetails(task)}>
-                        <TooltipProvider >
-                          <Tooltip  >
-                            <TooltipTrigger>
-                              <Badge
-                                variant="outline"
-                                className="flex items-center gap-1 bg-green-100 text-black"
-                              >
-                                <UserRoundCheck className="h-3 w-3" />
-                                <span className="truncate">
-                                  {task?.author?.name}
-                                </span>
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Created By {task?.author?.name}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <Badge>
-                          <ArrowRight className="h-3 w-3 " />
-                        </Badge>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Badge
-                                variant="outline"
-                                className="flex items-center gap-1 bg-purple-100 text-black"
-                              >
-                                <CircleUser className="h-3 w-3" />
-                                <span className="truncate">
-                                  {task?.assigned?.name}
-                                </span>
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Assigned To {task?.assigned?.name}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Badge
-                                variant={'outline'}
-                                className="flex items-center gap-1 bg-red-700 text-white"
-                               
-                              >
-                                <span className="truncate">
-                                  <div className="flex flex-row gap-1">
-                                    {moment(task.dueDate).format(
-                                      'MMM Do YYYY'
-                                    )}{' '}
-                                  </div>
-                                </span>
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Deadline</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                <div
+                  className={`flex items-center space-x-2 rounded-lg border border-gray-200 p-3 shadow-md
+                    ${!task.seen ? 'bg-blue-100' : task.important ? 'bg-orange-100' : 'bg-white'}
+                  `}
+                >
+                  <div className="flex w-full flex-col items-center justify-between gap-2 lg:flex-row">
+                    <div className="flex w-full flex-row items-center justify-between gap-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <span
+                          className={`flex-1 max-lg:text-xs ${
+                            task.status === 'completed'
+                              ? 'text-gray-500 line-through '
+                              : ''
+                          }`}
+                        >
+                          {task.taskName}
+                        </span>
                       </div>
-                     
+                      <div className="flex flex-row gap-8">
+                        <div className="flex items-center justify-center gap-2 max-lg:hidden">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge
+                                  variant="outline"
+                                  className="flex items-center gap-1 bg-green-100 text-black"
+                                >
+                                  <UserRoundCheck className="h-3 w-3" />
+                                  <span className="truncate">
+                                    {task?.author?.name}
+                                  </span>
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Created By {task?.author?.name}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          <Badge>
+                            <ArrowRight className="h-3 w-3" />
+                          </Badge>
+
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge
+                                  variant="outline"
+                                  className="flex items-center gap-1 bg-purple-100 text-black"
+                                >
+                                  <CircleUser className="h-3 w-3" />
+                                  <span className="truncate">
+                                    {task?.assigned?.name}
+                                  </span>
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Assigned To {task?.assigned?.name}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge
+                                  variant="outline"
+                                  className="flex items-center gap-1 bg-red-700 text-white"
+                                >
+                                  <span className="truncate">
+                                    <div className="flex flex-row gap-1">
+                                      {moment(task.dueDate).format(
+                                        'MMM Do YYYY'
+                                      )}{' '}
+                                    </div>
+                                  </span>
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Deadline</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-row items-center justify-center gap-1 lg:hidden">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Badge
-                            variant="outline"
-                            className="flex items-center gap-1 bg-green-100 px-2 py-1 text-[6px] text-black  lg:text-xs"
-                          >
-                            <UserRoundCheck className="h-2.5 w-2.5" />
-                            {task?.author?.name}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">
-                            Created By {task?.author?.name}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className="flex flex-row items-center justify-center gap-1 lg:hidden">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge
+                              variant="outline"
+                              className="flex items-center gap-1 bg-green-100 px-2 py-1 text-[6px] text-black  lg:text-xs"
+                            >
+                              <UserRoundCheck className="h-2.5 w-2.5" />
+                              {task?.author?.name}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">
+                              Created By {task?.author?.name}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
-                    <Badge className="flex items-center gap-1 px-2 py-1 text-xs">
-                      <ArrowRight className="h-1.5 w-1.5 lg:h-2.5 lg:w-2.5" />
-                    </Badge>
+                      <Badge className="flex items-center gap-1 px-2 py-1 text-xs">
+                        <ArrowRight className="h-1.5 w-1.5 lg:h-2.5 lg:w-2.5" />
+                      </Badge>
 
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Badge
-                            variant="outline"
-                            className="flex items-center gap-1  bg-purple-100 px-2 py-1 text-[6px] text-black  lg:text-xs"
-                          >
-                            <CircleUser className="h-2.5 w-2.5" />
-                            {task?.assigned?.name}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">
-                            Assigned To {task?.assigned?.name}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge
+                              variant="outline"
+                              className="flex items-center gap-1  bg-purple-100 px-2 py-1 text-[6px] text-black  lg:text-xs"
+                            >
+                              <CircleUser className="h-2.5 w-2.5" />
+                              {task?.assigned?.name}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">
+                              Assigned To {task?.assigned?.name}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Badge
-                            variant="outline"
-                            className="flex items-center gap-1 bg-red-700 px-2 py-1 text-[6px] text-white  lg:text-xs"
-                            
-                          >
-                            <Calendar className="h-2.5 w-2.5" />
-                            {moment(task.dueDate).format('MMM Do YYYY')}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">Deadline</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge
+                              variant="outline"
+                              className="flex items-center gap-1 bg-red-700 px-2 py-1 text-[6px] text-white  lg:text-xs"
+                            >
+                              <Calendar className="h-2.5 w-2.5" />
+                              {moment(task.dueDate).format('MMM Do YYYY')}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Deadline</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))}
       </ScrollArea>
     );
   };
 
   // Render tasks for mobile view
- const renderMobileTasks = () => {
-  let filteredTasksForView = [];
+  const renderMobileTasks = () => {
+    let filteredTasksForView = [];
 
-  if (Array.isArray(filteredTasks)) {
-    if (calendarView === 'month') {
-      const monthStart = currentDate.clone().startOf('month');
-      const monthEnd = currentDate.clone().endOf('month');
+    if (Array.isArray(filteredTasks)) {
+      if (calendarView === 'month') {
+        const monthStart = currentDate.clone().startOf('month');
+        const monthEnd = currentDate.clone().endOf('month');
 
-      filteredTasksForView = filteredTasks.filter(
-        (task) =>
-          moment(task.dueDate).isSame(currentDate, 'day') &&
-          moment(task.dueDate).isBetween(monthStart, monthEnd, null, '[]')
-      );
-    } else if (calendarView === 'week') {
-      const weekStart = currentDate.clone().startOf('week');
-      const weekEnd = currentDate.clone().endOf('week');
+        filteredTasksForView = filteredTasks.filter(
+          (task) =>
+            moment(task.dueDate).isSame(currentDate, 'day') &&
+            moment(task.dueDate).isBetween(monthStart, monthEnd, null, '[]')
+        );
+      } else if (calendarView === 'week') {
+        const weekStart = currentDate.clone().startOf('week');
+        const weekEnd = currentDate.clone().endOf('week');
 
-      filteredTasksForView = filteredTasks.filter(
-        (task) =>
-          moment(task.dueDate).isSame(currentDate, 'day') &&
-          moment(task.dueDate).isBetween(weekStart, weekEnd, null, '[]')
-      );
+        filteredTasksForView = filteredTasks.filter(
+          (task) =>
+            moment(task.dueDate).isSame(currentDate, 'day') &&
+            moment(task.dueDate).isBetween(weekStart, weekEnd, null, '[]')
+        );
+      }
     }
-  }
-
 
     return (
       <div className="lg:hidden">
@@ -591,10 +585,7 @@ export default function TaskPlanner() {
             <Card
               key={task._id}
               className="mb-4 cursor-pointer"
-              onClick={() =>
-                // setSelectedTask(task)
-                navigate(`/dashboard/task-details/${task._id}`)
-              }
+              onClick={() => openTaskDetails(task)}
             >
               <CardHeader>
                 <CardTitle className="text-md md:text-lg">
@@ -669,11 +660,6 @@ export default function TaskPlanner() {
 
       <div className="flex flex-col">
         {renderHeader()}
-        {/* {loading ? (
-          <div className="flex justify-center py-8">
-            <Loader />
-          </div>
-        ) : ( */}
         <>
           {calendarView === 'month' && (
             <>
@@ -685,47 +671,7 @@ export default function TaskPlanner() {
           {calendarView === 'day' && renderDayView()}
           {renderMobileTasks()}
         </>
-        {/* )} */}
       </div>
-
-      {/* <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Task Details</DialogTitle>
-          </DialogHeader>
-          <div className="mt-2">
-            {selectedTask && (
-              <div className="flex flex-col">
-                <div className="flex flex-row gap-2 pb-2 items-center text-[14px]">
-                  <div className="flex flex-row items-center gap-1">
-                    <CircleUser className="h-4 w-4 rounded-full" />
-                    <h1 className="font-semibold">{selectedTask.author?.name}</h1>
-                  </div>
-                  <div>
-                    <Badge variant="outline" className="bg-black">
-                      <ArrowRight className="h-3 w-3" />
-                    </Badge>
-                  </div>
-                  <div className="flex flex-row items-center gap-1">
-                    <CircleUser className="h-4 w-4 rounded-full" />
-                    <h1 className="font-semibold">{selectedTask.assigned?.name}</h1>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-800">{selectedTask.taskName}</p>
-                <div className="mt-2 flex items-center">
-                  <Clock className="mr-2 h-4 w-4" />
-                  <span className="text-sm">
-                    {moment(selectedTask.dueDate).format('MMMM Do YYYY, h:mm a')}
-                  </span>
-                </div>
-                <p className="mt-2 text-[12px] font-bold text-gray-500">
-                  Last updated: {moment(selectedTask.updatedAt).format('MMMM Do YYYY, h:mm:ss a')}
-                </p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog> */}
     </div>
   );
 }
