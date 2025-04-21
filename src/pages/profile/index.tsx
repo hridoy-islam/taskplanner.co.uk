@@ -140,11 +140,11 @@ export default function ProfilePage() {
 
   <PageHead title="Profile Page" />
 
-  <div className="flex w-full flex-col items-center justify-center space-y-4 md:mt-20">
+  <div className="flex w-full flex-col items-start justify-center space-y-4 ">
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="grid w-[80vw] md:w-[40vw] grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-6"
+        className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-6"
       >
         <div className="flex flex-col items-center justify-start space-y-2 lg:col-span-2 lg:items-start lg:space-y-4">
           <Avatar className="h-32 w-32">

@@ -46,11 +46,23 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   }
 
   const handleMarkAsImportant = async () => {
+    if (!user?._id || !localTask) return;
+
+    const alreadyMarked = Array.isArray(localTask.importantBy)
+      ? localTask?.importantBy.includes(user._id)
+      : false;
+
+    const updatedImportantBy = alreadyMarked
+      ? localTask?.importantBy.filter((id: string) => id !== user._id)
+      : [...(localTask.importantBy || []), user._id];
+
     try {
-      const updated = { important: !localTask.important,importantBy:user?._id };
-      const result = await onUpdate(updated);
+      const result = await onUpdate({ importantBy: updatedImportantBy });
+
       if (result && result.data) {
-        setLocalTask((prev) => (prev ? { ...prev, ...updated } : prev));
+        setLocalTask((prev) =>
+          prev ? { ...prev, importantBy: updatedImportantBy } : prev
+        );
       }
     } catch (error) {
       console.error('Failed to update importance:', error);
@@ -101,6 +113,8 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     if (typeof user === 'string') return 'U';
     return user.name ? user.name.charAt(0) : 'U';
   };
+
+  const isImportant = localTask.importantBy?.includes(user?._id);
 
   return (
     <div className="space-y-6 p-6">
@@ -207,34 +221,36 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         </div>
 
         <div className="space-y-3">
-  <h3 className="text-xs font-medium uppercase tracking-wider text-gray-400">
-    Task Priority
-  </h3>
-  <div className="flex items-center gap-3">
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={handleMarkAsImportant}
-      className={`group rounded-full p-2 transition-all hover:bg-amber-50 hover:shadow-sm ${
-        localTask.important ? 'bg-amber-50' : ''
-      }`}
-      aria-label={
-        localTask.important ? 'Unmark as important' : 'Mark as important'
-      }
-    >
-      <Star
-        className={`h-5 w-5 transition-all ${
-          localTask.important
-            ? 'fill-amber-500 text-amber-500'
-            : 'text-gray-400 group-hover:text-amber-400'
-        }`}
-      />
-    </Button>
-    <span className="text-sm font-medium text-gray-600">
-      {localTask.important ? 'Important Task' : 'Normal Priority'}
-    </span>
-  </div>
-</div>
+          <h3 className="text-xs font-medium uppercase tracking-wider text-gray-400">
+            Task Priority
+          </h3>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleMarkAsImportant}
+              className={`group rounded-full p-2 transition-all hover:bg-amber-50 hover:shadow-sm ${
+                isImportant ? 'bg-amber-50' : ''
+              }`}
+              aria-label={
+                localTask.important
+                  ? 'Unmark as important'
+                  : 'Mark as important'
+              }
+            >
+              <Star
+                className={`h-5 w-5 transition-all ${
+                  isImportant
+                    ? 'fill-amber-500 text-amber-500'
+                    : 'text-gray-400 group-hover:text-amber-400'
+                }`}
+              />
+            </Button>
+            <span className="text-sm font-medium text-gray-600">
+              {localTask.important ? 'Important Task' : 'Normal Priority'}
+            </span>
+          </div>
+        </div>
 
         <div className="space-y-2">
           <h3 className="text-sm text-gray-500">Complete Task</h3>

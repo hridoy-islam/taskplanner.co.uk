@@ -9,7 +9,11 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return children; // If user exists, render the children (dashboard)
+  // if (user && !user.authorized) {
+  //   return <Navigate to="/not-verified" replace />;
+  // }
+
+  return children; 
 };
 
 export default ProtectedRoute;

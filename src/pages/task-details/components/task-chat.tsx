@@ -33,11 +33,12 @@ import {
   ArrowUpRightFromSquare,
   DownloadIcon,
   ForwardIcon,
-  Paperclip
+  Paperclip, Edit, Check, X 
 } from 'lucide-react';
-import { ImageUploader } from '@/components/shared/image-uploader';
 import axios from 'axios';
 import { ScrollArea } from "@/components/ui/scroll-area";
+
+import { ImageUploader } from './file-uploader';
 
 
 UC.defineComponents(UC);
@@ -68,6 +69,9 @@ export default function TaskChat({ task }: TaskChatProps) {
   const [maxComments, setMaxComments] = useState(50);
   const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editedContent, setEditedContent] = useState('');
+
 
   useEffect(() => {
     if (commentsEndRef.current) {
@@ -80,6 +84,55 @@ export default function TaskChat({ task }: TaskChatProps) {
     socket.emit('setup', user);
     socket.on('connected', () => setSocketConnected(true));
   }, [user]);
+
+
+  const handleEditComment = (commentId: string, currentContent: string) => {
+    setEditingCommentId(commentId);
+    setEditedContent(currentContent);
+  };
+  
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditedContent('');
+  };
+  
+  const handleSaveEdit = async (commentId: string) => {
+    if (!editedContent.trim()) {
+      toast.error('Comment cannot be empty');
+      return;
+    }
+  
+    try {
+      const response = await axiosInstance.patch(`/comment/${commentId}`, {
+        content: editedContent
+      });
+  
+      if (response.data.success) {
+        setComments(prevComments =>
+          prevComments.map(comment =>
+            comment._id === commentId 
+              ? { ...comment, content: editedContent } 
+              : comment
+          )
+        );
+        setDisplayedComments(prevComments =>
+          prevComments.map(comment =>
+            comment._id === commentId 
+              ? { ...comment, content: editedContent } 
+              : comment
+          )
+        );
+        setEditingCommentId(null);
+        setEditedContent('');
+        toast.success('Comment updated successfully');
+      }
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      toast.error('Failed to update comment');
+    }
+  };
+
+
 
   const updateLastReadMessage = async (taskId, userId, messageId) => {
     try {
@@ -238,27 +291,7 @@ export default function TaskChat({ task }: TaskChatProps) {
     }
   };
 
-  const fetchData = async () => {
-    try {
-      const response = await axios.get(
-        `https://core.qualitees.co.uk/api/documents?where=entity_id,${task?._id}&exclude=file_type,document`,
-        {
-          headers: {
-            'x-company-token': 'taskplanner-520480935547'
-          }
-        }
-      );
-      console.log(response?.data);
-    } catch (error) {
-      console.error('error Fetching Document', error);
-    }
-  };
 
-  useEffect(() => {
-    if (task?._id) {
-      fetchData();
-    }
-  }, [task?._id]);
 
   const typingHandler = () => {
     if (!socketConnected) return;
@@ -315,224 +348,245 @@ export default function TaskChat({ task }: TaskChatProps) {
   }
   return (
     <div className='flex flex-col justify-between h-full'>
-  <div className="flex basis-6/7 w-full flex-col py-4">
-    <ScrollArea className="h-[calc(100vh-270px)] p-6">
-      <div ref={commentsEndRef} className="space-y-4">
-        {comments.length > displayedComments.length && (
-          <div className="text-center">
-            <Button onClick={handleLoadMoreComments} variant={'ghost'}>
-              Load More Comments <ArrowUp className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        )}
-        {displayedComments?.map((comment: any) => {
-          const isFile = comment.isFile;
-          let parsedContent = comment.content;
-
-          if (isFile) {
-            try {
-              parsedContent = JSON.parse(comment.content);
-            } catch (error) {
-              console.error('Failed to parse file content:', error);
-            }
-          }
-
-          return (
-            <div
-              key={comment._id}
-              className={`flex w-full flex-row ${
-                comment.authorId._id === user?._id
-                  ? 'justify-end'
-                  : 'justify-start'
-              }`}
-            >
-              <div
-                className={`flex max-w-80 flex-col items-end justify-end xl:max-w-60 ${
-                  comment.authorId._id === user?._id
-                    ? 'flex-row-reverse'
-                    : 'flex-row'
-                } items-center space-x-2`}
-                style={{
-                  wordWrap: 'break-word',
-                  whiteSpace: 'pre-wrap',
-                  overflowWrap: 'break-word'
-                }}
-              >
+      <div className="flex basis-6/7 w-full flex-col py-4">
+        <ScrollArea className="h-[calc(100vh-270px)] p-6">
+          <div ref={commentsEndRef} className="space-y-4">
+            {comments.length > displayedComments.length && (
+              <div className="text-center">
+                <Button onClick={handleLoadMoreComments} variant={'ghost'}>
+                  Load More Comments <ArrowUp className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            {displayedComments?.map((comment: any) => {
+              const isFile = comment.isFile;
+              let parsedContent = comment.content;
+  
+              if (isFile) {
+                try {
+                  parsedContent = JSON.parse(comment.content);
+                } catch (error) {
+                  console.error('Failed to parse file content:', error);
+                }
+              }
+  
+              return (
                 <div
-                  className={`max-w-[90%] ${
-                    comment.authorId?._id === user?._id ? 'mr-2' : 'ml-2'
+                  key={comment._id}
+                  className={`flex w-full flex-row ${
+                    comment.authorId._id === user?._id
+                      ? 'justify-end'
+                      : 'justify-start'
                   }`}
                 >
+                  {comment.authorId?._id === user?._id && !comment.isFile && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 w-6 p-0"
+                      onClick={() => handleEditComment(comment._id, comment.content)}
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                  )}
                   <div
-                    className={`flex min-w-[150px] flex-col rounded-lg ${
-                      isFile
-                        ? comment.authorId?._id === user?._id
-                          ? 'bg-[#002055] p-2 text-white ' // For the current user
-                          : 'bg-[#9333ea]  p-2 text-white ' // For others
-                        : comment.authorId?._id === user?._id
-                          ? 'bg-[#002055] p-2 text-white'
-                          : 'bg-[#9333ea]  p-2 text-white'
-                    }`}
+                    className={`flex max-w-80 flex-col items-end justify-end xl:max-w-60 ${
+                      comment.authorId._id === user?._id
+                        ? 'flex-row-reverse'
+                        : 'flex-row'
+                    } items-center space-x-2`}
                     style={{
                       wordWrap: 'break-word',
                       whiteSpace: 'pre-wrap',
                       overflowWrap: 'break-word'
                     }}
                   >
-                    <span className="inline-block items-center overflow-hidden text-ellipsis whitespace-nowrap pb-1 text-xs md:text-xs md:font-semibold">
-                      {comment?.authorId?.name}
-                    </span>
-                    {isFile ? (
+                    <div
+                      className={`max-w-[90%] ${
+                        comment.authorId?._id === user?._id ? 'mr-2' : 'ml-2'
+                      }`}
+                    >
                       <div
-                        className={`flex items-center space-x-2 rounded-lg ${
-                          comment.authorId?._id === user?._id
-                            ? 'bg-gray-600 p-2'
-                            : 'bg-gray-600 p-2'
+                        className={`flex min-w-[150px] flex-col rounded-lg ${
+                          isFile
+                            ? comment.authorId?._id === user?._id
+                              ? 'bg-[#002055] p-2 text-white'
+                              : 'bg-[#9333ea] p-2 text-white'
+                            : comment.authorId?._id === user?._id
+                              ? 'bg-[#002055] p-2 text-white'
+                              : 'bg-[#9333ea] p-2 text-white'
                         }`}
+                        style={{
+                          wordWrap: 'break-word',
+                          whiteSpace: 'pre-wrap',
+                          overflowWrap: 'break-word'
+                        }}
                       >
-                        {parsedContent.mimeType?.startsWith('image/') ? (
-                          <div className="flex items-end space-x-2">
-                            <img
-                              src={parsedContent}
-                              alt={parsedContent || 'Preview'}
-                              className="max-h-32 max-w-full rounded shadow-sm"
+                        <span className="inline-block items-center overflow-hidden text-ellipsis whitespace-nowrap pb-1 text-xs md:text-xs md:font-semibold">
+                          {comment?.authorId?.name}
+                        </span>
+                        
+                        {editingCommentId === comment._id ? (
+                          <div className="flex flex-col gap-2">
+                            <Textarea
+                              value={editedContent}
+                              onChange={(e) => setEditedContent(e.target.value)}
+                              className="w-full bg-white text-black"
                             />
-                            <a
-                              href={parsedContent}
-                              download={parsedContent}
-                              className="text-blue-600 hover:underline"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <ArrowUpRightFromSquare className="h-4 w-4 font-extralight" />
-                            </a>
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant='ghost'
+                                size="sm"
+                                className='' 
+                                onClick={handleCancelEdit}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="default" 
+                                size="sm" 
+                                onClick={() => handleSaveEdit(comment._id)}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : isFile ? (
+                          <div
+                            className={`flex items-center space-x-2 rounded-lg ${
+                              comment.authorId?._id === user?._id
+                                ? 'bg-gray-600 p-2'
+                                : 'bg-gray-600 p-2'
+                            }`}
+                          >
+                            {parsedContent.mimeType?.startsWith('image/') ? (
+                              <div className="flex items-end space-x-2">
+                                <img
+                                  src={parsedContent}
+                                  alt={parsedContent || 'Preview'}
+                                  className="max-h-32 max-w-full rounded shadow-sm"
+                                />
+                                <a
+                                  href={parsedContent}
+                                  download={parsedContent}
+                                  className="text-blue-600 hover:underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <ArrowUpRightFromSquare className="h-4 w-4 font-extralight" />
+                                </a>
+                              </div>
+                            ) : (
+                              <div className="flex items-end space-x-2 overflow-hidden text-ellipsis whitespace-pre-wrap break-words">
+                                <span className="overflow-hidden">
+                                  {parsedContent.originalFilename || 'File'}
+                                </span>
+                                <a
+                                  href={parsedContent}
+                                  download={parsedContent}
+                                  className="text-blue-600 hover:underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <DownloadIcon className="h-4 w-4" />
+                                </a>
+                              </div>
+                            )}
                           </div>
                         ) : (
-                          <div className="flex items-end space-x-2 overflow-hidden text-ellipsis whitespace-pre-wrap break-words">
-                            <span className="overflow-hidden">
-                              {parsedContent.originalFilename || 'File'}
-                            </span>
-                            <a
-                              href={parsedContent}
-                              download={parsedContent}
-                              className="text-blue-600 hover:underline"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <DownloadIcon className="h-4 w-4" />
-                            </a>
-                          </div>
+                          <Linkify
+                            componentDecorator={(
+                              decoratedHref,
+                              decoratedText,
+                              key
+                            ) => (
+                              <a
+                                href={decoratedHref}
+                                key={key}
+                                style={{
+                                  textDecoration: 'underline',
+                                  color: 'inherit'
+                                }}
+                              >
+                                {decoratedText}
+                              </a>
+                            )}
+                          >
+                            {comment.content}
+                          </Linkify>
                         )}
                       </div>
-                    ) : (
-                      <Linkify
-                        componentDecorator={(
-                          decoratedHref,
-                          decoratedText,
-                          key
-                        ) => (
-                          <a
-                            href={decoratedHref}
-                            key={key}
-                            style={{
-                              textDecoration: 'underline',
-                              color: 'inherit'
-                            }}
-                          >
-                            {decoratedText}
-                          </a>
-                        )}
-                      >
-                        {comment.content}
-                      </Linkify>
-                    )}
-                  </div>
-                  <div className="flex flex-row items-center justify-between gap-2 p-1">
-                    <div className="flex flex-row items-center gap-1">
-                      {comment.authorId?._id === user?._id && (
-                        <p className="text-xs text-gray-500">
-                          {comment.seenBy?.length > 1
-                            ? 'Seen'
-                            : 'Delivered'}
-                        </p>
-                      )}
-
-                      {/* {comment.authorId?._id === user?._id && (
-                        <img
-                          src={
-                            comment.seenBy?.length > 1 ? seen : delivered
-                          }
-                          alt={
-                            comment.seenBy?.length > 1
-                              ? 'seen'
-                              : 'delivered'
-                          }
-                          className="h-2.5 w-2.5"
-                        />
-                      )} */}
+                      <div className="flex flex-row items-center justify-between gap-2 p-1">
+                        <div className="flex flex-row items-center gap-1">
+                          {comment.authorId?._id === user?._id && (
+                            <p className="text-xs text-gray-500">
+                              {comment.seenBy?.length > 1
+                                ? 'Seen'
+                                : 'Delivered'}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-[10px] opacity-70">
+                          {moment(comment?.createdAt).isSame(moment(), 'day')
+                            ? moment(comment?.createdAt).format('hh:mm A')
+                            : moment(comment?.createdAt).format('DD/MM/YYYY')}
+                        </span>
+                      </div>
                     </div>
-
-                    <span className="text-[10px] opacity-70">
-                      {moment(comment?.createdAt).isSame(moment(), 'day')
-                        ? moment(comment?.createdAt).format('hh:mm A')
-                        : moment(comment?.createdAt).format('DD/MM/YYYY')}
-                    </span>
                   </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        </ScrollArea>
       </div>
-    </ScrollArea>
-  </div>
-  <div className="sticky basis-1/7 bottom-0 border-t border-gray-200 bg-gray-50 p-6">
-    <form
-      onSubmit={handleSubmit(handleCommentSubmit)}
-      className="grid gap-2"
-    >
-      <Label htmlFor="comment" className="sr-only">
-        Add Comment
-      </Label>
-      {files?.length === 0 && (
-        <Textarea
-          id="comment"
-          {...register('content', { required: true })}
-          placeholder="Type your comment here..."
-          className="resize-none"
-          rows={3}
-          onKeyDown={handleKeyDown}
-          disabled={isSubmitting}
-        />
-      )}
-      <div className="flex flex-row items-center justify-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="default"
-          onClick={() => setIsImageUploaderOpen(true)}
+      <div className="sticky basis-1/7 bottom-0 border-t border-gray-200 bg-gray-50 p-6">
+        <form
+          onSubmit={handleSubmit(handleCommentSubmit)}
+          className="grid gap-2"
         >
-          <Paperclip className="mr-2 h-4 w-4" /> Upload
-        </Button>
-
-        <Button type="submit" className="w-full" variant={'outline'}>
-          Submit
-        </Button>
+          <Label htmlFor="comment" className="sr-only">
+            Add Comment
+          </Label>
+          {files?.length === 0 && (
+            <Textarea
+              id="comment"
+              {...register('content', { required: true })}
+              placeholder="Type your comment here..."
+              className="resize-none"
+              rows={3}
+              onKeyDown={handleKeyDown}
+              disabled={isSubmitting}
+            />
+          )}
+          <div className="flex flex-row items-center justify-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="default"
+              onClick={() => setIsImageUploaderOpen(true)}
+            >
+              <Paperclip className="mr-2 h-4 w-4" /> Upload
+            </Button>
+  
+            <Button type="submit" className="w-full" variant={'outline'}>
+              Submit
+            </Button>
+          </div>
+        </form>
+        <ImageUploader
+          open={isImageUploaderOpen}
+          onOpenChange={setIsImageUploaderOpen}
+          multiple={false}
+          onUploadComplete={(uploadedFiles) => {
+            handleCommentSubmit({
+              content: uploadedFiles.data.fileUrl,
+              isFile: true
+            });
+          }}
+          className="uc-light"
+        />
       </div>
-    </form>
-    <ImageUploader
-      open={isImageUploaderOpen}
-      onOpenChange={setIsImageUploaderOpen}
-      multiple={false}
-      onUploadComplete={(uploadedFiles) => {
-        handleCommentSubmit({
-          content: uploadedFiles.data.file_url,
-          isFile: true
-        });
-      }}
-      className="uc-light"
-    />
-  </div>
-</div>
+    </div>
   );
 }

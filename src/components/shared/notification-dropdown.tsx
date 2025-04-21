@@ -63,6 +63,8 @@ export function NotificationDropdown() {
       loadNotifications(user._id);
     }
 
+    
+
     // Set up socket connection
     if (user?._id) {
       setupSocket(user._id);
@@ -82,27 +84,44 @@ export function NotificationDropdown() {
     }
   }, []);
 
-  const markAsRead = async (id: string, notification) => {
+  const markAsRead = async (id: string, notification: Notification) => {
     try {
-      await axiosInstance.patch(`/notifications/${id}/read`, { isRead: true }); // API call to mark notification as read
-      setNotifications((prev) =>
-        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
-      );
-      setUnreadCount((prevUnread) => Math.max(0, prevUnread - 1));
-
+      if (!notification.isRead) {
+        await axiosInstance.patch(`/notifications/${id}/read`, { isRead: true }); // API call to mark notification as read
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+        );
+        setUnreadCount((prevUnread) => Math.max(0, prevUnread - 1)); // Only reduce count if unread
+      }
+  
       if (notification.type === 'task' && notification.docId) {
         navigate(`/dashboard/task-details/${notification.docId}`);
-      }
-      else if (notification?.type === 'group' && notification?.docId) {
+      } else if (notification?.type === 'group' && notification?.docId) {
         navigate(`/dashboard/group/${notification?.docId}`);
-      }
-      else if (notification?.type === 'note' || notification?.docId) {
+      } else if (notification?.type === 'note' || notification?.docId) {
         navigate(`/dashboard/notes`);
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
   };
+
+
+  const markAllAsSeen = async () => {
+    try {
+      await axiosInstance.patch(`/notifications/readall`);
+      
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, isRead: true }))
+      );
+      setUnreadCount(0);
+      
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      // Optionally show error toast
+    }
+  };
+  
 
   // Function to calculate duration
   const calculateDuration = (createdAt: string): string => {
@@ -149,10 +168,11 @@ export function NotificationDropdown() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="mr-4 w-80 bg-primary ">
-          <DropdownMenuLabel className="font-normal">
-            <h2 className="text-center text-lg font-semibold text-black">
+          <DropdownMenuLabel className="font-normal flex flex-row items-center justify-between">
+            <h2 className="text-left text-lg font-semibold text-black">
               Notifications
             </h2>
+            <button className='text-black text-xs font-semibold ' onClick={markAllAsSeen}>Mark As Seen All</button>
           </DropdownMenuLabel>
           {/* <DropdownMenuSeparator /> */}
           <DropdownMenuGroup className="max-h-[300px] overflow-y-auto bg-primary">

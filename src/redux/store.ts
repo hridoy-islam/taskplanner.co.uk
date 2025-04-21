@@ -2,14 +2,12 @@ import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import authReducer from './features/authSlice';
-import { TaskSlice } from './features/taskSlice';
 import profileReducer from './features/profileSlice';
-import allTaskSlice from './features/allTaskSlice';
 
 import userSlice from './features/userSlice';
-import { NoteSlice } from './features/noteSlice';
-import { TagSlice } from './features/tagSlice';
-
+import  tagReducer  from './features/tagSlice';
+import allTasksReducer from './features/allTaskSlice';
+import allNotesReducer from "./features/allNoteSlice"
 const persistConfig = {
   key: 'taskplanner',
   storage
@@ -19,10 +17,9 @@ const rootReducer = combineReducers({
   auth: authReducer,
   profile: profileReducer,
   users: userSlice,
-  alltasks: allTaskSlice,
-  [TaskSlice.reducerPath]: TaskSlice.reducer,
-  [NoteSlice.reducerPath]: NoteSlice.reducer,
-  [TagSlice.reducerPath]: TagSlice.reducer
+  alltasks: allTasksReducer,
+  allnotes: allNotesReducer,
+  tags: tagReducer
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -35,10 +32,7 @@ const store = configureStore({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST'] // Ignore persist related actions to avoid serializability issues
       }
-    })
-      .concat(TaskSlice.middleware)
-      .concat(NoteSlice.middleware)
-      .concat(TagSlice.middleware),
+    }),
   devTools: true
 });
 

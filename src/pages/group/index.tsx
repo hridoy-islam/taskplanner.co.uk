@@ -17,48 +17,21 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-
 import axiosInstance from '../../lib/axios';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Archive,
-  ArchiveRestore,
-  Bell,
-  MessageSquareIcon,
-  MessageSquareText,
-  Plus,
-  Search,
-  Trash,
-  X
-} from 'lucide-react';
-
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@/components/ui/tooltip';
+import { ArchiveRestore, Plus, Search, Trash, Trash2, Users, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-
-import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
-import { now } from 'moment';
 
 interface Member {
   id: number;
   name: string;
   email: string;
   image: string;
+  isCurrentUser?: boolean;
 }
 
 interface Comment {
@@ -73,18 +46,13 @@ interface Group {
   name: string;
   members: Member[];
   comments: Comment[];
-  unreadMessageCount?: number; // Add this line
-  status: string; // Add this line
-  createdAt: Date; // Add this line
+  unreadMessageCount?: number;
+  status: string;
+  createdAt: Date;
   isArchived: boolean;
   updatedAt: Date;
+  image:string
 }
-
-// interface Notification {
-//   id: number;
-//   content: string;
-//   isRead: boolean;
-// }
 
 export default function GroupPage() {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -94,39 +62,34 @@ export default function GroupPage() {
     'name' | 'members' | 'unread' | 'recent'
   >('unread');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  // const [currentPage, setCurrentPage] = useState(1);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
-  // const [newComment, setNewComment] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  // const [notifications, setNotifications] = useState<Notification[]>([]);
   const [initialMembers, setInitialMembers] = useState<Member[]>([]);
   const { user } = useSelector((state: any) => state.auth);
+  const navigate = useNavigate();
+  const [view, setView] = useState<'active' | 'archived'>('active');
 
   const fetchMembers = async () => {
     try {
       const response = await axiosInstance.get(`/users/company/${user?._id}`);
-
       return response.data.data;
     } catch (error) {
       console.error('Error fetching members:', error);
       return [];
     }
   };
-  const navigate = useNavigate();
 
   useEffect(() => {
     const loadMembers = async () => {
       const fetchedMembers = await fetchMembers();
-
       setInitialMembers([
         {
           id: user?._id,
           name: user?.name,
           email: user?.email,
           image: user?.image,
-          isCurrentUser: true // Add this line
+          isCurrentUser: true
         },
         ...fetchedMembers.map((member: any) => ({
           id: member._id,
@@ -139,7 +102,6 @@ export default function GroupPage() {
 
     loadMembers();
   }, [user?._id]);
-
 
   const fetchGroups = async () => {
     try {
@@ -158,49 +120,41 @@ export default function GroupPage() {
             image: initialMembers.find((m) => m.id === member._id)?.image
           })),
           comments: [],
-          unreadMessageCount: group.unreadMessageCount
+          unreadMessageCount: group.unreadMessageCount,
+          image:group.image
         }));
         setGroups(fetchedGroups);
       }
     } catch (error) {
       console.error('Error fetching groups:', error);
-    } finally {
     }
   };
 
   useEffect(() => {
-    // Fetch groups initially
     fetchGroups();
-
-    // Set up an interval to refresh the group data
     const interval = setInterval(() => {
       fetchGroups();
-    }, 30000); // Refresh every 30 seconds
-
-    // Cleanup the interval on component unmount
+    }, 20000);
     return () => clearInterval(interval);
-  }, [initialMembers]); // Re-run if `initialMembers` changes
-
-  // const pageSize = 5;
+  }, [initialMembers]);
 
   const addGroup = async () => {
     if (newGroupName) {
       const groupData = {
         groupName: newGroupName,
-        description: 'A new group created by the user.', // Optional, adjust as needed
-        creator: user?._id, // Replace with the actual creator's ID from the user's context
+        description: 'A new group created by the user.',
+        creator: user?._id,
         status: 'active',
         members: [
           {
-            _id: user?._id, // Add the current user as an admin
-            role: 'admin', // Assign the role as admin
+            _id: user?._id,
+            role: 'admin',
             acceptInvitation: true,
-
             name: user?.name
           },
           ...selectedMembers.map((memberId) => ({
             _id: memberId,
-            role: 'member', // Default role; adjust as needed
+            role: 'member',
             acceptInvitation: true
           }))
         ]
@@ -209,27 +163,6 @@ export default function GroupPage() {
       try {
         const response = await axiosInstance.post('/group', groupData);
         if (response.status === 201 || response.status === 200) {
-          // Update UI with the newly created group
-          const newGroup: Group = {
-            id: response.data._id, // Assuming the API returns the created group's ID
-            name: groupData.groupName,
-            status: groupData.status,
-            createdAt: new Date(),
-            members: [
-              {
-                id: user?._id,
-                name: user?.name || 'You',
-                email: '',
-                image: user?.image
-              },
-              ...initialMembers.filter((member) =>
-                selectedMembers.includes(member.id)
-              )
-            ],
-            comments: []
-          };
-
-          // setGroups([...groups, newGroup]);
           setNewGroupName('');
           setSelectedMembers([]);
           setIsGroupModalOpen(false);
@@ -239,48 +172,9 @@ export default function GroupPage() {
         }
       } catch (error) {
         console.error('Error creating group:', error);
-        // Optionally display an error message to the user
       }
     }
   };
-
-  // const addComment = () => {
-  //   if (selectedGroup && newComment) {
-  //     const comment: Comment = {
-  //       id: Date.now(),
-  //       memberId: 1, // Assuming the current user is the first member
-  //       content: newComment,
-  //       createdAt: new Date()
-  //     };
-  //     const updatedGroup = {
-  //       ...selectedGroup,
-  //       comments: [...selectedGroup.comments, comment]
-  //     };
-  //     setGroups(
-  //       groups.map((group) =>
-  //         group.id === selectedGroup.id ? updatedGroup : group
-  //       )
-  //     );
-  //     setNewComment('');
-  //     // addNotification(
-  //     //   `New comment in ${selectedGroup.name}: ${newComment.substring(0, 50)}${newComment.length > 50 ? '...' : ''}`
-  //     // );
-  //   }
-  // };
-
-  // const removeMember = (groupId: number, memberId: number) => {
-  //   setGroups(
-  //     groups.map((group) => {
-  //       if (group.id === groupId) {
-  //         return {
-  //           ...group,
-  //           members: group.members.filter((member) => member.id !== memberId)
-  //         };
-  //       }
-  //       return group;
-  //     })
-  //   );
-  // };
 
   const filteredMembers = initialMembers
     .filter((member) =>
@@ -290,50 +184,6 @@ export default function GroupPage() {
       ...member,
       image: member.image
     }));
-
-  // const addNotification = (content: string) => {
-  //   const newNotification: Notification = {
-  //     id: Date.now(),
-  //     content,
-  //     isRead: false
-  //   };
-  //   setNotifications([newNotification, ...notifications]);
-  // };
-
-  // const markNotificationAsRead = (id: number) => {
-  //   setNotifications(
-  //     notifications.map((notification) =>
-  //       notification.id === id
-  //         ? { ...notification, isRead: true }
-  //         : notification
-  //     )
-  //   );
-  // };
-
-  // const filteredGroups = groups
-  //   .filter((group) =>
-  //     group.name.toLowerCase().includes(searchTerm.toLowerCase())
-  //   )
-  //   .sort((a, b) => {
-  //     if (sortBy === 'name') {
-  //       return sortOrder === 'asc'
-  //         ? a.name.localeCompare(b.name)
-  //         : b.name.localeCompare(a.name);
-  //     } else if (sortBy === 'members') {
-  //       return sortOrder === 'asc'
-  //         ? a.members.length - b.members.length
-  //         : b.members.length - a.members.length;
-  //     } else if (sortBy === 'unread') {
-  //       return sortOrder === 'asc'
-  //         ? (b.unreadMessageCount || 0) - (a.unreadMessageCount || 0)
-  //         : (a.unreadMessageCount || 0) - (b.unreadMessageCount || 0);
-  //     } else if (sortBy === 'recent') {
-  //       return sortOrder === 'asc'
-  //         ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  //         : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  //     }
-  //     return 0;
-  //   });
 
   const filteredGroups = groups
     .filter((group) =>
@@ -345,10 +195,20 @@ export default function GroupPage() {
       return dateB.getTime() - dateA.getTime();
     });
 
+  const activeGroups = filteredGroups.filter(
+    (group) => group.status !== 'archived'
+  );
+  const archivedGroups = filteredGroups.filter(
+    (group) => group.status === 'archived'
+  );
+
+  console.log(groups)
+
   return (
-    <div className=" mx-auto h-full overflow-auto p-4">
+    <div className="mx-auto h-full overflow-auto p-4">
       <h1 className="mb-4 text-2xl font-bold">Groups</h1>
-      <div className="flex md:flex-row  ">
+
+      <div className="flex md:flex-row">
         <div className="mb-4 flex w-full gap-4 max-md:flex-col">
           <div className="relative flex-grow">
             <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
@@ -359,17 +219,7 @@ export default function GroupPage() {
               className="w-full pl-8"
             />
           </div>
-
-          {/* <Button
-          onClick={() => {
-            setSortBy('members');
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-          }}
-        >
-          {sortOrder === 'asc' ? '↑' : '↓'}
-        </Button> */}
-
-          <div className="flex flex-row  items-center justify-end gap-2">
+          <div className="flex flex-row items-center justify-end gap-2">
             <Button
               onClick={() => setIsGroupModalOpen(true)}
               className="hover:bg-black hover:text-white"
@@ -380,128 +230,194 @@ export default function GroupPage() {
         </div>
       </div>
 
-      <Card>
-        <CardContent>
-          <Table>
-            <ScrollArea className="h-[40rem] max-h-fit pr-2 ">
-              <TableHeader className="sticky w-full  top-0 z-10 bg-white">
-                <TableRow >
-                  <TableHead>Name</TableHead>
-                  <TableHead className='text-right pl-2'>Archive</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredGroups.map((group) => (
-                 <TableRow
-                 key={group.id}
-                 className="cursor-pointer w-full items-center border-none shadow hover:bg-slate-100"
-               >
-                 <TableCell
-                   onClick={() => navigate(`${group?.id}`)}
-                   className="flex flex-col items-start justify-start gap-2 font-semibold w-full"
-                 >
-                   <div className="mt-2 flex flex-row items-center justify-start gap-2">
-                     <div>{group.name}</div>
-                     <div
-                       className="flex flex-row hover:bg-none"
-                       onClick={(e) => {
-                         e.stopPropagation();
-                       }}
-                     >
-                       <span
-                         className={`flex h-4 w-4 items-center justify-center rounded-full text-[12px] text-white ${
-                           (group.unreadMessageCount ?? 0) > 0
-                             ? 'bg-[#7f1d1d]'
-                             : 'bg-transparent'
-                         }`}
-                       >
-                         {(group.unreadMessageCount ?? 0) > 0 ? (
-                           <span>{group?.unreadMessageCount}</span>
-                         ) : (
-                           ''
-                         )}
-                       </span>
-                     </div>
-                   </div>
-                   <div className="flex space-x-2 overflow-hidden justify-start">
-                     {group.members.slice(0, 3).map((member) => (
-                       <TooltipProvider key={member.id}>
-                         <Tooltip>
-                           <TooltipTrigger asChild>
-                             <Avatar className="inline-block h-5 w-5">
-                               <AvatarImage
-                                 src={member.image}
-                                 alt={member.name}
-                               />
-                               <AvatarFallback>
-                                 {member?.name
-                                   ?.split(' ')
-                                   ?.map((n) => n[0])
-                                   ?.join('') || 'User'}
-                               </AvatarFallback>
-                             </Avatar>
-                           </TooltipTrigger>
-                           <TooltipContent>
-                             <p>{member.name}</p>
-                           </TooltipContent>
-                         </Tooltip>
-                       </TooltipProvider>
-                     ))}
-                     {group.members.length > 3 && (
-                       <Avatar className="inline-block h-5 w-5 border-background">
-                         <AvatarFallback>
-                           +{group.members.length - 3}
-                         </AvatarFallback>
-                       </Avatar>
-                     )}
-                   </div>
-                 </TableCell>
-                 <TableCell className="text-right whitespace-nowrap">
-                   <select
-                     value={group.status || 'active'}
-                     onChange={async (e) => {
-                       const updatedStatus = e.target.value;
-                       try {
-                         const response = await axiosInstance.patch(
-                           `/group/single/${group.id}`,
-                           {
-                             status: updatedStatus
-                           }
-                         );
-                         if (response.status === 200) {
-                           toast({
-                             title: 'Group status updated successfully',
-                           });
-                           fetchGroups();
-                         } else {
-                           throw new Error('Failed to update group status');
-                         }
-                       } catch (error) {
-                         console.error(
-                           'Error updating group status:',
-                           error
-                         );
-                         toast({
-                           title: 'Failed to update group status',
-                           className: 'bg-destructive border-none text-white'
-                         });
-                       }
-                     }}
-                     className="rounded-sm border border-gray-200 px-4 py-1"
-                     onClick={(e) => e.stopPropagation()}
-                   >
-                     <option value="active">Active</option>
-                     <option value="archived">Archived</option>
-                   </select>
-                 </TableCell>
-               </TableRow>
-                ))}
-              </TableBody>
-            </ScrollArea>
-          </Table>
-        </CardContent>
-      </Card>
+      <div className="mb-4 flex gap-2">
+        <Button
+          variant={view === 'active' ? 'outline' : 'default'}
+          onClick={() => setView('active')}
+        >
+          Active Groups
+        </Button>
+        <Button
+          variant={view === 'archived' ? 'outline' : 'default'}
+          onClick={() => setView('archived')}
+        >
+          Archived Groups
+        </Button>
+      </div>
 
+      {view === 'active' ? (
+        <Card className="mb-8 p-2">
+          <CardContent>
+            <h2 className="mb-4  text-xl  font-semibold">Active Groups</h2>
+            <Table>
+              <ScrollArea className="h-[30rem] max-h-fit pr-2">
+                <TableHeader className="sticky top-0 z-10 bg-white">
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="pl-2 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activeGroups.map((group) => (
+                    <TableRow
+                      key={group.id}
+                      className="cursor-pointer items-center border-none shadow hover:bg-slate-100"
+                    >
+                      <TableCell
+                        onClick={() => navigate(`${group?.id}`)}
+                        className="flex flex-col items-start justify-start gap-2 font-semibold"
+                      >
+                        <div className="mt-2 flex flex-row items-center justify-start gap-2">
+                        <Avatar className="h-6 w-6">
+                            <AvatarImage
+                              src={group?.image}
+                              alt="Profile picture"
+                            />
+                            <AvatarFallback className=''>
+                            <Users />
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>{group.name}</div>
+                          {group.unreadMessageCount > 0 && (
+                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#7f1d1d] text-[12px] text-white">
+                              {group.unreadMessageCount}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex justify-end">
+                          <Trash2
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                await axiosInstance.patch(
+                                  `/group/single/${group.id}`,
+                                  {
+                                    status: 'archived'
+                                  }
+                                );
+                                toast({
+                                  title: 'Group archived successfully'
+                                });
+                                fetchGroups();
+                              } catch (error) {
+                                console.error('Error archiving group:', error);
+                                toast({
+                                  title: 'Failed to archive group',
+                                  variant: 'destructive'
+                                });
+                              }
+                            }}
+                            className="h-5 w-5 cursor-pointer text-red-600 transition-colors hover:text-red-800"
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* {activeGroups.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={2}
+                        className="text-center text-gray-500"
+                      >
+                        No active groups found
+                      </TableCell>
+                    </TableRow>
+                  )} */}
+                </TableBody>
+              </ScrollArea>
+            </Table>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent>
+            <h2 className="mb-4 text-xl font-semibold">Archived Groups</h2>
+            <Table>
+              <ScrollArea className="h-[20rem] max-h-fit pr-2">
+                <TableHeader className="sticky top-0 z-10 bg-white">
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="pl-2 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {archivedGroups.map((group) => (
+                    <TableRow
+                      key={group.id}
+                      className="cursor-pointer items-center border-none shadow hover:bg-slate-100"
+                    >
+                      <TableCell
+                        onClick={() => navigate(`${group?.id}`)}
+                        className="flex flex-row items-start justify-start gap-2 font-semibold"
+                      >
+                        <div className="mt-2 flex flex-row items-center justify-start gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage
+                              src={group?.image}
+                              alt="Profile picture"
+                            />
+                            <AvatarFallback className=''>
+                            <Users />
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
+                        <div className="mt-2 flex flex-row items-center justify-start gap-2">
+                          <div>{group.name}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-gray-400">
+                        <div className="flex items-center justify-end gap-2 ">
+                          <ArchiveRestore
+                            onClick={async (e) => {
+                              e.stopPropagation(); // Prevent row click if any
+                              try {
+                                await axiosInstance.patch(
+                                  `/group/single/${group.id}`,
+                                  {
+                                    status: 'active'
+                                  }
+                                );
+                                toast({
+                                  title: 'Group unarchived successfully'
+                                });
+                                fetchGroups();
+                              } catch (error) {
+                                console.error(
+                                  'Error unarchiving group:',
+                                  error
+                                );
+                                toast({
+                                  title: 'Failed to unarchive group',
+                                  variant: 'destructive'
+                                });
+                              }
+                            }}
+                            className="h-5 w-5 cursor-pointer text-blue-600 transition-colors hover:text-blue-800"
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {archivedGroups.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={2}
+                        className="text-center text-gray-500"
+                      >
+                        No archived groups found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </ScrollArea>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create Group Dialog */}
       <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -512,14 +428,16 @@ export default function GroupPage() {
               placeholder="Group Name"
               value={newGroupName}
               onChange={(e) => setNewGroupName(e.target.value)}
+              className='w-full'
             />
             <div>
               <Label>Select Members</Label>
               <Input
                 placeholder="Search User"
-                className="mb-2"
-                value={searchQuery} // Bind the input value to searchQuery state
-                onChange={(e) => setSearchQuery(e.target.value)} // Update searchQuery on input change
+                className="mb-2 w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                
               />
               <ScrollArea className="h-[200px] w-full rounded-md border p-4">
                 {filteredMembers.map((member) => (

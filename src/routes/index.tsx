@@ -30,6 +30,7 @@ import Otp from '@/pages/auth/otp';
 import NewPassword from '@/pages/new-password';
 import AssignedTasksPage from '@/pages/assignedtask';
 import TaskDetailsPage from '@/pages/task-details';
+import VerifyPage from '@/pages/auth/verify';
 
 const DashboardLayout = lazy(
   () => import('@/components/layout/dashboard-layout')
@@ -177,6 +178,11 @@ export default function AppRouter() {
     {
       path: '/new-password',
       element: <NewPassword />,
+      index: true
+    },
+    {
+      path: '/not-verified',
+      element: <VerifyPage />,
       index: true
     },
     {

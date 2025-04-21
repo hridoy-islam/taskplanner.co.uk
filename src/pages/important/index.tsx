@@ -386,38 +386,39 @@ export default function ImportantPage() {
   // In parent component
   const handleMarkAsImportant = async (taskId: string) => {
     const originalTasks = [...tasks];
-
-    // Find the current task
-    const currentTask = tasks.find((task) => task._id === taskId);
-    if (!currentTask) return;
-
-    // Optimistic update while preserving all nested objects
+    const currentTask = tasks.find((task) => task?._id === taskId);
+    if (!currentTask || !user?._id) return;
+  
+    const alreadyMarked = currentTask.importantBy?.includes(user._id);
+  
+    // Toggle the user's ID in the array
+    const updatedImportantBy = alreadyMarked
+      ? currentTask.importantBy?.filter((id) => id !== user._id) // remove
+      : [...(currentTask.importantBy || []), user._id]; // add
+  
+    // Optimistic update
     setFilteredTasks((prev) =>
-      prev.map((task) => {
-        if (task._id === taskId) {
-          return {
-            ...task,
-            important: !task.important,
-            importantBy: user?._id
-          };
-        }
-        return task;
-      })
+      prev.map((task) =>
+        task._id === taskId
+          ? { ...task, importantBy: updatedImportantBy }
+          : task
+      )
     );
-
+  
     try {
       await dispatch(
         updateTask({
           taskId,
-          taskData: { important: !currentTask.important,importantBy: user?._id }
+          taskData: {
+            importantBy: updatedImportantBy
+          },
         })
       ).unwrap();
     } catch (error) {
-      // Revert on error
       setFilteredTasks(originalTasks);
       toast({
         variant: 'destructive',
-        title: 'Failed to update task importance'
+        title: 'Failed to update task importance',
       });
     }
   };

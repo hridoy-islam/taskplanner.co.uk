@@ -55,7 +55,6 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
         );
         setOptimisticTasks(updatedTasks);
   
-        // Use Redux dispatch instead of direct axios call
         await dispatch(updateTask({
           taskId: task?._id.toString(),
           taskData: { seen: true }
@@ -137,7 +136,7 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
             >
               <div className=" flex w-full flex-col items-center justify-between gap-2 lg:flex-row ">
                 <div className="flex w-full flex-row items-center justify-between gap-2">
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-2 cursor-pointer">
                     <Checkbox
                       checked={task.status === 'completed'}
                       onCheckedChange={() => onToggleTaskCompletion(task._id)}

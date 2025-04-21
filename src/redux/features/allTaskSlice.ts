@@ -177,7 +177,7 @@ const taskSlice = createSlice({
         state.loading = false;
         const updatedTask = action.payload;
         const index = state.tasks.findIndex(task => task._id === updatedTask._id);
-      
+        
         if (index !== -1) {
           const existingTask = state.tasks[index];
           
@@ -195,11 +195,17 @@ const taskSlice = createSlice({
                     : { _id: updatedTask.assigned || existingTask.assigned, name: 'Unassigned' }))
             : undefined;
       
+          // Handle importantBy - either null or a single user ID
+          const importantBy = updatedTask.important 
+            ? updatedTask.importantBy 
+            : null;
+      
           state.tasks[index] = {
             ...existingTask,
             ...updatedTask,
             author, 
             assigned,
+            importantBy, // This will be either the user ID or null
             seen: true
           };
         }

@@ -10,7 +10,7 @@ import { ImageIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import axiosInstance from "@/lib/axios";
 
-export function FileUploader({
+export function ImageUploader({
   open,
   onOpenChange,
   onUploadComplete,
@@ -79,7 +79,7 @@ export function FileUploader({
 
       const formData = new FormData();
       formData.append('entityId', entityId);
-      formData.append('file_type', 'groupDoc');
+      formData.append('file_type', 'groupImg');
       formData.append('file', file);
 
       const response = await axiosInstance.post(

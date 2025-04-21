@@ -34,7 +34,7 @@ type Task = {
   description?: string;
   status: string;
   dueDate?: string;
-  important: boolean;
+  // important: boolean;
   author: string | PopulatedUserReference;
   assigned?: string | PopulatedUserReference;
   updatedAt: string;
@@ -251,36 +251,36 @@ export default function TaskPage() {
 
   // Handle marking a task as important
   const handleMarkAsImportant = async (taskId: string) => {
-    // Create a copy of current tasks
     const originalTasks = [...tasks];
-
-    // Find the current task
     const currentTask = tasks.find((task) => task?._id === taskId);
-    if (!currentTask) return;
-
-    // Optimistic update while preserving all nested objects
+    if (!currentTask || !user?._id) return;
+  
+    const alreadyMarked = currentTask.importantBy?.includes(user._id);
+  
+    // Toggle the user's ID in the array
+    const updatedImportantBy = alreadyMarked
+      ? currentTask.importantBy?.filter((id) => id !== user._id) // remove
+      : [...(currentTask.importantBy || []), user._id]; // add
+  
+    // Optimistic update
     setFilteredTasks((prev) =>
-      prev.map((task) => {
-        if (task?._id === taskId) {
-          return {
-            ...task,
-            important: !task.important,
-            importantBy: user?._id
-          };
-        }
-        return task;
-      })
+      prev.map((task) =>
+        task._id === taskId
+          ? { ...task, importantBy: updatedImportantBy }
+          : task
+      )
     );
-
+  
     try {
       await dispatch(
         updateTask({
           taskId,
-          taskData: { important: !currentTask.important, importantBy: user?._id },
+          taskData: {
+            importantBy: updatedImportantBy
+          },
         })
       ).unwrap();
     } catch (error) {
-      // Revert on error
       setFilteredTasks(originalTasks);
       toast({
         variant: 'destructive',
@@ -288,6 +288,7 @@ export default function TaskPage() {
       });
     }
   };
+  
 
   // Handle toggling task completion status
   const handleToggleTaskCompletion = async (taskId: string) => {
