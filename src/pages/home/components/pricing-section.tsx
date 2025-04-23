@@ -65,7 +65,7 @@ export function PricingSection({ id }: { id: string }) {
           viewport={{ once: true }}
           className="mb-16 text-center"
         >
-          <h2 className="text-[#00214C] text-3xl font-bold leading-tight md:text-5xl">
+          <h2 className="text-taskplanner text-3xl font-bold leading-tight md:text-5xl">
             We offer great price plans for the application
           </h2>
           <p className="mx-auto mt-4 max-w-[800px] text-gray-600">
@@ -92,11 +92,11 @@ export function PricingSection({ id }: { id: string }) {
             >
               <Card
                 className={`relative h-full ${
-                  plan.highlighted ? "bg-[#00214C] text-white shadow-xl" : "bg-white border-2 border-gray-100"
+                  plan.highlighted ? "bg-taskplanner text-white shadow-xl" : "bg-white border-2 border-gray-100"
                 }`}
               >
                 {plan.highlighted && (
-                  <div className="absolute -top-4 left-0 right-0 mx-auto w-fit rounded-full bg-[#1876FB] px-4 py-1 text-xs font-bold text-white">
+                  <div className="absolute -top-4 left-0 right-0 mx-auto w-fit rounded-full bg-black px-4 py-1 text-xs font-bold text-white">
                     MOST POPULAR
                   </div>
                 )}
@@ -113,7 +113,7 @@ export function PricingSection({ id }: { id: string }) {
                       <li key={feature} className="flex items-center">
                         <div
                           className={`mr-2 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${
-                            plan.highlighted ? "bg-white text-[#00214C]" : "bg-[#1876FB] text-white"
+                            plan.highlighted ? "bg-white text-taskplanner" : "bg-[#1876FB] text-white"
                           }`}
                         >
                           <Check className="h-3 w-3" />
@@ -127,8 +127,8 @@ export function PricingSection({ id }: { id: string }) {
                   <Button
                     className={`w-full ${
                       plan.highlighted
-                        ? "bg-white text-[#00214C] hover:bg-gray-100"
-                        : "bg-white text-[#00214C] border border-[#00214C] hover:bg-[#00214C] hover:text-white"
+                        ? "bg-white text-[taskplanner] hover:bg-gray-200 text-black"
+                        : "bg-white text-taskplanner border border-taskplanner hover:bg-taskplanner hover:text-white"
                     }`}
                   >
                     Choose Plan

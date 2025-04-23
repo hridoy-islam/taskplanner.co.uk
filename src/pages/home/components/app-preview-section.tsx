@@ -4,6 +4,9 @@ import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 import { Button } from "@/components/ui/button"
 import task1 from '@/assets/imges/home/task1.png'
+import appleLogo from '../../../assets/imges/home/apple_logo.png';
+import playstoreLogo from '../../../assets/imges/home/playstore_logo.png';
+
 
 export function AppPreviewSection() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -101,9 +104,9 @@ export function AppPreviewSection() {
             <div className="space-y-4 pt-4">
               <h3 className="text-lg font-medium text-[#00214C]">Get the app</h3>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button className="h-16 bg-[#00214C] hover:bg-[#0A3A7C] text-white">
+                <Button className="h-16 bg-taskplanner hover:bg-taskplanner/90 text-white">
                   <img
-                    src="/placeholder.svg?height=24&width=20"
+                    src={appleLogo}
                     alt="App Store"
                     width={20}
                     height={24}
@@ -115,9 +118,9 @@ export function AppPreviewSection() {
                     <p className="font-bold">App Store</p>
                   </div>
                 </Button>
-                <Button className="h-16 bg-[#00214C] hover:bg-[#0A3A7C] text-white">
+                <Button className="h-16 bg-taskplanner hover:bg-taskplanner/90 text-white">
                   <img
-                    src="/placeholder.svg?height=24&width=20"
+                    src={playstoreLogo}
                     alt="Google Play"
                     width={20}
                     height={24}

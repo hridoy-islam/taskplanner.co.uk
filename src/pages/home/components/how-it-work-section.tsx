@@ -26,7 +26,7 @@ export default function HowItWorkSection({ id }: { id: string }) {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-[#00214C] text-3xl font-bold md:text-4xl">How TaskPlanner works</h2>
+          <h2 className="text-taskplanner text-3xl font-bold md:text-4xl">How TaskPlanner works</h2>
           <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
             Simple, intuitive, and designed for the way you work. See how TaskPlanner helps teams move work forward.
           </p>
@@ -42,11 +42,11 @@ export default function HowItWorkSection({ id }: { id: string }) {
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#1876FB] text-white font-bold">
                 1
               </div>
-              <h3 className="text-2xl font-bold text-[#00214C]">Create boards for any project</h3>
+              <h3 className="text-2xl font-bold text-taskplanner">Create boards for any project</h3>
               <p className="text-gray-600">
                 Start with a board, lists, and cards. Customize and expand with more features as your teamwork grows.
               </p>
-              <Button className="w-fit group bg-[#00214C] hover:bg-[#0A3A7C]">
+              <Button className="w-fit group bg-taskplanner hover:bg-taskplanner/90 text-white">
                 Learn more
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
@@ -81,11 +81,12 @@ export default function HowItWorkSection({ id }: { id: string }) {
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#1876FB] text-white font-bold">
                 2
               </div>
-              <h3 className="text-2xl font-bold text-[#00214C]">Organize tasks your way</h3>
+              <h3 className="text-2xl font-bold text-taskplanner">Organize tasks your way</h3>
               <p className="text-gray-600">
                 Add details to cards, move them between lists as work progresses, and track every step of your project.
               </p>
-              <Button className="w-fit group bg-[#00214C] hover:bg-[#0A3A7C]">
+              <Button className="w-fit  group bg-taskplanner hover:bg-taskplanner text-white">
+                
                 Learn more
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>

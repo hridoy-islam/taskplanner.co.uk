@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { useState } from 'react';
-import hero from "@/assets/imges/home/hero.png"
-import task from "@/assets/imges/home/task.png"
-import notification from "@/assets/imges/home/notification.png"
+import hero from '@/assets/imges/home/hero.png';
+import task from '@/assets/imges/home/task.png';
+import notification from '@/assets/imges/home/notification.png';
 
 export function FeaturesSection({ id }: { id: string }) {
   const [activeFeature, setActiveFeature] = useState(0);
@@ -21,7 +21,7 @@ export function FeaturesSection({ id }: { id: string }) {
         'Easily assign tasks to teammates or yourself. Set due dates, priorities, and never miss a deadline again.',
       image: task
     },
-   
+
     {
       title: 'Smart Reminders & Notifications',
       description:
@@ -55,7 +55,7 @@ export function FeaturesSection({ id }: { id: string }) {
           viewport={{ once: true }}
           className="mb-16 text-left"
         >
-          <h2 className="text-taskplanner text-3xl font-bold md:text-4xl">
+          <h2 className="text-3xl font-bold text-taskplanner md:text-4xl">
             Your productivity powerhouse
           </h2>
           <p className=" mt-4 max-w-3xl font-semibold text-gray-600">
@@ -82,9 +82,8 @@ export function FeaturesSection({ id }: { id: string }) {
                 onClick={() => setActiveFeature(index)}
               >
                 <div className="flex items-start gap-4">
-                  
                   <div>
-                    <h3 className="text-taskplanner text-xl font-semibold">
+                    <h3 className="text-xl font-semibold text-taskplanner">
                       {feature.title}
                     </h3>
                     <p className="mt-1 text-gray-600">{feature.description}</p>
@@ -95,28 +94,26 @@ export function FeaturesSection({ id }: { id: string }) {
           </motion.div>
 
           {/* Active Feature Content */}
-          <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm md:w-2/3 max-h-[480px] overflow-hidden">
-  <div className="space-y-4">
-    {features[activeFeature].image && (
-     <motion.div
-     key={activeFeature} // ensures remount for animation
-     initial={{ opacity: 0, x: 100 }}
-     animate={{ opacity: 1, x: 0 }}
-     exit={{ opacity: 0, x: -100 }}
-     transition={{ duration: 0.6, ease: 'easeInOut' }}
-     className="w-full h-[410px]"
-   >
-     <img
-       src={features[activeFeature].image}
-       alt={`${features[activeFeature].title} preview`}
-       className="h-full w-full rounded-lg object-contain shadow-md"
-     />
-   </motion.div>
-   
-    )}
-  </div>
-</div>
-
+          <div className="max-h-[480px] overflow-hidden rounded-xl border border-gray-200 bg-white p-8 shadow-sm md:w-2/3">
+            <div className="space-y-4">
+              {features[activeFeature].image && (
+                <motion.div
+                  key={activeFeature} // ensures remount for animation
+                  initial={{ opacity: 0, x: 100 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
+                  transition={{ duration: 0.6, ease: 'easeInOut' }}
+                  className="h-[410px] w-full"
+                >
+                  <img
+                    src={features[activeFeature].image}
+                    alt={`${features[activeFeature].title} preview`}
+                    className="h-full w-full rounded-lg object-contain shadow-md"
+                  />
+                </motion.div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </section>

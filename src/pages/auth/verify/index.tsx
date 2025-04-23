@@ -1,14 +1,15 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { validateRequestOtp } from '@/redux/features/authSlice';
-import { AppDispatch } from '@/redux/store';
+import { AppDispatch, RootState } from '@/redux/store';
 import { useRouter } from '@/routes/hooks';
 import { jwtDecode } from 'jwt-decode';
 import { useEffect, useRef, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import taskplan from '@/assets/imges/home/otp.png';
 import logo from '@/assets/imges/home/logos/tlogo.png';
 import { Link } from 'react-router-dom';
+import  axiosInstance  from '@/lib/axios';
 
 export default function VerifyPage() {
   const [otp, setOtp] = useState(Array(4).fill(''));
@@ -20,6 +21,7 @@ export default function VerifyPage() {
   const inputRefs = useRef([]);
   const router = useRouter();
   const email = localStorage.getItem('tp_otp_email');
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const handleKeyDown = (e) => {
     if (
@@ -93,8 +95,41 @@ export default function VerifyPage() {
   //   }
   // };
 
-
-  const handleOtpSubmit = async (e) => {}
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    const otpCode = otp.join('');
+  
+    if (!user?.email) {
+      setError('Email missing');
+      return;
+    }
+  
+    try {
+      const response = await axiosInstance.patch('auth/verifyemail', {
+        email: user.email,
+        otp: otpCode,
+      });
+  
+      const { success, data } = response.data;
+  
+      if (success) {
+        const decoded = jwtDecode(data.accessToken);
+  
+        localStorage.setItem(
+          'taskplanner',
+          JSON.stringify({ ...decoded, token: data.accessToken })
+        );
+  
+        router.push('/dashboard');
+      } else {
+        setError('Invalid OTP');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Verification failed. Please try again.');
+    }
+  };
+  
 
   const handleResendOtp = async () => {
     try {
@@ -126,15 +161,21 @@ export default function VerifyPage() {
   <div className="w-full max-w-md space-y-6">
     <Card className="p-6 shadow-lg border border-gray-200">
       <div className="flex flex-col space-y-4 text-center">
-        <h2 className="text-xl font-bold text-gray-900">
-          You are not verified
+        <h2 className="text-xl font-medium text-gray-900">
+        VERIFY YOUR EMAIL ADDRESS
         </h2>
         <div>
-          
-          <p className="text-sm text-muted-foreground">
-            Please enter the verification code sent to your email.
+        <p className="text-gray-700 font-medium">
+            A verification code has been sent to
+            <br />
+            <span className="font-bold text-sm ">{user?.email}</span>
           </p>
         </div>
+        <p className="text-sm text-gray-600">
+            Please check your inbox and enter the verification code below to verify your email address. 
+
+          </p>
+
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 
@@ -165,13 +206,13 @@ export default function VerifyPage() {
         <Button
           disabled={otp.some((digit) => digit === '')}
           onClick={handleOtpSubmit}
-          className="mt-4 w-full"
+          className="mt-4 w-full bg-taskplanner text-white"
         >
           Verify OTP
         </Button>
 
         <div className="mt-2 flex items-center justify-center space-x-1 text-sm">
-          <span className="text-muted-foreground">
+          <span className="text-gray-600">
             Didn&apos;t receive the code?
           </span>
           <button
@@ -203,7 +244,7 @@ export default function VerifyPage() {
                 Resend in {resendCooldown}s
               </span>
             ) : (
-              <span className="text-muted-foreground">Resend code</span>
+              <span className="text-gray-600 font-semibold hover:underline">Resend code</span>
             )}
           </button>
         </div>

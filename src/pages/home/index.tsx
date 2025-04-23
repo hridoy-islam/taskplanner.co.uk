@@ -18,7 +18,7 @@ export default function HomePage() {
         <LogosSection />
         <FeaturesSection id="features" />
         <AppPreviewSection />
-        <HowItWorkSection id="how-it-works" />
+        {/* <HowItWorkSection id="how-it-works" /> */}
         <PricingSection id="pricing" />
       </main>
       <SiteFooter />

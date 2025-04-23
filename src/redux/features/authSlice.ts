@@ -64,6 +64,7 @@ interface RegisterResponse {
   name: string;
   email: string;
   role: string;
+  authorized:boolean
 }
 
 interface UserResponse {
