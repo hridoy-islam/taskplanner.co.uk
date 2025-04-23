@@ -1,12 +1,10 @@
 'use client';
-
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowUp, Edit2, Check, X, Edit } from 'lucide-react';
+import { ArrowUp, Edit } from 'lucide-react';
 import Linkify from 'react-linkify';
 import { ArrowUpRightFromSquare, DownloadIcon } from 'lucide-react';
 import moment from 'moment';
-import axiosInstance from '@/lib/axios';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function MessageList({
   commentsEndRef,
@@ -15,45 +13,19 @@ export function MessageList({
   comments,
   user,
   groupDetails,
-  limit
+  limit,
+  setEditingMessage
 }) {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingContent, setEditingContent] = useState('');
-
-  const handleEditClick = (comment: any) => {
-    setEditingId(comment._id);
-    setEditingContent(comment.content);
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditingContent('');
-  };
-
-  const saveEdit = async (commentId: string) => {
-    try {
-      const res = await axiosInstance.patch(`/groupMessage/${commentId}`, {
-        content: editingContent
-      });
-
-      if (res.status === 200) {
-        // You may want to re-fetch the messages instead
-        const updatedIndex = comments.findIndex(
-          (c: any) => c._id === commentId
-        );
-        if (updatedIndex !== -1) {
-          comments[updatedIndex].content = editingContent;
-        }
-        setEditingId(null);
-        setEditingContent('');
-      }
-    } catch (error) {
-      console.error('Failed to update message:', error);
-    }
+  const handleEditClick = (comment) => {
+    // Instead of managing edit state locally, pass it up to parent
+    setEditingMessage({
+      id: comment._id,
+      content: comment.content
+    });
   };
 
   return (
-    <div ref={commentsEndRef} className="flex-grow overflow-y-auto">
+    <ScrollArea ref={commentsEndRef} className="flex-grow overflow-y-auto">
       <div className="flex w-full justify-center">
         {remainingMessages >= limit && (
           <Button
@@ -67,7 +39,7 @@ export function MessageList({
         )}
       </div>
       <div className="p-4">
-        {comments.map((comment: any) => {
+        {comments.map((comment) => {
           const isFile = comment.isFile;
           let parsedContent = comment.content;
 
@@ -84,21 +56,27 @@ export function MessageList({
           return (
             <div
               key={comment._id}
-              className={`mb-4 flex w-full gap-1 flex-row ${isUser ? 'justify-end' : 'justify-start'}`}
+              className={`group mb-4 flex w-full flex-row gap-1 ${isUser ? 'justify-end' : 'justify-start'}`}
             >
-              {isUser && !isFile && editingId !== comment._id && (
-                <Edit
-                  className="ml-2 h-4 w-4 cursor-pointer text-gray-600 "
-                  onClick={() => handleEditClick(comment)}
-                />
-              )}
-              <div className="flex flex-col items-end justify-end">
+              <div className="relative flex flex-col items-end justify-end">
+                {isUser && !isFile && (
+                  <div className="absolute -left-8 top-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                    <button
+                      onClick={() => handleEditClick(comment)}
+                      className="rounded-full bg-gray-100 p-1 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-800"
+                      aria-label="Edit message"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+
                 <div
-                  className={`relative flex min-w-[150px] max-w-[300px] flex-col ${
+                  className={`relative flex min-w-[120px] max-w-[320px] flex-col ${
                     isUser
-                      ? 'bg-[#151261] text-white'
-                      : 'bg-[#9333ea] text-white'
-                  } rounded-lg p-3`}
+                      ? 'rounded-tr-none bg-[#0a3d62] text-white'
+                      : 'rounded-tl-none bg-[#38ada9] text-white'
+                  } rounded-2xl p-3 transition-all duration-200 group-hover:shadow-md`}
                   style={{
                     wordWrap: 'break-word',
                     whiteSpace: 'pre-wrap',
@@ -106,126 +84,112 @@ export function MessageList({
                   }}
                 >
                   <div className="mb-1 flex items-center space-x-2">
-                    <span className="md:text-md text-xs md:font-semibold">
+                    <span className="text-sm font-medium">
                       {comment?.authorId?.name}
                     </span>
                   </div>
 
                   <div className="max-w-full">
-                    {editingId === comment._id ? (
-                      <div className="flex flex-col gap-1">
-                        <textarea
-                          value={editingContent}
-                          onChange={(e) => setEditingContent(e.target.value)}
-                          className="rounded-sm p-1 text-sm text-black"
-                        />
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            onClick={cancelEdit}
-                            size="sm"
-                            variant="secondary"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            onClick={() => saveEdit(comment._id)}
-                            size="sm"
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
+                    <div className="max-w-full">
+                      {isFile ? (
+                        <div
+                          className={`flex items-center space-x-2 rounded-lg p-2 ${
+                            isUser ? 'bg-blue-500/15' : 'bg-green-300/80'
+                          }`}
+                        >
+                          <div className="flex items-start space-x-2">
+                            <>
+                              <img
+                                src={parsedContent || ''}
+                                alt={'File'}
+                                className="max-h-32 max-w-full rounded shadow-sm"
+                              />
+                              <a
+                                href={parsedContent}
+                                download={parsedContent.originalFilename}
+                                className="justify-between text-gray-900 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ArrowUpRightFromSquare className="h-5 w-5 text-gray-500 hover:text-gray-200" />
+                              </a>
+                            </>
+                          </div>
                         </div>
-                      </div>
-                    ) : isFile ? (
-                      <div
-                        className={`flex items-center space-x-2 rounded-lg p-2 ${
-                          isUser ? 'bg-blue-500/15' : 'bg-green-300/80'
-                        }`}
-                      >
-                        {parsedContent.mimeType?.startsWith('image/') ? (
-                          <div className="flex items-end space-x-2">
-                            <img
-                              src={parsedContent.cdnUrl || '/placeholder.svg'}
-                              alt={parsedContent.originalFilename || 'Preview'}
-                              className="max-h-32 max-w-full rounded shadow-sm"
-                            />
+                      ) : (
+                        <Linkify
+                          componentDecorator={(
+                            decoratedHref,
+                            decoratedText,
+                            key
+                          ) => (
                             <a
-                              href={parsedContent.cdnUrl}
-                              download={parsedContent.originalFilename}
-                              className="justify-between text-gray-900 hover:underline"
+                              href={decoratedHref}
+                              key={key}
+                              className="text-blue-300 underline transition-colors hover:text-blue-200"
                               target="_blank"
                               rel="noopener noreferrer"
                             >
-                              <ArrowUpRightFromSquare className="h-5 w-5" />
+                              {decoratedText}
                             </a>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-between space-x-2">
-                            <span className="overflow-hidden">
-                              {parsedContent.originalFilename || 'File'}
-                            </span>
-                            <a
-                              href={parsedContent}
-                              download={parsedContent}
-                              className="text-blue-600 hover:underline"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <DownloadIcon className="h-4 w-4" />
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <Linkify
-                        componentDecorator={(
-                          decoratedHref,
-                          decoratedText,
-                          key
-                        ) => (
-                          <a
-                            href={decoratedHref}
-                            key={key}
-                            style={{
-                              textDecoration: 'underline',
-                              color: 'inherit'
-                            }}
-                          >
-                            {decoratedText}
-                          </a>
-                        )}
-                      >
-                        {comment.content}
-                      </Linkify>
-                    )}
+                          )}
+                        >
+                          {comment.content}
+                        </Linkify>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Seen & Timestamp */}
+                {/* Message metadata */}
                 <div
-                  className={`flex w-full flex-row items-center gap-1 ${
+                  className={`mt-1 flex w-full flex-row items-center gap-1 ${
                     !isUser ? 'justify-end' : 'justify-between'
                   }`}
                 >
                   {isUser && (
                     <p className="text-xs text-gray-500">
-                      {comment?.seenBy?.length === groupDetails?.members?.length
-                        ? 'Seen by All'
-                        : comment?.seenBy?.length > 1
-                          ? 'Seen by'
-                          : 'Delivered'}
+                      {(() => {
+                        const totalMembers = groupDetails?.members?.length || 0;
+                        const seenCount = comment?.seenBy?.length || 0;
+                        const allSeen = seenCount === totalMembers;
+
+                        const filteredMembers =
+                          groupDetails?.members?.filter(
+                            (member) =>
+                              member.lastMessageReadId === comment?._id &&
+                              member._id !== comment?.creatorId &&
+                              member._id !== user?._id
+                          ) || [];
+
+                        if (allSeen) {
+                          return 'Seen by All';
+                        } else if (filteredMembers.length > 0) {
+                          return `Seen by: ${filteredMembers.map((item) => item.name).join(', ')}`;
+                        } else {
+                          return 'Delivered';
+                        }
+                      })()}
                     </p>
                   )}
 
-                  <span className="text-[10px] opacity-70">
-                    {moment(comment?.createdAt).isSame(moment(), 'day')
-                      ? moment(comment?.createdAt).format('hh:mm A')
-                      : moment(comment?.createdAt).format('YYYY-MM-DD')}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    {comment.editedAt && (
+                      <span className="text-[10px] italic text-gray-400">
+                        edited
+                      </span>
+                    )}
+                    <span className="text-[10px] text-gray-500">
+                      {moment(comment?.createdAt).isSame(moment(), 'day')
+                        ? moment(comment?.createdAt).format('h:mm A')
+                        : moment(comment?.createdAt).format('MMM D')}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Seen By Names */}
-                {isUser && groupDetails?.members && (
-                  <div className="flex w-full flex-row items-center">
+                {/* Seen by details (only for partial reads) */}
+                {/* {isUser && groupDetails?.members && (
+                  <div className="mt-1 flex w-full flex-row items-center">
                     {(() => {
                       const filteredMembers =
                         groupDetails.members?.filter(
@@ -235,19 +199,24 @@ export function MessageList({
                             member._id !== user?._id
                         ) || [];
 
-                      return filteredMembers.length > 0 ? (
-                        <p className="text-[12px]">
+                      const totalMembers = groupDetails?.members?.length || 0;
+                      const seenCount = comment?.seenBy?.length || 0;
+                      const allSeen = seenCount === totalMembers;
+
+                      return !allSeen && filteredMembers.length > 0 ? (
+                        <p className="text-[11px] text-gray-500">
+                          Seen by:{' '}
                           {filteredMembers.map((item) => item.name).join(', ')}
                         </p>
                       ) : null;
                     })()}
                   </div>
-                )}
+                )} */}
               </div>
             </div>
           );
         })}
       </div>
-    </div>
+    </ScrollArea>
   );
 }

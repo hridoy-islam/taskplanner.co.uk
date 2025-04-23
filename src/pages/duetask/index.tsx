@@ -90,12 +90,15 @@ export default function DueTasks() {
   
     // Optimistic update
     setFilteredTasks((prev) =>
-      prev.map((task) =>
-        task._id === taskId
-          ? { ...task, importantBy: updatedImportantBy }
-          : task
-      )
+      Array.isArray(prev)
+        ? prev.map((task) =>
+            task._id === taskId
+              ? { ...task, importantBy: updatedImportantBy }
+              : task
+          )
+        : [] 
     );
+    
   
     try {
       await dispatch(

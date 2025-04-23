@@ -58,6 +58,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
     }
   }
 
+  
   return (
     <div className={cn('grid gap-6', className)} {...props}>
       <Form {...form}>

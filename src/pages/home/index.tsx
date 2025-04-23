@@ -6,11 +6,13 @@ import { AppPreviewSection } from './components/app-preview-section';
 import { PricingSection } from './components/pricing-section';
 import { SiteFooter } from './components/site-footer';
 import HowItWorkSection from './components/how-it-work-section';
+import { Header } from './components/header';
 
 export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col">
-      <SiteHeader />
+      {/* <SiteHeader /> */}
+      <Header />
       <main className="flex-1 bg-white">
         <HeroSection />
         <LogosSection />

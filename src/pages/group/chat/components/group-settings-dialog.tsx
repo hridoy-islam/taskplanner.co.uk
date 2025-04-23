@@ -19,7 +19,7 @@ export function GroupSettingsDialog({ isSettingsOpen, setIsSettingsOpen, groupDe
               <Label>Group Name</Label>
               <Input
                 placeholder="Group Name"
-                className="mb-2"
+                className="mb-2 w-full"
                 name="groupName"
                 required
                 defaultValue={groupDetails?.groupName}

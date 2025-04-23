@@ -28,7 +28,7 @@ export function AddMemberDialog({
             <Label>Select Member</Label>
             <Input
               placeholder="Search User"
-              className="mb-2"
+              className="mb-2 w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -42,6 +42,7 @@ export function AddMemberDialog({
                       name="member-selection"
                       checked={selectedMember2 === member.id}
                       onChange={() => setSelectedMember2(member.id)}
+                
                     />
                     <Label htmlFor={`member-${member.id}`} className="flex items-center space-x-2">
                       <Avatar className="inline-block">

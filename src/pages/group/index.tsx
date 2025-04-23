@@ -21,10 +21,29 @@ import axiosInstance from '../../lib/axios';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArchiveRestore, Plus, Search, Trash, Trash2, Users, X } from 'lucide-react';
+import {
+  ArchiveRestore,
+  Plus,
+  Search,
+  Trash,
+  Trash2,
+  Users,
+  X
+} from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from '@/components/ui/use-toast';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction
+} from '@/components/ui/alert-dialog';
 
 interface Member {
   id: number;
@@ -51,7 +70,8 @@ interface Group {
   createdAt: Date;
   isArchived: boolean;
   updatedAt: Date;
-  image:string
+  image: string;
+  creator:string
 }
 
 export default function GroupPage() {
@@ -69,6 +89,7 @@ export default function GroupPage() {
   const { user } = useSelector((state: any) => state.auth);
   const navigate = useNavigate();
   const [view, setView] = useState<'active' | 'archived'>('active');
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   const fetchMembers = async () => {
     try {
@@ -121,7 +142,8 @@ export default function GroupPage() {
           })),
           comments: [],
           unreadMessageCount: group.unreadMessageCount,
-          image:group.image
+          image: group.image,
+          creator:group.creator
         }));
         setGroups(fetchedGroups);
       }
@@ -202,33 +224,24 @@ export default function GroupPage() {
     (group) => group.status === 'archived'
   );
 
-  console.log(groups)
 
   return (
     <div className="mx-auto h-full overflow-auto p-4">
+      <div className='flex flex-row items-center justify-between'>
+
       <h1 className="mb-4 text-2xl font-bold">Groups</h1>
 
-      <div className="flex md:flex-row">
-        <div className="mb-4 flex w-full gap-4 max-md:flex-col">
-          <div className="relative flex-grow">
-            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
-            <Input
-              placeholder="Search groups..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8"
-            />
-          </div>
-          <div className="flex flex-row items-center justify-end gap-2">
+     
+          <div className="flex flex-row items-center w-full justify-end gap-2">
             <Button
               onClick={() => setIsGroupModalOpen(true)}
               className="hover:bg-black hover:text-white"
-            >
+              >
               <Plus className="mr-2 h-4 w-4" /> Add Group
             </Button>
           </div>
-        </div>
-      </div>
+       
+              </div>
 
       <div className="mb-4 flex gap-2">
         <Button
@@ -248,33 +261,41 @@ export default function GroupPage() {
       {view === 'active' ? (
         <Card className="mb-8 p-2">
           <CardContent>
-            <h2 className="mb-4  text-xl  font-semibold">Active Groups</h2>
+          <div className="relative flex-grow py-2">
+            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+            <Input
+              placeholder="Search groups..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-8"
+            />
+          </div>
             <Table>
               <ScrollArea className="h-[30rem] max-h-fit pr-2">
                 <TableHeader className="sticky top-0 z-10 bg-white">
-                  <TableRow>
+                  {/* <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead className="pl-2 text-right">Actions</TableHead>
-                  </TableRow>
+                  </TableRow> */}
                 </TableHeader>
                 <TableBody>
                   {activeGroups.map((group) => (
                     <TableRow
                       key={group.id}
-                      className="cursor-pointer items-center border-none shadow hover:bg-slate-100"
+                      className="cursor-pointer items-center border-0 border-b border-gray-300 hover:bg-slate-100"
                     >
                       <TableCell
                         onClick={() => navigate(`${group?.id}`)}
                         className="flex flex-col items-start justify-start gap-2 font-semibold"
                       >
                         <div className="mt-2 flex flex-row items-center justify-start gap-2">
-                        <Avatar className="h-6 w-6">
+                          <Avatar className="h-6 w-6">
                             <AvatarImage
                               src={group?.image}
                               alt="Profile picture"
                             />
-                            <AvatarFallback className=''>
-                            <Users />
+                            <AvatarFallback className="">
+                              <Users />
                             </AvatarFallback>
                           </Avatar>
                           <div>{group.name}</div>
@@ -285,36 +306,69 @@ export default function GroupPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        <div className="flex justify-end">
-                          <Trash2
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                await axiosInstance.patch(
-                                  `/group/single/${group.id}`,
-                                  {
-                                    status: 'archived'
-                                  }
-                                );
-                                toast({
-                                  title: 'Group archived successfully'
-                                });
-                                fetchGroups();
-                              } catch (error) {
-                                console.error('Error archiving group:', error);
-                                toast({
-                                  title: 'Failed to archive group',
-                                  variant: 'destructive'
-                                });
-                              }
-                            }}
-                            className="h-5 w-5 cursor-pointer text-red-600 transition-colors hover:text-red-800"
-                          />
-                        </div>
-                      </TableCell>
+                      {user._id === group.creator?.toString()&& (
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex justify-end">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Trash2
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedGroupId(group.id); // set group to archive
+                                  }}
+                                  className="h-5 w-5 cursor-pointer text-red-600 transition-colors hover:text-red-800"
+                                />
+                              </AlertDialogTrigger>
+
+                              <AlertDialogContent className="bg-white text-black">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Are you sure?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will archive the group. You can’t undo
+                                    this action.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={async () => {
+                                      try {
+                                        await axiosInstance.patch(
+                                          `/group/single/${selectedGroupId}`,
+                                          {
+                                            status: 'archived'
+                                          }
+                                        );
+                                        toast({
+                                          title: 'Group archived successfully'
+                                        });
+                                        fetchGroups();
+                                      } catch (error) {
+                                        console.error(
+                                          'Error archiving group:',
+                                          error
+                                        );
+                                        toast({
+                                          title: 'Failed to archive group',
+                                          variant: 'destructive'
+                                        });
+                                      }
+                                      setSelectedGroupId(null);
+                                    }}
+                                  >
+                                    Archive
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
+
                   {/* {activeGroups.length === 0 && (
                     <TableRow>
                       <TableCell
@@ -331,22 +385,16 @@ export default function GroupPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className="p-2">
           <CardContent>
-            <h2 className="mb-4 text-xl font-semibold">Archived Groups</h2>
             <Table>
               <ScrollArea className="h-[20rem] max-h-fit pr-2">
-                <TableHeader className="sticky top-0 z-10 bg-white">
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead className="pl-2 text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
+                <TableHeader className="sticky top-0 z-10 bg-white"></TableHeader>
                 <TableBody>
                   {archivedGroups.map((group) => (
                     <TableRow
                       key={group.id}
-                      className="cursor-pointer items-center border-none shadow hover:bg-slate-100"
+                      className="cursor-pointer items-center border-b border-gray-300 transition-all duration-200 hover:bg-slate-100"
                     >
                       <TableCell
                         onClick={() => navigate(`${group?.id}`)}
@@ -358,8 +406,8 @@ export default function GroupPage() {
                               src={group?.image}
                               alt="Profile picture"
                             />
-                            <AvatarFallback className=''>
-                            <Users />
+                            <AvatarFallback className="">
+                              <Users />
                             </AvatarFallback>
                           </Avatar>
                         </div>
@@ -367,37 +415,65 @@ export default function GroupPage() {
                           <div>{group.name}</div>
                         </div>
                       </TableCell>
+                      {user._id === group.creator?.toString()&& (
                       <TableCell className="text-right text-sm text-gray-400">
-                        <div className="flex items-center justify-end gap-2 ">
-                          <ArchiveRestore
-                            onClick={async (e) => {
-                              e.stopPropagation(); // Prevent row click if any
-                              try {
-                                await axiosInstance.patch(
-                                  `/group/single/${group.id}`,
-                                  {
-                                    status: 'active'
-                                  }
-                                );
-                                toast({
-                                  title: 'Group unarchived successfully'
-                                });
-                                fetchGroups();
-                              } catch (error) {
-                                console.error(
-                                  'Error unarchiving group:',
-                                  error
-                                );
-                                toast({
-                                  title: 'Failed to unarchive group',
-                                  variant: 'destructive'
-                                });
-                              }
-                            }}
-                            className="h-5 w-5 cursor-pointer text-blue-600 transition-colors hover:text-blue-800"
-                          />
+                        <div className="flex items-center justify-end gap-2">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <ArchiveRestore
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedGroupId(group.id);
+                                }}
+                                className="h-5 w-5 cursor-pointer text-blue-600 transition-colors hover:text-blue-800"
+                              />
+                            </AlertDialogTrigger>
+
+                            <AlertDialogContent className="bg-white text-black">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Unarchive Group?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will restore the group. Do you want to
+                                  continue?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={async () => {
+                                    try {
+                                      await axiosInstance.patch(
+                                        `/group/single/${selectedGroupId}`,
+                                        {
+                                          status: 'active'
+                                        }
+                                      );
+                                      toast({
+                                        title: 'Group unarchived successfully'
+                                      });
+                                      fetchGroups();
+                                    } catch (error) {
+                                      console.error(
+                                        'Error unarchiving group:',
+                                        error
+                                      );
+                                      toast({
+                                        title: 'Failed to unarchive group',
+                                        variant: 'destructive'
+                                      });
+                                    }
+                                    setSelectedGroupId(null);
+                                  }}
+                                >
+                                  Unarchive
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
-                      </TableCell>
+                      </TableCell>)}
                     </TableRow>
                   ))}
                   {archivedGroups.length === 0 && (
@@ -428,7 +504,7 @@ export default function GroupPage() {
               placeholder="Group Name"
               value={newGroupName}
               onChange={(e) => setNewGroupName(e.target.value)}
-              className='w-full'
+              className="w-full"
             />
             <div>
               <Label>Select Members</Label>
@@ -437,7 +513,6 @@ export default function GroupPage() {
                 className="mb-2 w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                
               />
               <ScrollArea className="h-[200px] w-full rounded-md border p-4">
                 {filteredMembers.map((member) => (

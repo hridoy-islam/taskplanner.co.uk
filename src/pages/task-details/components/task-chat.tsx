@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 //@ts-nocheck
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 // import seen from '@/assets/imges/home/logos/seen.svg';
@@ -33,13 +32,18 @@ import {
   ArrowUpRightFromSquare,
   DownloadIcon,
   ForwardIcon,
-  Paperclip, Edit, Check, X 
+  Paperclip,
+  Edit,
+  Check,
+  X
 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 import axios from 'axios';
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { ImageUploader } from './file-uploader';
-
+import Loader from '@/components/shared/loader';
 
 UC.defineComponents(UC);
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
@@ -72,7 +76,6 @@ export default function TaskChat({ task }: TaskChatProps) {
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState('');
 
-
   useEffect(() => {
     if (commentsEndRef.current) {
       commentsEndRef.current.scrollTop = commentsEndRef.current.scrollHeight;
@@ -85,45 +88,46 @@ export default function TaskChat({ task }: TaskChatProps) {
     socket.on('connected', () => setSocketConnected(true));
   }, [user]);
 
-
   const handleEditComment = (commentId: string, currentContent: string) => {
     setEditingCommentId(commentId);
     setEditedContent(currentContent);
   };
-  
+
   const handleCancelEdit = () => {
     setEditingCommentId(null);
     setEditedContent('');
+    reset({ content: '' });
   };
-  
+
   const handleSaveEdit = async (commentId: string) => {
     if (!editedContent.trim()) {
       toast.error('Comment cannot be empty');
       return;
     }
-  
+
     try {
       const response = await axiosInstance.patch(`/comment/${commentId}`, {
         content: editedContent
       });
-  
+
       if (response.data.success) {
-        setComments(prevComments =>
-          prevComments.map(comment =>
-            comment._id === commentId 
-              ? { ...comment, content: editedContent } 
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment._id === commentId
+              ? { ...comment, content: editedContent }
               : comment
           )
         );
-        setDisplayedComments(prevComments =>
-          prevComments.map(comment =>
-            comment._id === commentId 
-              ? { ...comment, content: editedContent } 
+        setDisplayedComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment._id === commentId
+              ? { ...comment, content: editedContent }
               : comment
           )
         );
         setEditingCommentId(null);
         setEditedContent('');
+        reset({ content: '' });
         toast.success('Comment updated successfully');
       }
     } catch (error) {
@@ -131,8 +135,6 @@ export default function TaskChat({ task }: TaskChatProps) {
       toast.error('Failed to update comment');
     }
   };
-
-
 
   const updateLastReadMessage = async (taskId, userId, messageId) => {
     try {
@@ -291,8 +293,6 @@ export default function TaskChat({ task }: TaskChatProps) {
     }
   };
 
-
-
   const typingHandler = () => {
     if (!socketConnected) return;
     if (!typing) {
@@ -334,6 +334,7 @@ export default function TaskChat({ task }: TaskChatProps) {
         commentsEndRef.current.scrollHeight - scrollPosition;
     }
   };
+
   const handleLoadMoreComments = () => {
     const scrollPosition = calculateScrollPosition();
     setMaxComments((prevMaxComments) => prevMaxComments + 50);
@@ -344,154 +345,157 @@ export default function TaskChat({ task }: TaskChatProps) {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div>
+        <Loader />
+      </div>
+    );
   }
   return (
-    <div className='flex flex-col justify-between h-full'>
-      <div className="flex basis-6/7 w-full flex-col py-4">
+    <div className="flex h-full flex-col justify-between">
+      <div className="bg-white flex flex-row items-center justify-start p-2">
+      <div className="flex items-center gap-4">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={task?.assigned?.image}  />
+              <AvatarFallback>
+                {task?.assigned?.name
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')}
+              </AvatarFallback>
+            </Avatar>
+            <h2 className="text-lg font-semibold">{task?.assigned?.name}</h2>
+          </div>
+      </div>
+      <div className="basis-6/7 flex w-full flex-col py-4">
         <ScrollArea className="h-[calc(100vh-270px)] p-6">
           <div ref={commentsEndRef} className="space-y-4">
             {comments.length > displayedComments.length && (
               <div className="text-center">
-                <Button onClick={handleLoadMoreComments} variant={'ghost'}>
+                {/* <Button onClick={handleLoadMoreComments} variant={'ghost'}>
                   Load More Comments <ArrowUp className="ml-2 h-4 w-4" />
-                </Button>
+                </Button> */}
+
+                <Loader />
               </div>
             )}
             {displayedComments?.map((comment: any) => {
               const isFile = comment.isFile;
               let parsedContent = comment.content;
-  
+
               if (isFile) {
                 try {
-                  parsedContent = JSON.parse(comment.content);
+                  // Check if the content starts with `{` or `[`, which are valid JSON structures
+                  if (
+                    comment.content.trim().startsWith('{') ||
+                    comment.content.trim().startsWith('[')
+                  ) {
+                    parsedContent = JSON.parse(comment.content);
+                  } else {
+                    parsedContent = comment.content; // or any other appropriate handling
+                  }
                 } catch (error) {
                   console.error('Failed to parse file content:', error);
                 }
               }
-  
+
               return (
                 <div
                   key={comment._id}
-                  className={`flex w-full flex-row ${
+                  className={`group mb-4 flex w-full flex-row gap-1 ${
                     comment.authorId._id === user?._id
                       ? 'justify-end'
                       : 'justify-start'
                   }`}
                 >
-                  {comment.authorId?._id === user?._id && !comment.isFile && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-6 w-6 p-0"
-                      onClick={() => handleEditComment(comment._id, comment.content)}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                  )}
-                  <div
-                    className={`flex max-w-80 flex-col items-end justify-end xl:max-w-60 ${
-                      comment.authorId._id === user?._id
-                        ? 'flex-row-reverse'
-                        : 'flex-row'
-                    } items-center space-x-2`}
-                    style={{
-                      wordWrap: 'break-word',
-                      whiteSpace: 'pre-wrap',
-                      overflowWrap: 'break-word'
-                    }}
-                  >
+                  <div className="relative flex flex-col items-end justify-end">
+                    {/* Edit button that appears on hover */}
+                    {comment.authorId?._id === user?._id && !comment.isFile && (
+                      <div className="absolute -left-8 top-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                        <button
+                          onClick={() =>
+                            handleEditComment(comment._id, comment.content)
+                          }
+                          className="rounded-full bg-gray-100 p-1 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-800"
+                          aria-label="Edit message"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Message bubble */}
                     <div
-                      className={`max-w-[90%] ${
-                        comment.authorId?._id === user?._id ? 'mr-2' : 'ml-2'
-                      }`}
+                      className={`relative flex min-w-[120px] max-w-[320px] flex-col ${
+                        comment.authorId._id === user?._id
+                          ? 'rounded-tr-none bg-[#002055] text-white'
+                          : 'rounded-tl-none bg-[#9333ea] text-white'
+                      } rounded-2xl p-3 transition-all duration-200 group-hover:shadow-md`}
+                      style={{
+                        wordWrap: 'break-word',
+                        whiteSpace: 'pre-wrap',
+                        overflowWrap: 'break-word'
+                      }}
                     >
-                      <div
-                        className={`flex min-w-[150px] flex-col rounded-lg ${
-                          isFile
-                            ? comment.authorId?._id === user?._id
-                              ? 'bg-[#002055] p-2 text-white'
-                              : 'bg-[#9333ea] p-2 text-white'
-                            : comment.authorId?._id === user?._id
-                              ? 'bg-[#002055] p-2 text-white'
-                              : 'bg-[#9333ea] p-2 text-white'
-                        }`}
-                        style={{
-                          wordWrap: 'break-word',
-                          whiteSpace: 'pre-wrap',
-                          overflowWrap: 'break-word'
-                        }}
-                      >
-                        <span className="inline-block items-center overflow-hidden text-ellipsis whitespace-nowrap pb-1 text-xs md:text-xs md:font-semibold">
+                      {/* Author name */}
+                      <div className="mb-1 flex items-center space-x-2">
+                        <span className="text-sm font-medium">
                           {comment?.authorId?.name}
                         </span>
-                        
-                        {editingCommentId === comment._id ? (
-                          <div className="flex flex-col gap-2">
-                            <Textarea
-                              value={editedContent}
-                              onChange={(e) => setEditedContent(e.target.value)}
-                              className="w-full bg-white text-black"
-                            />
-                            <div className="flex justify-end gap-2">
-                              <Button 
-                                variant='ghost'
-                                size="sm"
-                                className='' 
-                                onClick={handleCancelEdit}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="default" 
-                                size="sm" 
-                                onClick={() => handleSaveEdit(comment._id)}
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ) : isFile ? (
+                      </div>
+
+                      {/* Message content */}
+                      <div className="max-w-full">
+                        {comment.isFile ? (
                           <div
-                            className={`flex items-center space-x-2 rounded-lg ${
-                              comment.authorId?._id === user?._id
-                                ? 'bg-gray-600 p-2'
-                                : 'bg-gray-600 p-2'
+                            className={`flex items-center space-x-2 rounded-lg p-2 ${
+                              comment.authorId._id === user?._id
+                                ? 'bg-blue-500/15'
+                                : 'bg-green-300/80'
                             }`}
                           >
-                            {parsedContent.mimeType?.startsWith('image/') ? (
-                              <div className="flex items-end space-x-2">
-                                <img
-                                  src={parsedContent}
-                                  alt={parsedContent || 'Preview'}
-                                  className="max-h-32 max-w-full rounded shadow-sm"
-                                />
-                                <a
-                                  href={parsedContent}
-                                  download={parsedContent}
-                                  className="text-blue-600 hover:underline"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <ArrowUpRightFromSquare className="h-4 w-4 font-extralight" />
-                                </a>
-                              </div>
-                            ) : (
-                              <div className="flex items-end space-x-2 overflow-hidden text-ellipsis whitespace-pre-wrap break-words">
-                                <span className="overflow-hidden">
-                                  {parsedContent.originalFilename || 'File'}
-                                </span>
-                                <a
-                                  href={parsedContent}
-                                  download={parsedContent}
-                                  className="text-blue-600 hover:underline"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <DownloadIcon className="h-4 w-4" />
-                                </a>
-                              </div>
-                            )}
+                            {(() => {
+                              let parsedContent;
+                              try {
+                                parsedContent = JSON.parse(comment.content);
+                              } catch (error) {
+                                parsedContent = comment.content;
+                              }
+
+                              return (
+                                <div className="flex items-start space-x-1">
+                                  <img
+                                    src={parsedContent}
+                                    alt={'File'}
+                                    className="max-h-32 max-w-full rounded shadow-sm"
+                                  />
+
+                                  <span className="overflow-hidden text-ellipsis">
+                                    {typeof parsedContent === 'object'
+                                      ? parsedContent.originalFilename
+                                      : ''}
+                                  </span>
+
+                                  <a
+                                    href={
+                                      typeof parsedContent === 'object'
+                                        ? parsedContent.url
+                                        : parsedContent
+                                    }
+                                    download={
+                                      typeof parsedContent === 'object'
+                                        ? parsedContent.originalFilename
+                                        : 'file'
+                                    }
+                                    className="text-gray-900 hover:underline"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <ArrowUpRightFromSquare className="h-5 w-5 text-gray-500 hover:text-gray-200" />
+                                  </a>
+                                </div>
+                              );
+                            })()}
                           </div>
                         ) : (
                           <Linkify
@@ -503,10 +507,9 @@ export default function TaskChat({ task }: TaskChatProps) {
                               <a
                                 href={decoratedHref}
                                 key={key}
-                                style={{
-                                  textDecoration: 'underline',
-                                  color: 'inherit'
-                                }}
+                                className="text-blue-300 underline transition-colors hover:text-blue-200"
+                                target="_blank"
+                                rel="noopener noreferrer"
                               >
                                 {decoratedText}
                               </a>
@@ -516,20 +519,32 @@ export default function TaskChat({ task }: TaskChatProps) {
                           </Linkify>
                         )}
                       </div>
-                      <div className="flex flex-row items-center justify-between gap-2 p-1">
-                        <div className="flex flex-row items-center gap-1">
-                          {comment.authorId?._id === user?._id && (
-                            <p className="text-xs text-gray-500">
-                              {comment.seenBy?.length > 1
-                                ? 'Seen'
-                                : 'Delivered'}
-                            </p>
-                          )}
-                        </div>
-                        <span className="text-[10px] opacity-70">
+                    </div>
+
+                    {/* Message metadata */}
+                    <div
+                      className={`mt-1 flex w-full flex-row items-center gap-1 ${
+                        comment.authorId._id !== user?._id
+                          ? 'justify-end'
+                          : 'justify-between'
+                      }`}
+                    >
+                      {comment.authorId._id === user?._id && (
+                        <p className="text-xs text-gray-500">
+                          {comment.seenBy?.length > 1 ? 'Seen' : 'Delivered'}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-1">
+                        {comment.editedAt && (
+                          <span className="text-[10px] italic text-gray-400">
+                            edited
+                          </span>
+                        )}
+                        <span className="text-[10px] text-gray-500">
                           {moment(comment?.createdAt).isSame(moment(), 'day')
-                            ? moment(comment?.createdAt).format('hh:mm A')
-                            : moment(comment?.createdAt).format('DD/MM/YYYY')}
+                            ? moment(comment?.createdAt).format('h:mm A')
+                            : moment(comment?.createdAt).format('MMM D')}
                         </span>
                       </div>
                     </div>
@@ -540,9 +555,34 @@ export default function TaskChat({ task }: TaskChatProps) {
           </div>
         </ScrollArea>
       </div>
-      <div className="sticky basis-1/7 bottom-0 border-t border-gray-200 bg-gray-50 p-6">
+      <div className="basis-1/7 sticky bottom-0 border-t border-gray-200 bg-gray-50 p-6">
+        {editingCommentId && (
+          <div className="mb-2 flex items-center justify-between rounded-md bg-amber-50 px-3 py-2 text-sm">
+            <span>Editing message</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelEdit}
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+          </div>
+        )}
+
         <form
-          onSubmit={handleSubmit(handleCommentSubmit)}
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (editingCommentId) {
+              handleSaveEdit(editingCommentId);
+            } else {
+              // Get the form data and pass it to handleCommentSubmit
+              const formData = new FormData(e.currentTarget);
+              const content = formData.get('content') as string;
+              handleCommentSubmit({ content });
+            }
+          }}
           className="grid gap-2"
         >
           <Label htmlFor="comment" className="sr-only">
@@ -551,29 +591,57 @@ export default function TaskChat({ task }: TaskChatProps) {
           {files?.length === 0 && (
             <Textarea
               id="comment"
-              {...register('content', { required: true })}
-              placeholder="Type your comment here..."
+              name="content" // Add name attribute for FormData
+              {...(!editingCommentId
+                ? register('content', { required: true })
+                : {})}
+              value={editingCommentId ? editedContent : undefined}
+              onChange={(e) => {
+                if (editingCommentId) {
+                  setEditedContent(e.target.value);
+                }
+              }}
+              placeholder={
+                editingCommentId
+                  ? 'Edit your message...'
+                  : 'Type your comment here...'
+              }
               className="resize-none"
               rows={3}
-              onKeyDown={handleKeyDown}
+              onKeyDown={(e) => {
+                typingHandler();
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (editingCommentId) {
+                    handleSaveEdit(editingCommentId);
+                  } else {
+                    const formData = new FormData(e.currentTarget.form);
+                    const content = formData.get('content') as string;
+                    handleCommentSubmit({ content });
+                  }
+                }
+              }}
               disabled={isSubmitting}
             />
           )}
           <div className="flex flex-row items-center justify-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="default"
-              onClick={() => setIsImageUploaderOpen(true)}
-            >
-              <Paperclip className="mr-2 h-4 w-4" /> Upload
-            </Button>
-  
+            {!editingCommentId && (
+              <Button
+                type="button"
+                variant="outline"
+                size="default"
+                onClick={() => setIsImageUploaderOpen(true)}
+              >
+                <Paperclip className="mr-2 h-4 w-4" /> Upload
+              </Button>
+            )}
             <Button type="submit" className="w-full" variant={'outline'}>
-              Submit
+              {editingCommentId ? 'Update' : 'Submit'}
             </Button>
           </div>
         </form>
+
+        {/* Image Uploader Component */}
         <ImageUploader
           open={isImageUploaderOpen}
           onOpenChange={setIsImageUploaderOpen}

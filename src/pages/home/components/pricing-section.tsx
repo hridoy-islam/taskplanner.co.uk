@@ -1,111 +1,144 @@
-import { Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
 
-export function PricingSection({ id }) {
+import { motion } from "framer-motion"
+import { Check } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+
+export function PricingSection({ id }: { id: string }) {
   const plans = [
     {
-      name: 'Basic',
-      price: '$9.99',
-      description: '/ Per user Month',
-      features: [
-        'Up to 10 User',
-        'Basic task management',
-        'Simple calendar view'
-      ]
+      name: "Basic",
+      price: "$9.99",
+      description: "/ Per user Month",
+      features: ["Up to 10 User", "Basic task management", "Simple calendar view", "Email support"],
     },
     {
-      name: 'Pro',
-      price: '$19.99',
-      description: '/ Per user Month',
+      name: "Pro",
+      price: "$19.99",
+      description: "/ Per user Month",
       features: [
-        'Up to 50 users',
-        'Advanced task management',
-        'Team calendar & planning',
-        'Role-based access control'
+        "Up to 50 users",
+        "Advanced task management",
+        "Team calendar & planning",
+        "Role-based access control",
+        "Priority support",
       ],
-      highlighted: true
+      highlighted: true,
     },
     {
-      name: 'Enterprise',
-      price: 'Custom',
-      description: 'Contact us for pricing',
+      name: "Enterprise",
+      price: "Custom",
+      description: "Contact us for pricing",
       features: [
-        'Unlimited users',
-        'Custom integrations',
-        'Advanced analytics',
-        'Dedicated support'
-      ]
-    }
-  ];
+        "Unlimited users",
+        "Custom integrations",
+        "Advanced analytics",
+        "Dedicated support",
+        "SLA guarantees",
+        "Custom training",
+      ],
+    },
+  ]
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  }
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  }
 
   return (
-    <section id="pricing" className="bg-white py-24">
+    <section id={id} className="bg-white py-24">
       <div className="container">
-        <div className="mb-9 w-full space-y-4 md:mx-auto md:mb-16 md:w-[648px]">
-          <h2 className="text-navy-900 text-3xl font-bold leading-[54px] md:text-center md:text-5xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          viewport={{ once: true }}
+          className="mb-16 text-center"
+        >
+          <h2 className="text-[#00214C] text-3xl font-bold leading-tight md:text-5xl">
             We offer great price plans for the application
           </h2>
-          <p className="mx-auto max-w-[800px] text-[16px] leading-[30px] text-gray-600 md:text-center">
-            Objectively market-driven intellectual capital rather than covalent
-            best practices facilitate strategic information before innovation.
+          <p className="mx-auto mt-4 max-w-[800px] text-gray-600">
+            Objectively market-driven intellectual capital rather than covalent best practices facilitate strategic
+            information before innovation.
           </p>
-        </div>
-        <div className="grid gap-8 md:grid-cols-3">
-          {plans.map((plan) => (
-            <Card
+        </motion.div>
+
+        <motion.div
+          variants={container}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          className="grid gap-8 md:grid-cols-3"
+        >
+          {plans.map((plan, index) => (
+            <motion.div
               key={plan.name}
-              className={`relative ${
-                plan.highlighted
-                  ? 'bg-navy-900 scale-105 bg-[#00214C] text-white shadow-lg'
-                  : 'bg-white'
-              }`}
+              variants={item}
+              whileHover={{
+                y: -10,
+                transition: { duration: 0.3 },
+              }}
             >
-              <CardHeader>
-                <CardTitle className="text-xl">{plan.name}</CardTitle>
-                <CardDescription
-                  className={
-                    plan.highlighted ? 'text-gray-300' : 'text-gray-500'
-                  }
-                >
-                  {plan.description}
-                </CardDescription>
-                <div className="mt-4 text-3xl font-bold">{plan.price}</div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-4">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center">
-                      <Check
-                        className={`${plan.highlighted ? 'bg-white text-[#00214C]' : 'text-white'} mr-2 h-4 w-4 flex-shrink-0 rounded-full bg-black p-[2px]`}
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  className={`w-full ${
-                    plan.highlighted
-                      ? 'text-navy-900 bg-white text-[#00214C] hover:bg-gray-100'
-                      : 'bg-white text-[#00214C] hover:bg-[#00214C] hover:text-white'
-                  }`}
-                >
-                  Choose Plan
-                </Button>
-              </CardFooter>
-            </Card>
+              <Card
+                className={`relative h-full ${
+                  plan.highlighted ? "bg-[#00214C] text-white shadow-xl" : "bg-white border-2 border-gray-100"
+                }`}
+              >
+                {plan.highlighted && (
+                  <div className="absolute -top-4 left-0 right-0 mx-auto w-fit rounded-full bg-[#1876FB] px-4 py-1 text-xs font-bold text-white">
+                    MOST POPULAR
+                  </div>
+                )}
+                <CardHeader>
+                  <CardTitle className="text-xl">{plan.name}</CardTitle>
+                  <CardDescription className={plan.highlighted ? "text-gray-300" : "text-gray-500"}>
+                    {plan.description}
+                  </CardDescription>
+                  <div className="mt-4 text-3xl font-bold">{plan.price}</div>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-4">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-center">
+                        <div
+                          className={`mr-2 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${
+                            plan.highlighted ? "bg-white text-[#00214C]" : "bg-[#1876FB] text-white"
+                          }`}
+                        >
+                          <Check className="h-3 w-3" />
+                        </div>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    className={`w-full ${
+                      plan.highlighted
+                        ? "bg-white text-[#00214C] hover:bg-gray-100"
+                        : "bg-white text-[#00214C] border border-[#00214C] hover:bg-[#00214C] hover:text-white"
+                    }`}
+                  >
+                    Choose Plan
+                  </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
-  );
+  )
 }

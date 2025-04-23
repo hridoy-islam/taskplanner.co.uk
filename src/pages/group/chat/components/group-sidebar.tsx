@@ -35,7 +35,7 @@ export function GroupSidebar({
   return (
     <div
       className={cn(
-        "fixed z-20 w-80 space-y-3 rounded-md bg-white p-4 transition-transform duration-300 ease-in-out max-md:border md:relative",
+        "fixed z-20 w-80 space-y-3 bg-white p-4 transition-transform duration-300 ease-in-out max-md:border md:relative",
         isSidebarVisible ? "block" : "hidden",
         "md:block",
       )}
