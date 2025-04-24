@@ -291,12 +291,12 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
             onChange={(e) => setTempTaskName(e.target.value)}
             onBlur={handleTaskNameBlur}
             onKeyDown={handleTaskNameKeyDown}
-            className="text-xl font-semibold text-gray-900 resize-none"
+            className="resize-none text-xl font-semibold text-gray-900"
             rows={1}
           />
         ) : (
-          <h1 
-            className="text-xl font-semibold text-gray-900 text-justify cursor-pointer hover:bg-gray-100 rounded p-1"
+          <h1
+            className="cursor-pointer rounded p-1 text-justify text-xl font-semibold text-gray-900 hover:bg-gray-100"
             onClick={handleTaskNameClick}
           >
             {localTask.taskName}
@@ -322,11 +322,8 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
             />
           </Button>
 
-          <Button
-            variant="secondary"
-            onClick={handleStatusChange}
-          >
-            {localTask.status === 'completed' ? 'Reopen' : 'Complete'}
+          <Button variant="secondary" onClick={handleStatusChange}>
+            {localTask.status === 'completed' ? 'Undo' : 'Complete'}
           </Button>
         </div>
       </div>
@@ -344,11 +341,13 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
               className="rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800"
             />
           ) : (
-            <span 
-              className="rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800 cursor-pointer hover:bg-orange-200"
+            <span
+              className="cursor-pointer rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800 hover:bg-orange-200"
               onClick={handleDueDateClick}
             >
-              {localTask.dueDate ? formatDate(localTask.dueDate) : 'No due date'}
+              {localTask.dueDate
+                ? formatDate(localTask.dueDate)
+                : 'No due date'}
             </span>
           )}
         </div>
@@ -397,10 +396,25 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           </TooltipProvider>
         </div>
       </div>
+      <div className="flex flex-col space-y-2">
+        <h2 className="text-sm font-bold text-gray-700">Frequency</h2>
+        <Select defaultValue="none">
+          <SelectTrigger className="w-40 border-gray-400">
+            <SelectValue placeholder="Select frequency" />
+          </SelectTrigger>
+          <SelectContent className="border-gray-400">
+            <SelectItem value="none">None</SelectItem>
+            <SelectItem value="daily">Daily</SelectItem>
+            <SelectItem value="weekly">Weekly</SelectItem>
+            <SelectItem value="weekdays">Weekdays</SelectItem>
+            <SelectItem value="monthly">Monthly</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-gray-700">Description</h2>
+          <h2 className="text-sm font-bold text-gray-700">Description</h2>
           <Info className="h-4 w-4 text-gray-400" />
         </div>
         {editingDesc ? (
@@ -414,29 +428,15 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
             rows={4}
           />
         ) : (
-          <p 
-            className="text-sm text-gray-600 cursor-pointer hover:bg-gray-100 rounded p-1 whitespace-pre-wrap"
+          <p
+            className="cursor-pointer whitespace-pre-wrap rounded p-1 text-sm text-gray-600 hover:bg-gray-100"
             onClick={handleDescClick}
           >
             {localTask.description || 'No description provided.'}
           </p>
         )}
       </div>
-      <div className="space-y-2 flex flex-col">
-      <h2 className="text-sm font-medium text-gray-700">Frequency</h2>
-      <Select defaultValue="none">
-        <SelectTrigger className="w-40 border-gray-400">
-          <SelectValue placeholder="Select frequency" />
-        </SelectTrigger>
-        <SelectContent className="border-gray-400">
-          <SelectItem value="none">None</SelectItem>
-          <SelectItem value="daily">Daily</SelectItem>
-          <SelectItem value="weekly">Weekly</SelectItem>
-          <SelectItem value="weekdays">Weekdays</SelectItem>
-          <SelectItem value="monthly">Monthly</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+      
     </div>
   );
 }

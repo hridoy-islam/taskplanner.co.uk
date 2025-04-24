@@ -51,11 +51,9 @@ export default function AssignedTasksPage() {
           );
           const isPending = task.status === 'pending';
           const isAssignedToCurrentUser = task?.assigned?._id !== user._id; // Only tasks not assigned to the current user
-          const isDue = task.dueDate
-            ? moment(task.dueDate).startOf('day').isSameOrBefore(moment().startOf('day'))
-            : false;
           
-          return matchesSearch && isPending && isAssignedToCurrentUser && isDue;
+          
+          return matchesSearch && isPending && isAssignedToCurrentUser;
         })
         .sort((a, b) => {
           return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();

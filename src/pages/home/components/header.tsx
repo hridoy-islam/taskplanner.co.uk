@@ -24,40 +24,95 @@ import {
 import { ChevronRight, Menu } from 'lucide-react';
 import { useState } from 'react';
 
-const components = [
+const features = [
   {
-    title: 'Alert Dialog',
-    href: '/docs/primitives/alert-dialog',
-    description:
-      'A modal dialog that interrupts the user with important content and expects a response.'
+    title: 'Team Collaboration',
+    href: '/features/team-collaboration',
+    description: 'Work seamlessly with your team members on shared tasks and projects'
   },
   {
-    title: 'Hover Card',
-    href: '/docs/primitives/hover-card',
-    description: 'For sighted users to preview content available behind a link.'
+    title: 'Group Project',
+    href: '/features/group-project',
+    description: 'Manage complex projects with multiple team members and tasks'
   },
   {
-    title: 'Progress',
-    href: '/docs/primitives/progress',
-    description:
-      'Displays an indicator showing the completion progress of a task, typically displayed as a progress bar.'
+    title: 'Note',
+    href: '/features/note',
+    description: 'Keep all your important notes organized and accessible'
   },
   {
-    title: 'Scroll-area',
-    href: '/docs/primitives/scroll-area',
-    description: 'Visually or semantically separates content.'
+    title: 'Planner',
+    href: '/features/planner',
+    description: 'Plan your day, week, or month with our intuitive planner'
   },
   {
-    title: 'Tabs',
-    href: '/docs/primitives/tabs',
-    description:
-      'A set of layered sections of content—known as tab panels—that are displayed one at a time.'
+    title: 'Automation',
+    href: '/features/automation',
+    description: 'Automate repetitive tasks to save time and increase productivity'
   },
   {
-    title: 'Tooltip',
-    href: '/docs/primitives/tooltip',
-    description:
-      'A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it.'
+    title: 'Reminder',
+    href: '/features/reminder',
+    description: 'Never miss important deadlines with our smart reminder system'
+  }
+];
+
+const solutions = [
+  {
+    title: 'Task Management',
+    href: '/solutions/task-management',
+    description: 'Efficiently manage your daily tasks and to-dos'
+  },
+  {
+    title: 'Project Management',
+    href: '/solutions/project-management',
+    description: 'Complete project management solution for teams of all sizes'
+  },
+  {
+    title: 'Personal',
+    href: '/solutions/personal',
+    description: 'Tools to organize your personal life and daily routines'
+  },
+  {
+    title: 'Education',
+    href: '/solutions/education',
+    description: 'Specialized tools for students and educators'
+  },
+  {
+    title: 'Marketing & Sales',
+    href: '/solutions/marketing-sales',
+    description: 'Streamline your marketing and sales processes'
+  },
+  {
+    title: 'Customer Support',
+    href: '/solutions/customer-support',
+    description: 'Manage customer queries and support tickets efficiently'
+  }
+];
+
+const resources = [
+  {
+    title: 'Task Planner Guide',
+    href: '/resources/guide',
+    description: 'Learn how to get the most out of our task planner'
+  },
+  {
+    title: 'Customer Stories',
+    href: '/resources/customer-stories',
+    description: 'See how our customers are using our product'
+  },
+  {
+    title: 'Help Resource',
+    href: '/resources/help',
+    description: 'Get help with any questions or issues you might have'
+  }
+];
+
+const gettingStarted = [
+  {
+    title: 'How to Start',
+    href: '/getting-started',
+    description: 'Quick guide to get you up and running with our platform'
   }
 ];
 
@@ -69,9 +124,8 @@ export function Header() {
   };
 
   return (
-    <div className="container py-0  z-20 flex w-full flex-row items-center   justify-between">
+    <div className="container py-0 z-20 flex w-full flex-row items-center justify-between">
       {/* Logo */}
-
       <div className="flex flex-row items-center justify-start gap-2">
         <div>
           <Link to="/" className="flex items-center space-x-2">
@@ -83,84 +137,93 @@ export function Header() {
         <div className="hidden justify-center md:flex">
           <NavigationMenu>
             <NavigationMenuList>
-              <NavigationMenuItem >
-                <NavigationMenuTrigger className='font-semibold'>Getting started</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid gap-3 p-6 lg:grid-cols-[.75fr_1fr]">
-                    {/* <li className="row-span-3">
-                      <NavigationMenuLink asChild>
-                        <a
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
-                          href="/"
-                        >
-                          <div className="mb-2 mt-4 text-lg font-medium">
-                            shadcn/ui
-                          </div>
-                          <p className="text-sm leading-tight text-muted-foreground">
-                            Beautifully designed components that you can copy
-                            and paste into your apps. Accessible. Customizable.
-                            Open Source.
-                          </p>
-                        </a>
-                      </NavigationMenuLink>
-                    </li> */}
-                    <ListItem href="/docs" title="Introduction">
-                      Re-usable components built using Radix UI and Tailwind
-                      CSS.
-                    </ListItem>
-                    <ListItem href="/docs/installation" title="Installation">
-                      How to install dependencies and structure your app.
-                    </ListItem>
-                    <ListItem
-                      href="/docs/primitives/typography"
-                      title="Typography"
-                    >
-                      Styles for headings, paragraphs, lists...etc
-                    </ListItem>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+              {/* Features Menu */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger  className='font-semibold'>Components</NavigationMenuTrigger>
+                <NavigationMenuTrigger className='font-semibold'>Features</NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                    {components.map((component) => (
+                  <ul className="grid gap-3 p-6 lg:grid-cols-2">
+                    {features.map((feature) => (
                       <ListItem
-                        key={component.title}
-                        title={component.title}
-                        href={component.href}
+                        key={feature.title}
+                        title={feature.title}
+                        href={feature.href}
                       >
-                        {component.description}
+                        {feature.description}
                       </ListItem>
                     ))}
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
-              <NavigationMenuItem className="rounded-sm hover:bg-taskplanner ">
-                <Link to="/docs">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()} >
-                    Documentation
-                  </NavigationMenuLink>
-                </Link>
+
+              {/* Solutions Menu */}
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className='font-semibold'>Solutions</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid gap-3 p-6 lg:grid-cols-2">
+                    {solutions.map((solution) => (
+                      <ListItem
+                        key={solution.title}
+                        title={solution.title}
+                        href={solution.href}
+                      >
+                        {solution.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
+
+              {/* Resources Menu */}
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className='font-semibold'>Resources</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[600px] gap-3 p-4">
+                    {resources.map((resource) => (
+                      <ListItem
+                        key={resource.title}
+                        title={resource.title}
+                        href={resource.href}
+                      >
+                        {resource.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className='font-semibold'>Getting Started</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[600px] gap-3 p-4">
+                    {gettingStarted.map((resource) => (
+                      <ListItem
+                        key={resource.title}
+                        title={resource.title}
+                        href={resource.href}
+                      >
+                        {resource.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+
+              
             </NavigationMenuList>
           </NavigationMenu>
         </div>
       </div>
 
       {/* Auth buttons */}
-      <div className="hidden h-full items-center  space-x-4 md:flex">
-        <div className=" ">
-          <Link to="/login" className="text-md font-semibold ">
+      <div className="hidden h-full items-center space-x-4 md:flex">
+        <div className="">
+          <Link to="/login" className="text-md font-semibold">
             Login
           </Link>
         </div>
         
-
         <Button className="bg-blue-400 p-8 rounded-none text-white hover:bg-blue-500">
           Request Demo
         </Button>
-      
       </div>
 
       {/* Mobile menu */}
@@ -180,75 +243,33 @@ export function Header() {
               <SheetClose asChild>
                 <Link
                   to="/"
-                  className="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-accent  hover:text-white"
+                  className="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-accent hover:text-white"
                 >
                   <span className="text-base font-medium">Home</span>
                 </Link>
               </SheetClose>
 
-              {/* Getting Started */}
+              {/* Features */}
               <div className="flex flex-col">
                 <button
-                  onClick={() => toggleSubmenu('getting-started')}
-                  className="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-accent  hover:text-white"
-                >
-                  <span className="text-base font-medium">Getting Started</span>
-                  <ChevronRight
-                    className={`h-4 w-4 transition-transform ${openSubmenu === 'getting-started' ? 'rotate-90' : ''}`}
-                  />
-                </button>
-
-                {openSubmenu === 'getting-started' && (
-                  <div className="ml-4 mt-1 space-y-1 ">
-                    <SheetClose asChild>
-                      <Link
-                        to="/docs"
-                        className="block rounded-lg px-4 py-2 text-sm hover:bg-accent/50"
-                      >
-                        Introduction
-                      </Link>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <Link
-                        to="/docs/installation"
-                        className="block rounded-lg px-4 py-2 text-sm hover:bg-accent/50"
-                      >
-                        Installation
-                      </Link>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <Link
-                        to="/docs/primitives/typography"
-                        className="block rounded-lg px-4 py-2 text-sm hover:bg-accent/50"
-                      >
-                        Typography
-                      </Link>
-                    </SheetClose>
-                  </div>
-                )}
-              </div>
-
-              {/* Components */}
-              <div className="flex flex-col">
-                <button
-                  onClick={() => toggleSubmenu('components')}
+                  onClick={() => toggleSubmenu('features')}
                   className="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-accent hover:text-white"
                 >
-                  <span className="text-base font-medium">Components</span>
+                  <span className="text-base font-medium">Features</span>
                   <ChevronRight
-                    className={`h-4 w-4 transition-transform ${openSubmenu === 'components' ? 'rotate-90' : ''}`}
+                    className={`h-4 w-4 transition-transform ${openSubmenu === 'features' ? 'rotate-90' : ''}`}
                   />
                 </button>
 
-                {openSubmenu === 'components' && (
+                {openSubmenu === 'features' && (
                   <div className="ml-4 mt-1 space-y-1">
-                    {components.map((component) => (
-                      <SheetClose key={component.title} asChild>
+                    {features.map((feature) => (
+                      <SheetClose key={feature.title} asChild>
                         <Link
-                          to={component.href}
+                          to={feature.href}
                           className="block rounded-lg px-4 py-2 text-sm hover:bg-accent/50"
                         >
-                          {component.title}
+                          {feature.title}
                         </Link>
                       </SheetClose>
                     ))}
@@ -256,13 +277,69 @@ export function Header() {
                 )}
               </div>
 
-              {/* Documentation */}
+              {/* Solutions */}
+              <div className="flex flex-col">
+                <button
+                  onClick={() => toggleSubmenu('solutions')}
+                  className="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-accent hover:text-white"
+                >
+                  <span className="text-base font-medium">Solutions</span>
+                  <ChevronRight
+                    className={`h-4 w-4 transition-transform ${openSubmenu === 'solutions' ? 'rotate-90' : ''}`}
+                  />
+                </button>
+
+                {openSubmenu === 'solutions' && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    {solutions.map((solution) => (
+                      <SheetClose key={solution.title} asChild>
+                        <Link
+                          to={solution.href}
+                          className="block rounded-lg px-4 py-2 text-sm hover:bg-accent/50"
+                        >
+                          {solution.title}
+                        </Link>
+                      </SheetClose>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Resources */}
+              <div className="flex flex-col">
+                <button
+                  onClick={() => toggleSubmenu('resources')}
+                  className="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-accent hover:text-white"
+                >
+                  <span className="text-base font-medium">Resources</span>
+                  <ChevronRight
+                    className={`h-4 w-4 transition-transform ${openSubmenu === 'resources' ? 'rotate-90' : ''}`}
+                  />
+                </button>
+
+                {openSubmenu === 'resources' && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    {resources.map((resource) => (
+                      <SheetClose key={resource.title} asChild>
+                        <Link
+                          to={resource.href}
+                          className="block rounded-lg px-4 py-2 text-sm hover:bg-accent/50"
+                        >
+                          {resource.title}
+                        </Link>
+                      </SheetClose>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Getting Started */}
               <SheetClose asChild>
                 <Link
-                  to="/docs"
-                  className="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-accent  hover:text-white"
+                  to="/getting-started"
+                  className="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-accent hover:text-white"
                 >
-                  <span className="text-base font-medium">Documentation</span>
+                  <span className="text-base font-medium">Getting Started</span>
                 </Link>
               </SheetClose>
 
@@ -270,7 +347,7 @@ export function Header() {
               <SheetClose asChild>
                 <Link
                   to="/login"
-                  className="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-accent  hover:text-white"
+                  className="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-accent hover:text-white"
                 >
                   <span className="text-base font-medium">Login</span>
                 </Link>

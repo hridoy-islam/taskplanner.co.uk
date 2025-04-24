@@ -50,7 +50,6 @@ export default function ForgotPassword() {
   return (
     <>
       <div className="grid h-screen md:grid-cols-2 lg:px-0">
-        {/* Left Image Panel - Fixed implementation */}
         <div
           className="relative hidden h-full flex-col border-gray-200 p-8 text-black dark:border-r lg:flex"
           style={{

@@ -105,6 +105,7 @@ export default function NewPassword() {
                   onSubmit={form.handleSubmit(onSubmit)}
                   className="w-full space-y-4"
                 >
+                  
                   <FormField
                     control={form.control}
                     name="password"
@@ -117,12 +118,14 @@ export default function NewPassword() {
                             placeholder="Enter your password..."
                             disabled={loading}
                             {...field}
+                            className='w-full'
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="confirmPassword"
@@ -135,6 +138,7 @@ export default function NewPassword() {
                             placeholder="Confirm your password..."
                             disabled={loading}
                             {...field}
+                            className='w-full'
                           />
                         </FormControl>
                         <FormMessage />

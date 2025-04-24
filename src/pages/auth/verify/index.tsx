@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { validateRequestOtp } from '@/redux/features/authSlice';
+import { loginUser, validateRequestOtp, verifyEmail } from '@/redux/features/authSlice';
 import { AppDispatch, RootState } from '@/redux/store';
 import { useRouter } from '@/routes/hooks';
 import { jwtDecode } from 'jwt-decode';
@@ -98,34 +98,22 @@ export default function VerifyPage() {
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
     const otpCode = otp.join('');
-  
+    
     if (!user?.email) {
       setError('Email missing');
       return;
     }
   
     try {
-      const response = await axiosInstance.patch('auth/verifyemail', {
+      const resultAction = await dispatch(verifyEmail({
         email: user.email,
-        otp: otpCode,
-      });
+        otp: otpCode
+      }));
   
-      const { success, data } = response.data;
-  
-      if (success) {
-        const decoded = jwtDecode(data.accessToken);
-  
-        localStorage.setItem(
-          'taskplanner',
-          JSON.stringify({ ...decoded, token: data.accessToken })
-        );
-  
+      if (verifyEmail.fulfilled.match(resultAction)) {
         router.push('/dashboard');
-      } else {
-        setError('Invalid OTP');
       }
     } catch (err) {
-      console.error(err);
       setError('Verification failed. Please try again.');
     }
   };

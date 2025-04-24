@@ -16,7 +16,8 @@ import {
   UserMinus,
   MoreVertical,
   Users,
-  ArrowLeft
+  ArrowLeft,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -106,12 +107,8 @@ const GroupBar = ({
                     className="max-h-68 w-72 bg-white overflow-y-auto scrollbar-hide"
                   >
                     <ScrollArea className="max-h-64 bg-white">
-                      {loading ? (
-                        <div className="flex h-32 items-center justify-center">
-                          <Loader />
-                        </div>
-                      ) : (
-                        groupDetails?.members?.map((member) => (
+                      
+                        {groupDetails?.members?.map((member) => (
                           <div
                             key={member?._id}
                             className="flex items-center justify-between border-b p-2 bg-white text-black"
@@ -163,7 +160,7 @@ const GroupBar = ({
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent
                                     align="end"
-                                    className="w-48 cursor-pointer hover:bg-black hover:text-white"
+                                    className="w-48 cursor-pointer bg-white text-black "
                                   >
                                     <DropdownMenuLabel>
                                       Member Actions
@@ -176,6 +173,7 @@ const GroupBar = ({
                                           member?.role
                                         )
                                       }
+                                      className='hover:bg-black hover:text-white'
                                     >
                                       Make{' '}
                                       {member.role === 'admin'
@@ -187,7 +185,7 @@ const GroupBar = ({
                                         onClick={() =>
                                           handleRemoveMember(member._id)
                                         }
-                                        className="text-red-600 focus:text-red-600"
+                                        className="text-red-600 hover:bg-black hover:text-red-600"
                                       >
                                         <UserMinus className="mr-2 h-4 w-4" />
                                         Remove
@@ -198,7 +196,7 @@ const GroupBar = ({
                               )}
                           </div>
                         ))
-                      )}
+                      }
                     </ScrollArea>
                   </DropdownMenuContent>
                 </DropdownMenu>

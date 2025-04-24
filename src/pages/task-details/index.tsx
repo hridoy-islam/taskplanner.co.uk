@@ -6,6 +6,7 @@ import { toast } from '@/components/ui/use-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { updateTask } from '@/redux/features/allTaskSlice';
+import { Card } from '@/components/ui/card';
 
 interface User {
   id: string;
@@ -57,36 +58,46 @@ export default function TaskDetailsPage() {
 
     try {
       // Optimistic local update
-      setTask(prev => {
+      setTask((prev) => {
         if (!prev) return null;
         return {
           ...prev,
           ...updatedData,
           author: {
-            ...(typeof prev.author === 'object' ? prev.author : { id: prev.author, name: 'Unknown' }),
-            ...(typeof updatedData.author === 'object' ? updatedData.author : {}),
+            ...(typeof prev.author === 'object'
+              ? prev.author
+              : { id: prev.author, name: 'Unknown' }),
+            ...(typeof updatedData.author === 'object'
+              ? updatedData.author
+              : {})
           },
           assigned: {
-            ...(typeof prev.assigned === 'object' ? prev.assigned : { id: prev.assigned, name: 'Unassigned' }),
-            ...(typeof updatedData.assigned === 'object' ? updatedData.assigned : {}),
+            ...(typeof prev.assigned === 'object'
+              ? prev.assigned
+              : { id: prev.assigned, name: 'Unassigned' }),
+            ...(typeof updatedData.assigned === 'object'
+              ? updatedData.assigned
+              : {})
           }
         };
       });
 
       // Dispatch to Redux
-      dispatch(updateTask({
-        taskId:id.toString(),
-        taskData: updatedData
-      }));
+      dispatch(
+        updateTask({
+          taskId: id.toString(),
+          taskData: updatedData
+        })
+      );
 
       toast({
-        title: "Task updated successfully!",
+        title: 'Task updated successfully!'
       });
 
       return updatedData;
     } catch (err) {
       toast({
-        title: "Failed to update task",
+        title: 'Failed to update task',
         variant: 'destructive'
       });
       console.error(err);
@@ -94,19 +105,22 @@ export default function TaskDetailsPage() {
     }
   };
 
-
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
-      <div className="w-full overflow-y-auto border-r border-gray-200 lg:w-1/2">
-        <TaskDetails 
-          task={task} 
-          onUpdate={onUpdate} 
-        />
+    <div className="flex h-screen flex-col gap-4 overflow-hidden p-4 lg:h-[calc(100vh-100px)] lg:flex-row">
+    {/* Task Details */}
+    <Card className="flex-1 overflow-hidden rounded-xl border border-gray-200">
+      <div className="h-full overflow-y-auto">
+        <TaskDetails task={task} onUpdate={onUpdate} />
       </div>
-
-      <div className="w-full lg:w-1/2">
+    </Card>
+  
+    {/* Task Chat */}
+    <div className="flex-1 overflow-hidden rounded-xl border border-gray-200">
+      <div className="h-full overflow-y-auto">
         <TaskChat task={task} />
       </div>
     </div>
+  </div>
+
   );
 }

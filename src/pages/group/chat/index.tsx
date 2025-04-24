@@ -297,6 +297,8 @@ export default function GroupChat() {
   useEffect(() => {
     const messageReceivedHandler = (newMessageReceived) => {
       const response = newMessageReceived?.data?.data;
+
+      console.log(response)
       const newComment = {
         authorId: {
           _id: response?.authorId,
@@ -331,187 +333,187 @@ export default function GroupChat() {
     };
   }, [currentPath, router]);
 
-  // const handleCommentSubmit = async (data) => {
-  //   if (isSubmitting) return
-  //   setIsSubmitting(true) // Set submission flag
-
-  //   if (!data.content) {
-  //     console.error(data, "Content is required to submit a comment.")
-  //     setIsSubmitting(false)
-  //     return
-  //   }
-
-  //   try {
-  //     const typer = {
-  //       room: currentPath,
-  //       user: user?._id,
-  //     }
-  //     socket.emit("stop typing", typer)
-
-  //     // If we're editing a message, update it instead of creating a new one
-  //     if (editingMessage) {
-  //       const response = await axiosInstance.patch(`/groupMessage/${editingMessage.id}`, {
-  //         content: data.content,
-  //       })
-
-  //       if (response.data.success) {
-  //         // Update the message in the comments array
-  //         setComments(
-  //           comments.map((comment) =>
-  //             comment._id === editingMessage.id ? { ...comment, content: data.content } : comment,
-  //           ),
-  //         )
-
-  //         // Clear editing state
-  //         setEditingMessage(null)
-  //         toast.success("Message updated successfully")
-  //       }
-  //     } else {
-  //       // Create a new message
-  //       data.taskId = currentPath
-  //       data.authorId = user?._id
-  //       const response = await axiosInstance.post(`/groupMessage`, data)
-
-  //       if (response.data.success) {
-  //         const newComment = {
-  //           authorId: {
-  //             _id: user?._id,
-  //             name: user?.name,
-  //           },
-  //           content: data?.content,
-  //           isFile: data?.isFile,
-  //           taskId: currentPath,
-  //           createdAt: response?.data?.data?.createdAt,
-  //           _id: response?.data?.data?._id || Math.random().toString(36).substring(7), // math random is temporary
-  //         }
-  //         socket.emit("new message", response)
-  //         appendComment(newComment) // Use the new utility function
-  //       } else {
-  //         console.error("Failed to add comment:", response.data.message)
-  //       }
-  //     }
-
-  //     reset()
-  //   } catch (error) {
-  //     console.error("Error posting comment:", error)
-  //     toast.error(`error occured!`, {
-  //       description: `Message: ${error?.response?.data?.message}`,
-  //     })
-  //     const typer = {
-  //       room: currentPath,
-  //       user: user?._id,
-  //     }
-  //     socket.emit("stop typing", typer)
-  //   } finally {
-  //     setIsSubmitting(false) // Reset submission flag
-  //   }
-  // }
-
   const handleCommentSubmit = async (data) => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+    if (isSubmitting) return
+    setIsSubmitting(true) // Set submission flag
 
-    // Validate content
-    if (!data.content && (!data.isFile || !files.length)) {
-      console.error('Content or file is required to submit a message.');
-      setIsSubmitting(false);
-      return;
+    if (!data.content) {
+      console.error(data, "Content is required to submit a comment.")
+      setIsSubmitting(false)
+      return
     }
 
     try {
       const typer = {
         room: currentPath,
-        user: user?._id
-      };
-      socket.emit('stop typing', typer);
+        user: user?._id,
+      }
+      socket.emit("stop typing", typer)
 
-      if (editingMessage?.id) {
-        // Handle message update
-        const response = await axiosInstance.patch(
-          `/groupMessage/${editingMessage.id}`,
-          {
-            content: data.content
-          }
-        );
+      // If we're editing a message, update it instead of creating a new one
+      if (editingMessage) {
+        const response = await axiosInstance.patch(`/groupMessage/${editingMessage.id}`, {
+          content: data.content,
+        })
 
         if (response.data.success) {
-          // Update the message in state
-          setComments((prevComments) =>
-            prevComments.map((comment) =>
-              comment._id === editingMessage.id
-                ? {
-                    ...comment,
-                    content: data.content,
-                    updatedAt: new Date().toISOString()
-                  }
-                : comment
-            )
-          );
+          // Update the message in the comments array
+          setComments(
+            comments.map((comment) =>
+              comment._id === editingMessage.id ? { ...comment, content: data.content } : comment,
+            ),
+          )
 
           // Clear editing state
-          setEditingMessage(null);
-          reset(); // Reset the form
-          toast.success('Message updated successfully');
-        } else {
-          throw new Error(response.data.message || 'Failed to update message');
+          setEditingMessage(null)
+          toast.success("Message updated successfully")
         }
       } else {
-        // Handle new message creation
-        const payload = {
-          ...data,
-          taskId: currentPath,
-          authorId: user?._id,
-          groupId: groupId // Added groupId if needed
-        };
-
-        const response = await axiosInstance.post(`/groupMessage`, payload);
+        // Create a new message
+        data.taskId = currentPath
+        data.authorId = user?._id
+        const response = await axiosInstance.post(`/groupMessage`, data)
 
         if (response.data.success) {
           const newComment = {
-            ...response.data.data,
             authorId: {
               _id: user?._id,
-              name: user?.name
+              name: user?.name,
             },
             content: data?.content,
             isFile: data?.isFile,
             taskId: currentPath,
             createdAt: response?.data?.data?.createdAt,
-            _id:
-              response?.data?.data?._id ||
-              Math.random().toString(36).substring(7) // math random is temporary
-          };
-
-          // Emit socket event and update state
-          socket.emit('new message', {
-            message: newComment,
-            room: currentPath
-          });
-
-          // Update comments state
-          setComments((prevComments) => [...prevComments, newComment]);
-          reset(); 
-
-          commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            _id: response?.data?.data?._id || Math.random().toString(36).substring(7), // math random is temporary
+          }
+          socket.emit("new message", response)
+          appendComment(newComment) // Use the new utility function
         } else {
-          throw new Error(response.data.message || 'Failed to send message');
+          console.error("Failed to add comment:", response.data.message)
         }
       }
-    } catch (error) {
-      console.error('Error processing message:', error);
-      toast.error(
-        error?.response?.data?.message ||
-          'An error occurred while processing your message'
-      );
 
-      // Re-enable the form if editing
-      if (editingMessage?.id) {
-        setValue('content', editingMessage.content);
+      reset()
+    } catch (error) {
+      console.error("Error posting comment:", error)
+      toast.error(`error occured!`, {
+        description: `Message: ${error?.response?.data?.message}`,
+      })
+      const typer = {
+        room: currentPath,
+        user: user?._id,
       }
+      socket.emit("stop typing", typer)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false) // Reset submission flag
     }
-  };
+  }
+
+  // const handleCommentSubmit = async (data) => {
+  //   if (isSubmitting) return;
+  //   setIsSubmitting(true);
+
+  //   // Validate content
+  //   if (!data.content && (!data.isFile || !files.length)) {
+  //     console.error('Content or file is required to submit a message.');
+  //     setIsSubmitting(false);
+  //     return;
+  //   }
+
+  //   try {
+  //     const typer = {
+  //       room: currentPath,
+  //       user: user?._id
+  //     };
+  //     socket.emit('stop typing', typer);
+
+  //     if (editingMessage?.id) {
+  //       // Handle message update
+  //       const response = await axiosInstance.patch(
+  //         `/groupMessage/${editingMessage.id}`,
+  //         {
+  //           content: data.content
+  //         }
+  //       );
+
+  //       if (response.data.success) {
+  //         // Update the message in state
+  //         setComments((prevComments) =>
+  //           prevComments.map((comment) =>
+  //             comment._id === editingMessage.id
+  //               ? {
+  //                   ...comment,
+  //                   content: data.content,
+  //                   updatedAt: new Date().toISOString()
+  //                 }
+  //               : comment
+  //           )
+  //         );
+
+  //         // Clear editing state
+  //         setEditingMessage(null);
+  //         reset(); // Reset the form
+  //         toast.success('Message updated successfully');
+  //       } else {
+  //         throw new Error(response.data.message || 'Failed to update message');
+  //       }
+  //     } else {
+  //       // Handle new message creation
+  //       const payload = {
+  //         ...data,
+  //         taskId: currentPath,
+  //         authorId: user?._id,
+  //         groupId: groupId // Added groupId if needed
+  //       };
+
+  //       const response = await axiosInstance.post(`/groupMessage`, payload);
+
+  //       if (response.data.success) {
+  //         const newComment = {
+  //           ...response.data.data,
+  //           authorId: {
+  //             _id: user?._id,
+  //             name: user?.name
+  //           },
+  //           content: data?.content,
+  //           isFile: data?.isFile,
+  //           taskId: currentPath,
+  //           createdAt: response?.data?.data?.createdAt,
+  //           _id:
+  //             response?.data?.data?._id ||
+  //             Math.random().toString(36).substring(7) // math random is temporary
+  //         };
+
+  //         // Emit socket event and update state
+  //         socket.emit('new message', {
+  //           message: newComment,
+  //           room: currentPath
+  //         });
+
+  //         // Update comments state
+  //         setComments((prevComments) => [...prevComments, newComment]);
+  //         reset(); 
+
+  //         commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  //       } else {
+  //         throw new Error(response.data.message || 'Failed to send message');
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error processing message:', error);
+  //     toast.error(
+  //       error?.response?.data?.message ||
+  //         'An error occurred while processing your message'
+  //     );
+
+  //     // Re-enable the form if editing
+  //     if (editingMessage?.id) {
+  //       setValue('content', editingMessage.content);
+  //     }
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   const cancelEdit = () => {
     setEditingMessage(null);

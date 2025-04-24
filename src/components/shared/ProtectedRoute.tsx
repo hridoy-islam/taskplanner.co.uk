@@ -8,7 +8,7 @@ const ProtectedRoute = ({ children }) => {
     // If there's no user, redirect to the login page
     return <Navigate to="/login" replace />;
   }
-  if (!user || !user.authorized) {
+  if ( !user.authorized) {
     return <Navigate to="/not-verified" replace />;
   }
   return children; 

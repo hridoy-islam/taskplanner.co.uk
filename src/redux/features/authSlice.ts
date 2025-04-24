@@ -205,6 +205,20 @@ export const logout = createAsyncThunk<void>('user/logout', async () => {
   localStorage.removeItem('taskplannerRefresh');
 });
 
+export const verifyEmail = createAsyncThunk(
+  'auth/verifyEmail',
+  async ({ email, otp }: { email: string; otp: string }, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(
+    `${import.meta.env.VITE_API_URL}/auth/verifyemail`, { email, otp });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response.data);
+    }
+  }
+);
+
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -266,6 +280,26 @@ const authSlice = createSlice({
         state.error = null;
         state.token = null;
         state.refreshToken = null;
+      }).addCase(verifyEmail.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(verifyEmail.fulfilled, (state, action) => {
+        const { accessToken, refreshToken } = action.payload.data;
+        const decoded = jwtDecode(accessToken);
+        
+        state.loading = false;
+        state.token = accessToken;
+        state.refreshToken = refreshToken;
+        state.user = {
+          ...decoded,
+          authorized: true
+        };
+        state.error = null;
+      })
+      .addCase(verifyEmail.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || 'Verification failed';
       });
   }
 });
