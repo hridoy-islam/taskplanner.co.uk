@@ -367,7 +367,7 @@ export default function TaskChat({ task }: TaskChatProps) {
             <h2 className="text-lg font-semibold">{task?.assigned?.name}</h2>
           </div>
       </div>
-      <div className="basis-6/7 flex w-full flex-col py-4">
+      <div className="basis-6/7 flex w-full flex-col -mt-24">
         <ScrollArea className="h-[calc(100vh-270px)] p-6">
           <div ref={commentsEndRef} className="space-y-4">
             {comments.length > displayedComments.length && (
