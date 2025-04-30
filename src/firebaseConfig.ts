@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getAnalytics } from "firebase/analytics";
 
 // const firebaseConfig = {
 //   apiKey: 'AIzaSyDyw-pWBCnYnmmsjyDOl_6O2GGnw1EadVU',
@@ -19,10 +18,9 @@ const firebaseConfig = {
   storageBucket: "taskplanner-7ed20.firebasestorage.app",
   messagingSenderId: "756204695909",
   appId: "1:756204695909:web:74d20f30ff68c743d6b18c",
-  measurementId: "G-GWS69HT0NS"
+  // measurementId: "G-GWS69HT0NS"
 };
 
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 export const firebaseAuth = getAuth(app);
