@@ -182,7 +182,7 @@ export default function UserAuthForm() {
         <Link to="/forgot-password">Forgot Password?</Link>
       </p>
 
-      <div className="relative">
+      {/* <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
         </div>
@@ -190,10 +190,9 @@ export default function UserAuthForm() {
           <span className="bg-background px-2 text-muted-foreground">
             Or continue with
           </span>
-          {/* third party login */}
         </div>
-      </div>
-      <Button
+      </div> */}
+      {/* <Button
         onClick={handleGoogleLogin}
         className="border-1 mt-6 flex h-12 items-center justify-center gap-2 border border-gray-400"
       >
@@ -215,7 +214,7 @@ export default function UserAuthForm() {
           className="h-6 w-6"
         />{' '}
         sign in with facebook
-      </Button>
+      </Button> */}
     </>
   );
 }

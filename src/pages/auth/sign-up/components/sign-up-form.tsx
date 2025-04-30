@@ -140,7 +140,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
           </div>
         </form>
       </Form>
-      <div className="relative">
+      {/* <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
         </div>
@@ -148,7 +148,6 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
           <span className="bg-background px-2 text-muted-foreground">
             Or continue with
           </span>
-          {/* third party login */}
         </div>
       </div>
       <div className='relative flex flex-col items-center justify-center gap-4 w-full'>
@@ -169,7 +168,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
           />{' '}
           sign in with facebook
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 }
