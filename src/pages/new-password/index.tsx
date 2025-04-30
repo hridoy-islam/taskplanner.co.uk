@@ -1,3 +1,10 @@
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+  DialogDescription
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -16,6 +23,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
+import taskplan from '@/assets/imges/home/taskplan.jpg';
+import logo from '@/assets/imges/home/logos/tlogo.png';
 
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
@@ -33,9 +42,11 @@ type UserFormValue = z.infer<typeof formSchema>;
 
 export default function NewPassword() {
   const { loading } = useSelector((state: any) => state.auth);
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [fieldsDisabled, setFieldsDisabled] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false); // State to control dialog visibility
   const router = useRouter();
+
   const dispatch = useDispatch<AppDispatch>();
   const defaultValues = {
     password: '',
@@ -51,11 +62,9 @@ export default function NewPassword() {
       setError('Passwords do not match');
       return;
     }
-    const userData = JSON.parse(localStorage.getItem('tp_user_data'));
-    // console.log({token: userData.token, password: data.password, userId: userData._id });
+    const userData = JSON.parse(localStorage.getItem('tp_user_data') || '{}');
     const result: any = await dispatch(
       changePassword({
-        token: userData.token,
         password: data.password,
         userId: userData._id
       })
@@ -64,109 +73,125 @@ export default function NewPassword() {
       setError('');
       localStorage.removeItem('tp_user_data');
       localStorage.removeItem('tp_otp_email');
-      setMessage('Password changed successfully');
+      setDialogOpen(true); // Open the dialog when password changes successfully
+      setFieldsDisabled(true);
     }
   };
 
-  useEffect(() => {
-    if (localStorage.getItem('tp_user_data') === null) router.push('/login');
-  }, []);
+  // useEffect(() => {
+  //   if (localStorage.getItem('tp_user_data') === null) router.push('/login');
+  // }, []);
 
   return (
-    <>
-      <div className="container grid h-svh flex-col items-center justify-center bg-primary lg:max-w-none lg:px-0">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-2 sm:w-[480px] lg:p-8">
-          <div className="mb-4 flex items-center justify-center">
-            <img src="/logo.png" alt="Logo" className="w-1/2" />
+    <div className="relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+      {/* Left Side (Image and Quote) */}
+      <div
+        className="relative hidden h-full flex-col border-gray-200 p-8 text-black dark:border-r lg:flex"
+        style={{
+          background: `url(${taskplan}) center/contain no-repeat, white`
+        }}
+      >
+        <Link to="/">
+          <div className="relative right-10 z-20 -mt-20 flex scale-90 cursor-pointer items-center text-lg font-semibold">
+            <img src={logo} alt="logo" />
           </div>
-          <Card className="p-6">
-            <div className="mb-2 flex flex-col space-y-2 text-left">
-              <div className="mb-5 space-x-3">
-                <h1 className="text-md font-semibold tracking-tight">
-                  Enter new password
+        </Link>
+      </div>
+
+      {/* Right Side (Form) */}
+      <div className="flex h-full items-center bg-primary p-4 lg:p-8">
+        <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[450px]">
+          {dialogOpen ? (
+            <Card className="space-y-6 p-6 text-center">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Password Changed Successfully
+              </h1>
+              <p className="text-sm text-muted">
+                Your password has been updated successfully. You can now log in
+                using your new password.
+              </p>
+              <Button
+                onClick={() => router.push('/login')}
+                className="w-full hover:bg-black hover:text-white"
+              >
+                Login Now
+              </Button>
+            </Card>
+          ) : (
+            <>
+              <div className="flex flex-col space-y-2 text-center">
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  Enter New Password
                 </h1>
                 <p className="text-sm text-muted">
                   Enter your new password to login.
                 </p>
-                {error ? (
-                  <p className="mt-4 text-sm text-red-500">{error}</p>
-                ) : null}
-                {message && (
-                  <p className="text-sm text-[#3b82f6]">
-                    {message}{' '}
-                    <Link to="/login" className="underline underline-offset-4 ">
-                      Login Now
-                    </Link>
-                  </p>
-                )}
               </div>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="w-full space-y-4"
-                >
-                  
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="Enter your password..."
-                            disabled={loading}
-                            {...field}
-                            className='w-full'
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="Confirm your password..."
-                            disabled={loading}
-                            {...field}
-                            className='w-full'
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              {error && (
+                <p className="mt-2 text-center text-sm text-red-500">{error}</p>
+              )}
 
-                  <Button
-                    disabled={loading}
-                    className="ml-auto w-full bg-background text-white hover:bg-background"
-                    type="submit"
+              <Card className="space-y-6 p-6">
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="w-full space-y-4"
                   >
-                    Submit
-                  </Button>
-                </form>
-              </Form>
-            </div>
-            {/* <ForgotForm /> */}
-            <p className="mt-4 px-8 text-center text-sm text-muted">
-              Don't have an account?{' '}
-              <Link to="/sign-up" className="underline underline-offset-4">
-                Sign up
-              </Link>
-              .
-            </p>
-          </Card>
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Enter your password..."
+                              disabled={loading || fieldsDisabled}
+                              {...field}
+                              className="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Confirm your password..."
+                              disabled={loading || fieldsDisabled}
+                              {...field}
+                              className="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button
+                      disabled={loading || fieldsDisabled}
+                      className="w-full bg-background text-white hover:bg-background"
+                      type="submit"
+                    >
+                      Submit
+                    </Button>
+                  </form>
+                </Form>
+              </Card>
+            </>
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

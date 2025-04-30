@@ -74,11 +74,11 @@ export default function CompanyProfileDetail() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" {...register('name')} />
+                <Input id="name" {...register('name')} className='w-full' />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" {...register('email')} />
+                <Input id="email" type="email" {...register('email')} className='w-full' />
               </div>
               <Button type="submit" variant={'outline'}>
                 Save Changes

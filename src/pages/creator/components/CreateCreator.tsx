@@ -108,7 +108,7 @@ export default function CreateCreator({ onUserCreated }) {
                   id="password"
                   type="password"
                   {...register('password')}
-                  className="col-span-3"
+                  className="col-span-3 w-full"
                   required
                 />
               </div>

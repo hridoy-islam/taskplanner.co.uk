@@ -1,5 +1,4 @@
 'use client';
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   CalendarIcon,
@@ -7,7 +6,8 @@ import {
   Star,
   ArrowRight,
   UserRoundCheck,
-  CircleUser
+  CircleUser,
+  CalendarDays
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect, useRef } from 'react';
@@ -23,11 +23,19 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { DateRangePicker } from 'react-date-range';
+import 'react-date-range/dist/styles.css';
+import 'react-date-range/dist/theme/default.css';
+import { getNextScheduledDate } from '@/utils/taskUtils';
+import { on } from 'events';
 
 interface User {
   id?: string;
@@ -35,6 +43,20 @@ interface User {
   image?: string;
   avatar?: string;
   _id?: string;
+}
+
+enum TaskFrequency {
+  ONCE = 'once',
+  DAILY = 'daily',
+  WEEKDAYS = 'weekdays',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  CUSTOM = 'custom'
+}
+
+interface IHistory {
+  date: Date;
+  completed: boolean;
 }
 
 interface TaskDetailsProps {
@@ -50,6 +72,12 @@ interface TaskDetailsProps {
     dueDate: string;
     seen: boolean;
     importantBy?: string[];
+    frequency?: TaskFrequency;
+    scheduledDays?: number[];
+    scheduledDate?: number;
+
+    customSchedule?: Date[];
+    history?: IHistory[];
   } | null;
   onUpdate: (updatedData: any) => Promise<any>;
 }
@@ -67,18 +95,85 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   const taskNameTextareaRef = useRef<HTMLTextAreaElement>(null);
   const descTextareaRef = useRef<HTMLTextAreaElement>(null);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
+  const [frequency, setFrequency] = useState<TaskFrequency | string>('none');
+  const [selectedDays, setSelectedDays] = useState<boolean[]>(
+    Array(7).fill(false)
+  ); // For weekdays
+  const [selectedDates, setSelectedDates] = useState([
+    { startDate: new Date(), endDate: new Date(), key: 'selection' }
+  ]);
+  const [showPicker, setShowPicker] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const [showWeekdaysPicker, setShowWeekdaysPicker] = useState(false);
+  const [tempSelectedDays, setTempSelectedDays] = useState<boolean[]>(
+    Array(7).fill(false)
+  );
+  const [selectedDateRange, setSelectedDateRange] = useState<{
+    startDate: string;
+    endDate: string;
+  } | null>(null);
 
-  // Sync task prop into local state
+  const [monthlyDay, setMonthlyDay] = useState<number | null>();
+
+  // Handle clicks outside the date picker
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(event.target as Node)
+      ) {
+        setShowPicker(false);
+      }
+    };
+    if (showPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPicker]);
+
+  // Initialize task data and frequency-related state
   useEffect(() => {
     if (!localTask || localTask._id !== task?._id) {
       setLocalTask(task);
+
       if (task) {
         setTempTaskName(task.taskName);
         setTempDesc(task.description);
         setTempDueDate(task.dueDate);
+        setFrequency(task.frequency || 'once');
+
+        if (task.scheduledDays && task.scheduledDays.length > 0) {
+          const newSelectedDays = Array(7).fill(false);
+          task.scheduledDays.forEach((day) => {
+            newSelectedDays[day] = true;
+          });
+          setSelectedDays(newSelectedDays);
+        }
+        if (task.frequency === TaskFrequency.MONTHLY) {
+          setMonthlyDay(task?.scheduledDate || 1); // Default to 1 if not specified
+        }
+        if (task.customSchedule && task.customSchedule.length > 0) {
+          const sortedSchedule = [...task.customSchedule].sort(
+            (a, b) => new Date(a).getTime() - new Date(b).getTime()
+          );
+
+          const firstDate = new Date(sortedSchedule[0]);
+          const lastDate = new Date(sortedSchedule[sortedSchedule.length - 1]);
+
+          setSelectedDates([
+            { startDate: firstDate, endDate: lastDate, key: 'selection' }
+          ]);
+
+          setSelectedDateRange({
+            startDate: moment(firstDate).format('MMM DD, YYYY'),
+            endDate: moment(lastDate).format('MMM DD, YYYY')
+          });
+        }
       }
     }
-  }, [task]);
+  }, [task,onUpdate]);
 
   useEffect(() => {
     if (localTask && user?._id) {
@@ -86,47 +181,149 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     }
   }, [localTask, user?._id]);
 
-  // Focus the textarea when editing starts
-  useEffect(() => {
-    if (editingTaskName && taskNameTextareaRef.current) {
-      taskNameTextareaRef.current.focus();
-      const length = taskNameTextareaRef.current.value.length;
-      taskNameTextareaRef.current.setSelectionRange(length, length);
+  const handleFrequencyChange = async (value: string) => {
+    if (value === 'once') {
+      setFrequency('once');
+      setSelectedDays(Array(7).fill(false));
+      setSelectedDates([
+        { startDate: new Date(), endDate: new Date(), key: 'selection' }
+      ]);
+      try {
+        await onUpdate({
+          frequency: null,
+          scheduledDays: null,
+          scheduledDate: null,
+          customSchedule: null
+        });
+      } catch (error) {
+        console.error('Failed to update frequency:', error);
+      }
+      return;
     }
-  }, [editingTaskName]);
 
-  // Focus the description textarea when editing starts
-  useEffect(() => {
-    if (editingDesc && descTextareaRef.current) {
-      descTextareaRef.current.focus();
-      const length = descTextareaRef.current.value.length;
-      descTextareaRef.current.setSelectionRange(length, length);
-    }
-  }, [editingDesc]);
+    setFrequency(value);
 
-  // Focus the date input when editing starts
-  useEffect(() => {
-    if (editingDueDate && dueDateInputRef.current) {
-      dueDateInputRef.current.focus();
+    if (value !== 'weekdays' && value !== 'custom' && value !== 'monthly') {
+      try {
+        await onUpdate({
+          frequency: value,
+          scheduledDays: null,
+          scheduledDate: null,
+          customSchedule: null
+        });
+      } catch (error) {
+        console.error('Failed to update frequency:', error);
+      }
     }
-  }, [editingDueDate]);
+
+    if (value === 'weekdays') {
+      setTempSelectedDays([...selectedDays]);
+      setShowWeekdaysPicker(true);
+    }
+    if (value === 'custom') {
+      setShowPicker(true);
+    } else {
+      setShowPicker(false);
+    }
+  };
+
+  const handleCheckboxChange = (index: number) => {
+    const newTempDays = [...tempSelectedDays];
+    newTempDays[index] = !newTempDays[index];
+    setTempSelectedDays(newTempDays);
+  };
+
+  const handleSelect = (ranges: any) => {
+    const { startDate, endDate } = ranges.selection;
+    setSelectedDates([ranges.selection]);
+    setSelectedDateRange({
+      startDate: moment(startDate).format('MMM DD, YYYY'),
+      endDate: moment(endDate).format('MMM DD, YYYY')
+    });
+  };
+
+  const handleWeekdaysApply = async () => {
+    setSelectedDays([...tempSelectedDays]);
+    setShowWeekdaysPicker(false);
+    const selectedDayIndices = tempSelectedDays
+      .map((selected, index) => (selected ? index : null))
+      .filter((index) => index !== null);
+    try {
+      await onUpdate({
+        frequency: 'weekdays',
+        scheduledDays: selectedDayIndices,
+        scheduledDate: null,
+        customSchedule: null
+      });
+    } catch (error) {
+      console.error('Failed to update weekdays selection:', error);
+    }
+  };
+
+  const handleWeekdaysCancel = () => {
+    setShowWeekdaysPicker(false);
+    setTempSelectedDays([...selectedDays]);
+  };
+
+  const handleMonthlyDaySelect = async (day: number) => {
+    setMonthlyDay(day);
+
+    // Calculate the next due date based on the selected day
+    const now = moment();
+    let nextDate = moment().date(day);
+
+    // If the selected day has already passed this month, go to next month
+    if (now.date() > day || (now.date() === day && now.hour() >= 12)) {
+      nextDate = nextDate.add(1, 'month');
+    }
+
+    try {
+      await onUpdate({
+        frequency: TaskFrequency.MONTHLY,
+        scheduledDays: null,
+        scheduledDate: day, // Store the selected day
+        customSchedule: null,
+       
+      });
+    } catch (error) {
+      console.error('Failed to update monthly schedule:', error);
+    }
+  };
+
+  const applyCustomDates = async () => {
+    if (frequency !== 'custom') return;
+    const { startDate, endDate } = selectedDates[0];
+    const dates: Date[] = [];
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    try {
+      await onUpdate({
+        frequency: 'custom',
+        scheduledDays: null,
+        scheduledDate: null,
+        customSchedule: dates
+      });
+      setShowPicker(false);
+    } catch (error) {
+      console.error('Failed to update custom dates:', error);
+    }
+  };
 
   const handleMarkAsImportant = async () => {
     if (!user?._id || !localTask) return;
-
     const currentImportantBy = localTask.importantBy || [];
     const willBeImportant = !currentImportantBy.includes(user._id);
-
     const newImportantBy = willBeImportant
       ? [...currentImportantBy, user._id]
-      : currentImportantBy.filter(id => id !== user._id);
-
+      : currentImportantBy.filter((id) => id !== user._id);
     setIsImportant(willBeImportant);
     setLocalTask({
       ...localTask,
-      importantBy: newImportantBy,
+      importantBy: newImportantBy
     });
-
     try {
       await onUpdate({ importantBy: newImportantBy });
     } catch (error) {
@@ -134,7 +331,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
       setIsImportant(!willBeImportant);
       setLocalTask({
         ...localTask,
-        importantBy: currentImportantBy,
+        importantBy: currentImportantBy
       });
     }
   };
@@ -150,130 +347,51 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
 
   const handleStatusChange = async () => {
     if (!localTask) return;
-    
-    const currentStatus = localTask.status;
-    const updatedStatus = currentStatus === 'completed' ? 'pending' : 'completed';
-    const currentImportantBy = localTask.importantBy || [];
-    
-    setLocalTask({
+
+    // Create updated history with current completion date
+    const updatedHistory = [
+      ...(localTask.history || []),
+      {
+        date: localTask.dueDate, // Use current date for completion
+        completed: true
+      }
+    ];
+
+    // For one-time tasks, mark as completed
+    const shouldCompleteTask =
+      localTask.frequency === TaskFrequency.ONCE ||
+      (localTask.frequency === TaskFrequency.CUSTOM &&
+        localTask.customSchedule?.every((date) =>
+          updatedHistory.some((h) => moment(h.date).isSame(date, 'day'))
+        ));
+
+    // Calculate next date using CURRENT frequency
+    const nextDate = getNextScheduledDate({
       ...localTask,
-      status: updatedStatus,
-      importantBy: currentImportantBy
+      history: updatedHistory,
+      frequency: frequency as TaskFrequency
     });
 
+    // Prepare update data
+    const updateData = {
+      history: updatedHistory,
+      ...(nextDate && { dueDate: nextDate.toISOString() }),
+      ...(shouldCompleteTask && { status: 'completed' })
+    };
+
     try {
-      await onUpdate({ status: updatedStatus });
+      // Optimistic update
+      setLocalTask({
+        ...localTask,
+        ...updateData
+      });
+
+      // Send update to backend
+      await onUpdate(updateData);
     } catch (error) {
       console.error('Failed to update status:', error);
-      setLocalTask({
-        ...localTask,
-        status: currentStatus
-      });
-    }
-  };
-
-  const handleTaskNameClick = () => {
-    setEditingTaskName(true);
-  };
-
-  const handleTaskNameBlur = async () => {
-    if (!localTask || tempTaskName.trim() === localTask.taskName) {
-      setEditingTaskName(false);
-      return;
-    }
-
-    const originalTaskName = localTask.taskName;
-    setLocalTask({
-      ...localTask,
-      taskName: tempTaskName.trim()
-    });
-    setEditingTaskName(false);
-
-    try {
-      await onUpdate({ taskName: tempTaskName.trim() });
-    } catch (error) {
-      console.error('Failed to update task name:', error);
-      setLocalTask({
-        ...localTask,
-        taskName: originalTaskName
-      });
-      setTempTaskName(originalTaskName);
-    }
-  };
-
-  const handleTaskNameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleTaskNameBlur();
-    }
-  };
-
-  const handleDescClick = () => {
-    setEditingDesc(true);
-  };
-
-  const handleDescBlur = async () => {
-    if (!localTask || tempDesc === localTask.description) {
-      setEditingDesc(false);
-      return;
-    }
-
-    const originalDesc = localTask.description;
-    setLocalTask({
-      ...localTask,
-      description: tempDesc
-    });
-    setEditingDesc(false);
-
-    try {
-      await onUpdate({ description: tempDesc });
-    } catch (error) {
-      console.error('Failed to update description:', error);
-      setLocalTask({
-        ...localTask,
-        description: originalDesc
-      });
-      setTempDesc(originalDesc);
-    }
-  };
-
-  const handleDescKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleDescBlur();
-    }
-  };
-
-  const handleDueDateClick = () => {
-    setEditingDueDate(true);
-  };
-
-  const handleDueDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTempDueDate(e.target.value);
-  };
-
-  const handleDueDateBlur = async () => {
-    if (!localTask || tempDueDate === localTask.dueDate) {
-      setEditingDueDate(false);
-      return;
-    }
-
-    const originalDueDate = localTask.dueDate;
-    setLocalTask({
-      ...localTask,
-      dueDate: tempDueDate
-    });
-    setEditingDueDate(false);
-
-    try {
-      await onUpdate({ dueDate: tempDueDate });
-    } catch (error) {
-      console.error('Failed to update due date:', error);
-      setLocalTask({
-        ...localTask,
-        dueDate: originalDueDate
-      });
-      setTempDueDate(originalDueDate);
+      // Revert on error
+      setLocalTask(localTask);
     }
   };
 
@@ -284,25 +402,41 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-row items-start justify-between space-y-1">
-        {editingTaskName ? (
-          <Textarea
-            ref={taskNameTextareaRef}
-            value={tempTaskName}
-            onChange={(e) => setTempTaskName(e.target.value)}
-            onBlur={handleTaskNameBlur}
-            onKeyDown={handleTaskNameKeyDown}
-            className="resize-none text-xl font-semibold text-gray-900"
-            rows={1}
-          />
-        ) : (
-          <h1
-            className="cursor-pointer rounded p-1 text-justify text-xl font-semibold text-gray-900 hover:bg-gray-100"
-            onClick={handleTaskNameClick}
-          >
-            {localTask.taskName}
-          </h1>
-        )}
-
+        <div className="flex">
+          {editingTaskName ? (
+            <Textarea
+              ref={taskNameTextareaRef}
+              value={tempTaskName}
+              onChange={(e) => setTempTaskName(e.target.value)}
+              onBlur={async () => {
+                if (tempTaskName.trim() !== localTask.taskName) {
+                  setLocalTask({ ...localTask, taskName: tempTaskName.trim() });
+                  try {
+                    await onUpdate({ taskName: tempTaskName.trim() });
+                  } catch (error) {
+                    console.error('Failed to update task name:', error);
+                  }
+                }
+                setEditingTaskName(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  taskNameTextareaRef.current?.blur();
+                }
+              }}
+              className="resize-none text-xl font-semibold text-gray-900"
+              rows={1}
+            />
+          ) : (
+            <h1
+              className="cursor-pointer text-wrap break-words rounded p-1 text-justify text-xl font-semibold text-gray-900 hover:bg-gray-100"
+              onClick={() => setEditingTaskName(true)}
+            >
+              {localTask.taskName}
+            </h1>
+          )}
+        </div>
         <div className="flex flex-row items-center gap-2">
           <Button
             variant="ghost"
@@ -321,37 +455,55 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
               }`}
             />
           </Button>
+          {/* <Button variant="secondary" onClick={handleStatusChange}>
+            {localTask.history?.some((entry) => entry.completed)
+              ? 'Undo'
+              : 'Complete'}
+          </Button> */}
 
           <Button variant="secondary" onClick={handleStatusChange}>
-            {localTask.status === 'completed' ? 'Undo' : 'Complete'}
+            Complete
           </Button>
         </div>
       </div>
 
+      {/* Due Date */}
       <div className="flex flex-row items-center justify-between gap-2">
-        <div className="flex items-center gap-1 text-sm">
-          <CalendarIcon className="h-4 w-4 text-orange-500" />
+        <Badge
+          variant="outline"
+          className="flex h-7 max-w-[150px] items-center gap-1 bg-red-700 text-sm"
+        >
+          {/* <CalendarIcon className="h-4 w-4 text-white" /> */}
           {editingDueDate ? (
             <input
               ref={dueDateInputRef}
               type="date"
               value={tempDueDate}
-              onChange={handleDueDateChange}
-              onBlur={handleDueDateBlur}
-              className="rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800"
+              onChange={(e) => setTempDueDate(e.target.value)}
+              onBlur={async () => {
+                if (tempDueDate !== localTask.dueDate) {
+                  setLocalTask({ ...localTask, dueDate: tempDueDate });
+                  try {
+                    await onUpdate({ dueDate: tempDueDate });
+                  } catch (error) {
+                    console.error('Failed to update due date:', error);
+                  }
+                }
+                setEditingDueDate(false);
+              }}
+              className="rounded-full bg-red-700 px-2 py-1 text-xs font-medium text-white focus:outline-none"
             />
           ) : (
             <span
-              className="cursor-pointer rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800 hover:bg-orange-200"
-              onClick={handleDueDateClick}
+              className="cursor-pointer rounded-full bg-red-700 px-2 py-1 text-xs font-medium text-white hover:bg-red-700"
+              onClick={() => setEditingDueDate(true)}
             >
               {localTask.dueDate
                 ? formatDate(localTask.dueDate)
                 : 'No due date'}
             </span>
           )}
-        </div>
-
+        </Badge>
         <div className="flex flex-row items-center justify-center gap-1">
           <TooltipProvider>
             <Tooltip>
@@ -371,11 +523,9 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-
           <Badge className="flex items-center gap-1 px-2 py-1 text-xs">
             <ArrowRight className="h-1.5 w-1.5 lg:h-2.5 lg:w-2.5" />
           </Badge>
-
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
@@ -396,22 +546,163 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           </TooltipProvider>
         </div>
       </div>
+
+      {/* Frequency */}
       <div className="flex flex-col space-y-2">
         <h2 className="text-sm font-bold text-gray-700">Frequency</h2>
-        <Select defaultValue="none">
+        <Select
+          value={frequency as string}
+          onValueChange={handleFrequencyChange}
+        >
           <SelectTrigger className="w-40 border-gray-400">
             <SelectValue placeholder="Select frequency" />
           </SelectTrigger>
           <SelectContent className="border-gray-400">
-            <SelectItem value="none">None</SelectItem>
-            <SelectItem value="daily">Daily</SelectItem>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="weekdays">Weekdays</SelectItem>
-            <SelectItem value="monthly">Monthly</SelectItem>
+            <SelectItem value={TaskFrequency.ONCE}>Once</SelectItem>
+            <SelectItem value={TaskFrequency.DAILY}>Daily</SelectItem>
+            <SelectItem value={TaskFrequency.WEEKLY}>Weekly</SelectItem>
+            <SelectItem value={TaskFrequency.WEEKDAYS}>Weekdays</SelectItem>
+            <SelectItem value={TaskFrequency.MONTHLY}>Monthly</SelectItem>
+            <SelectItem value={TaskFrequency.CUSTOM}>Custom</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Weekdays Picker */}
+        {frequency === TaskFrequency.WEEKDAYS && (
+          <div className="flex flex-col space-y-2">
+            <div className="mt-2 flex flex-wrap gap-4">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
+                (day, index) => (
+                  <label key={day} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={
+                        showWeekdaysPicker
+                          ? tempSelectedDays[index]
+                          : selectedDays[index]
+                      }
+                      onChange={() => handleCheckboxChange(index)}
+                      className="form-checkbox h-5 w-5 text-blue-600 transition duration-150 ease-in-out focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      {day}
+                    </span>
+                  </label>
+                )
+              )}
+            </div>
+
+            {showWeekdaysPicker && (
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleWeekdaysCancel}
+                >
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleWeekdaysApply}>
+                  Apply
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+        {frequency === TaskFrequency.MONTHLY && (
+          <div className="space-y-3 pt-2">
+            <div className="flex flex-col space-y-2">
+              <label
+                htmlFor="monthly-day-select"
+                className="text-sm font-medium text-gray-700"
+              >
+                Monthly recurrence
+              </label>
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-500">On day</span>
+                <Select
+                  value={monthlyDay?.toString() || ''}
+                  onValueChange={(value) =>
+                    handleMonthlyDaySelect(parseInt(value))
+                  }
+                >
+                  <SelectTrigger
+                    id="monthly-day-select"
+                    className="w-24 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                    aria-label="Select day of month"
+                  >
+                    <SelectValue placeholder="Day" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-md border-gray-300 shadow-lg">
+                    <SelectGroup>
+                      <SelectLabel>Specific Day</SelectLabel>
+                      <div className="grid grid-cols-7 gap-1 p-2">
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map(
+                          (day) => (
+                            <SelectItem
+                              key={day}
+                              value={day.toString()}
+                              className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-gray-100"
+                            >
+                              {day}
+                            </SelectItem>
+                          )
+                        )}
+                      </div>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-gray-500">of each month</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Date Picker */}
+        {frequency === TaskFrequency.CUSTOM && (
+          <>
+            {showPicker ? (
+              // Show the date picker when showPicker is true
+              <div ref={pickerRef} className="relative z-10 ">
+                <DateRangePicker
+                  ranges={selectedDates}
+                  onChange={handleSelect}
+                  showDateDisplay={true}
+                  rangeColors={['#3D91FF']}
+                  className="w-[500px] border border-gray-200 shadow-lg "
+                />
+                <div className="mt-2 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPicker(false)}
+                    className="mr-2"
+                  >
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={applyCustomDates}>
+                    Apply
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              selectedDateRange && (
+                <div
+                  className="mb-2 flex cursor-pointer items-center gap-2 text-sm text-gray-600"
+                  onClick={() => setShowPicker(true)}
+                >
+                  <CalendarIcon className="h-4 w-4 text-gray-500" />
+                  <span>
+                    Selected Range: {selectedDateRange.startDate} to{' '}
+                    {selectedDateRange.endDate}
+                  </span>
+                </div>
+              )
+            )}
+          </>
+        )}
       </div>
 
+      {/* Description */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-700">Description</h2>
@@ -422,21 +713,79 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
             ref={descTextareaRef}
             value={tempDesc}
             onChange={(e) => setTempDesc(e.target.value)}
-            onBlur={handleDescBlur}
-            onKeyDown={handleDescKeyDown}
+            onBlur={async () => {
+              if (tempDesc !== localTask.description) {
+                setLocalTask({ ...localTask, description: tempDesc });
+                try {
+                  await onUpdate({ description: tempDesc });
+                } catch (error) {
+                  console.error('Failed to update description:', error);
+                }
+              }
+              setEditingDesc(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                descTextareaRef.current?.blur();
+              }
+            }}
             className="text-sm text-gray-600"
             rows={4}
           />
         ) : (
           <p
             className="cursor-pointer whitespace-pre-wrap rounded p-1 text-sm text-gray-600 hover:bg-gray-100"
-            onClick={handleDescClick}
+            onClick={() => setEditingDesc(true)}
           >
             {localTask.description || 'No description provided.'}
           </p>
         )}
       </div>
-      
+
+      {/* History Section */}
+      {localTask?.history && localTask.history.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-800">History</h2>
+          <div className="space-y-2">
+            {/* Create a new array before sorting */}
+            {[...localTask.history]
+              .sort(
+                (a, b) =>
+                  new Date(b.date).getTime() - new Date(a.date).getTime()
+              )
+              .map((entry, index) => (
+                <div key={index} className="flex items-center gap-4">
+                  {/* Badge with Status */}
+                  <div
+                    className={`flex items-center gap-3 rounded-lg border border-gray-200 bg-green-50 px-4 py-2 text-sm  font-medium ${
+                      entry.completed
+                        ? 'bg-green-100 text-green-600'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {/* Status Indicator */}
+                    <span
+                      className={`h-2.5 w-2.5 rounded-full ${
+                        entry.completed ? 'bg-green-600' : 'bg-gray-300'
+                      }`}
+                    />
+                    <span className="text-gray-700">
+                      {moment(entry.date).format('MMM DD, YYYY h:mm A')}
+                    </span>
+                    <span
+                      className={`font-semibold ${
+                        entry.completed ? 'text-green-600' : 'text-gray-500'
+                      }`}
+                    >
+                      {entry.completed ? 'Completed' : 'Incomplete'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

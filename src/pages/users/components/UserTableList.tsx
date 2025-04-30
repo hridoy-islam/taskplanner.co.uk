@@ -187,6 +187,7 @@ export default function UserTableList({ refreshKey }) {
           placeholder="Search..."
           value={searchTerm}
           onChange={handleSearch}
+          className='w-full'
         />
         {/* <div>
           <DynamicPagination

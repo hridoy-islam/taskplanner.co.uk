@@ -4,15 +4,13 @@ import { LogosSection } from './components/logos-section';
 import { FeaturesSection } from './components/features-section';
 import { AppPreviewSection } from './components/app-preview-section';
 import { PricingSection } from './components/pricing-section';
-import { SiteFooter } from './components/site-footer';
-import HowItWorkSection from './components/how-it-work-section';
-import { Header } from './components/header';
+
 
 export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* <SiteHeader /> */}
-      <Header />
+      {/* <Header /> */}
       <main className="flex-1 bg-white">
         <HeroSection />
         <LogosSection />
@@ -21,7 +19,7 @@ export default function HomePage() {
         {/* <HowItWorkSection id="how-it-works" /> */}
         <PricingSection id="pricing" />
       </main>
-      <SiteFooter />
+      {/* <SiteFooter /> */}
     </div>
   );
 }

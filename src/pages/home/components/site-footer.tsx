@@ -1,118 +1,141 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import appleLogo from '../../../assets/imges/home/apple_logo.png';
-import playstoreLogo from '../../../assets/imges/home/playstore_logo.png';
+import { useState } from 'react';
+import { Clipboard, Facebook, Instagram, Linkedin, Twitter, Youtube, Globe, ChevronDown } from 'lucide-react';
+import tlogo from '@/assets/imges/home/tpw.png';
+import { Link } from 'react-router-dom';
 
-export function SiteFooter() {
-  return (
-    <footer className="bg-white  ">
-      <div className="container space-y-8 ">
-        <div className="space-y-4 pb-40 text-center">
-          <h3 className="pb-8 text-5xl font-bold text-taskplanner">
-            Ready to Get Started?
-          </h3>
-          <p className="text-gray-600">
-            Join thousands of teams already using TaskPlanner to boost their
-            productivity.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Button
-              variant="outline"
-              className=" bg-white border-gray-200 text-taskplanner hover:bg-taskplanner hover:text-[#fff]"
-            >
-              Sign Up Now
-            </Button>
-            <Button variant={'outline'} className="bg-taskplanner border-gray-200 text-white">
-              Request Demo
-            </Button>
-          </div>
-        </div>
-      </div>
+// Language options for the language selector
+const languages = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español' },
+  { code: 'fr', name: 'Français' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'ja', name: '日本語' },
+];
 
-      <div className="bg-[#F9F9FB]">
-      <div className="container mx-auto px-4 py-8">
-        {/* Grid layout */}
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Subscribe Section */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold">Subscribe</h4>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="w-full rounded-full border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 sm:w-auto"
-              />
-              <button className="w-full rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto">
-                Send →
-              </button>
-            </div>
-          </div>
+// Footer navigation links
+const footerLinks = [
+  {
+    title: 'Product',
+    links: [
+      { label: 'Task Planner Guide', href: 'guide' },
+      { label: 'Pricing', href: 'pricing' },
+      { label: 'Download Apps', href: 'download-app' },
+    ],
+  },
+  {
+    title: 'Support',
+    links: [
+      { label: 'Help Center', href: '/help' },
+      { label: 'FAQ', href: '/faq' },
+      { label: 'Productivity Method', href: '/productivity-method' },
+    ],
+  },
+  {
+    title: 'Company',
+    links: [
+      { label: 'About Us', href: '/about-us' },
+      { label: 'Career', href: '/careers' },
+    ],
+  },
+  {
+    title: 'Legal',
+    links: [
+      { label: 'Terms & Conditions', href: '/terms' },
+      { label: 'Privacy Policy', href: '/privacy-policy' },
+      { label: 'Security Policy', href: '/security-policy' },
+    ],
+  },
+];
 
-          {/* Quick Links Section */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold">Quick Links</h4>
-            <ul className="grid grid-cols-2 gap-2 text-sm text-gray-600 sm:grid-cols-1 sm:gap-0 sm:space-y-2">
-              <li className="cursor-pointer hover:text-blue-600">About Us</li>
-              <li className="cursor-pointer hover:text-blue-600">Blog</li>
-              <li className="cursor-pointer hover:text-blue-600">Contact</li>
-              <li className="cursor-pointer hover:text-blue-600">FAQ</li>
-            </ul>
-          </div>
+export default function SiteFooter() {
+  const currentYear = new Date().getFullYear();
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
 
-          {/* Contact Us Section */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold">Contact Us</h4>
-            <div className="text-sm text-gray-600">
-              <p className="hover:text-blue-600">123 Business Street</p>
-              <p className="hover:text-blue-600">New York, NY 10001</p>
-              <p className="cursor-pointer hover:text-blue-600">contact@taskplanner.com</p>
-            </div>
-          </div>
+  const toggleDropdown = () => setIsOpen(!isOpen);
 
-          {/* Get the App Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold">Get the app</h3>
-            <div className="flex flex-col gap-3">
-              <Button className="h-14 bg-taskplanner hover:bg-taskplanner/90 text-white sm:h-16">
-                <div className="flex items-center">
-                  <img
-                    src={appleLogo}
-                    alt="App Store"
-                    width={16}
-                    height={16}
-                  />
-                  <div className="mx-3 h-6 border-l border-[#0e3261]"></div>
-                  <div className="flex flex-col items-start">
-                    <p className="text-xs font-normal sm:text-sm">Download on the</p>
-                    <p className="text-sm font-bold sm:text-base">App Store</p>
-                  </div>
-                </div>
-              </Button>
-              <Button className="h-14 bg-taskplanner hover:bg-taskplanner/90 text-white sm:h-16">
-                <div className="flex items-center">
-                  <img
-                    src={playstoreLogo}
-                    alt="Google Play"
-                    width={16}
-                    height={16}
-                  />
-                  <div className="mx-3 h-6 border-l border-[#0e3261]"></div>
-                  <div className="flex flex-col items-start">
-                    <p className="text-xs font-normal sm:text-sm">Get it on</p>
-                    <p className="text-sm font-bold sm:text-base">Google Play</p>
-                  </div>
-                </div>
-              </Button>
-            </div>
-          </div>
-        </div>
+  const selectLanguage = (language) => {
+    setSelectedLanguage(language);
+    setIsOpen(false);
+  };
 
-        {/* Copyright */}
-        <div className="mt-8 pt-5 text-center text-sm text-gray-600">
-          <p>© 2024 TaskPlanner. All rights reserved.</p>
-        </div>
-      </div>
+  // Footer section component (inline)
+  const FooterSection = ({ title, description }) => (
+    <div className="mb-6 md:mb-0">
+      <h3 className="text-white font-medium mb-2">{title}</h3>
+      <p className="text-sm text-gray-300">{description}</p>
     </div>
+  );
+
+  // Social icon component (inline)
+  const SocialIcon = ({ Icon, href, label }) => (
+    <a
+      href={href}
+      aria-label={label}
+      className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center justify-center h-10 w-10 rounded-full hover:bg-white/10"
+    >
+      <Icon size={20} />
+    </a>
+  );
+
+  return (
+    <footer className="bg-taskplanner text-white py-6">
+      {/* Top section with logo and login */}
+      <div className="container mx-auto px-4 ">
+        {/* <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <div className="flex items-center mb-4 md:mb-0 gap-2">
+            <div className=" w-24">
+              <img src={tlogo} className="object-cover scale-125" alt="Task Planner Logo" />
+            </div>
+          </div>
+          
+        </div> */}
+
+        {/* Main footer sections */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-6">
+          {footerLinks.map((section, index) => (
+            <div key={index}>
+              <h3 className="text-white font-medium mb-4">{section.title}</h3>
+              <ul className="space-y-2">
+                {section.links.map((link, idx) => (
+                  <Link
+                  to={link.href}
+                  className="text-sm text-gray-300 hover:text-white transition-colors duration-200 block"
+                >
+                  {link.label}
+                </Link>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="pt-6 border-t border-white/10">
+          <div className="flex flex-col-reverse md:flex-row justify-between items-center">
+            {/* Language selector */}
+            <div className="flex items-center mt-4 md:mt-0">
+              {/* Language dropdown */}
+              
+              {/* Legal links */}
+              <div className="flex items-center space-x-4 text-sm">
+                
+                <span className="text-gray-300">
+                  Copyright © {currentYear} Task Planner
+                </span>
+              </div>
+            </div>
+
+            {/* Social icons */}
+            <div className="flex space-x-2">
+              <SocialIcon Icon={Twitter} href="https://twitter.com" label="Twitter" />
+              <SocialIcon Icon={Facebook} href="https://facebook.com" label="Facebook" />
+              <SocialIcon Icon={Linkedin} href="https://linkedin.com" label="LinkedIn" />
+              <SocialIcon Icon={Instagram} href="https://instagram.com" label="Instagram" />
+              <SocialIcon Icon={Youtube} href="https://youtube.com" label="YouTube" />
+            </div>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 }

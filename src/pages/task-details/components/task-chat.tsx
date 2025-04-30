@@ -35,13 +35,29 @@ import {
   Paperclip,
   Edit,
   Check,
-  X
+  X,
+  DotIcon,
+  DotSquareIcon,
+  EyeIcon,
+  AlignJustify
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+  DialogDescription
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
 import axios from 'axios';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
 import { ImageUploader } from './file-uploader';
 import Loader from '@/components/shared/loader';
 import { Card } from '@/components/ui/card';
@@ -76,6 +92,16 @@ export default function TaskChat({ task }: TaskChatProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleOpenDialog = () => {
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+  };
 
   useEffect(() => {
     if (commentsEndRef.current) {
@@ -83,7 +109,6 @@ export default function TaskChat({ task }: TaskChatProps) {
     }
   }, [displayedComments?.length]);
 
-  
   const goDown = () => {
     if (commentsEndRef.current) {
       commentsEndRef.current.scrollTop = commentsEndRef.current.scrollHeight;
@@ -214,13 +239,17 @@ export default function TaskChat({ task }: TaskChatProps) {
         });
       } else {
         setComments((prevComments) => {
-          if (!prevComments.some((comment) => comment?._id === newComment._id)) {
+          if (
+            !prevComments.some((comment) => comment?._id === newComment._id)
+          ) {
             return [...prevComments, newComment];
           }
           return prevComments;
         });
         setDisplayedComments((prevComments) => {
-          if (!prevComments.some((comment) => comment?._id === newComment._id)) {
+          if (
+            !prevComments.some((comment) => comment?._id === newComment._id)
+          ) {
             return [...prevComments, newComment];
           }
           return prevComments;
@@ -364,283 +393,410 @@ export default function TaskChat({ task }: TaskChatProps) {
     );
   }
   return (
-    <Card className="flex w-full h-full flex-col justify-between rounded-xl scrollbar-hide">
-  {/* Header Section (Fixed) */}
-  <div className="sticky top-0 z-10 flex w-full flex-row items-center justify-start bg-gray-200 p-4 rounded-t-xl">
-    <div className="flex items-center gap-4">
-      <Avatar className="h-10 w-10">
-        <AvatarImage src={task?.assigned?.image} />
-        <AvatarFallback>
-          {task?.assigned?.name
-            .split(' ')
-            .map((n) => n[0])
-            .join('')}
-        </AvatarFallback>
-      </Avatar>
-      <h2 className="text-lg font-semibold">{task?.assigned?.name}</h2>
-    </div>
-  </div>
-
-  <ScrollArea className="flex-1 overflow-y-auto p-6 ">
-    <div ref={commentsEndRef} className="space-y-4">
-      {comments.length > displayedComments.length && (
-        <div className="text-center">
-          <Loader />
+    <Card className="flex h-full w-full flex-col justify-between rounded-xl scrollbar-hide">
+      {/* Header Section (Fixed) */}
+      <div className="sticky top-0 z-10 flex w-full items-center justify-between rounded-t-xl bg-gray-200 p-4">
+        {/* Left side content */}
+        <div className="flex items-center gap-4">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={task?.assigned?.image} />
+            <AvatarFallback>
+              {task?.assigned?.name
+                .split(' ')
+                .map((n) => n[0])
+                .join('')}
+            </AvatarFallback>
+          </Avatar>
+          <h2 className="text-lg font-semibold">{task?.assigned?.name}</h2>
         </div>
-      )}
-      {displayedComments?.map((comment: any) => {
-        const isFile = comment.isFile;
-        let parsedContent = comment.content;
-        if (isFile) {
-          try {
-            if (
-              comment.content.trim().startsWith('{') ||
-              comment.content.trim().startsWith('[')
-            ) {
-              parsedContent = JSON.parse(comment.content);
+
+        {/* Right side content: 3-dot menu */}
+        <div className="ml-auto flex items-center">
+          {/* ShadCN DropdownMenu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="rounded-full p-2 hover:bg-gray-300">
+                <AlignJustify size={20} /> {/* Using Lucid 3-dot icon */}
+              </button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent className="w-48 -translate-x-4 rounded-md bg-white shadow-lg">
+              <ul className="">
+                <DropdownMenuItem
+                  onClick={handleOpenDialog}
+                  className="w-full p-2 text-left text-gray-700 hover:bg-gray-100"
+                >
+                  Files
+                </DropdownMenuItem>
+              </ul>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* ShadCN Dialog for 'Files' */}
+        <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
+          <DialogTrigger />
+          <DialogContent className="mx-auto max-w-2xl rounded-md bg-white p-4 shadow-lg">
+            <DialogTitle className="text-xl font-semibold">Files</DialogTitle>
+            <DialogDescription className="mt-2">
+              <ScrollArea className="h-[400px]">
+                <div className="grid grid-cols-1 gap-4">
+                  {comments
+                    .filter((comment) => comment.isFile)
+                    .map((comment) => {
+                      let fileContent;
+                      try {
+                        fileContent = JSON.parse(comment.content);
+                      } catch (error) {
+                        fileContent = comment.content;
+                      }
+
+                      const fileUrl =
+                        typeof fileContent === 'object'
+                          ? fileContent.url
+                          : fileContent;
+
+                      return (
+                        <a
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block"
+                          key={comment._id} // move key here
+                        >
+                          <Card className="cursor-pointer border border-gray-200 p-4 shadow-md hover:bg-gray-100">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0">
+                                {typeof fileContent === 'object' &&
+                                fileContent.mimeType?.startsWith('image/') ? (
+                                  <img
+                                    src={fileContent.url}
+                                    alt={fileContent.originalFilename}
+                                    className="h-16 w-16 rounded object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-16 w-16 items-center justify-center rounded bg-gray-100">
+                                    <Paperclip className="h-8 w-8 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <h3 className="font-medium">
+                                    {typeof fileContent === 'object'
+                                      ? fileContent.originalFilename
+                                      : 'File'}
+                                  </h3>
+                                  <EyeIcon className="h-5 w-5 text-blue-500" />
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                  Uploaded by {comment.authorId?.name}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  {moment(comment.createdAt).format(
+                                    'MMM D, YYYY h:mm A'
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </Card>
+                        </a>
+                      );
+                    })}
+                </div>
+
+                {comments.filter((comment) => comment.isFile).length === 0 && (
+                  <div className="flex h-full flex-col items-center justify-center py-8 text-gray-500">
+                    <Paperclip className="h-12 w-12" />
+                    <p className="mt-2">No files shared yet</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </DialogDescription>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <ScrollArea className="flex-1 overflow-y-auto p-6 ">
+        <div ref={commentsEndRef} className="space-y-4">
+          {comments.length > displayedComments.length && (
+            <div className="text-center">
+              <Loader />
+            </div>
+          )}
+          {displayedComments?.map((comment: any) => {
+            const isFile = comment.isFile;
+            let parsedContent = comment.content;
+            if (isFile) {
+              try {
+                if (
+                  comment.content.trim().startsWith('{') ||
+                  comment.content.trim().startsWith('[')
+                ) {
+                  parsedContent = JSON.parse(comment.content);
+                }
+              } catch (error) {
+                console.error('Failed to parse file content:', error);
+              }
             }
-          } catch (error) {
-            console.error('Failed to parse file content:', error);
-          }
-        }
-        return (
-          <div
-            key={comment._id}
-            className={`group mb-4 flex w-full flex-row gap-1 ${
-              comment.authorId._id === user?._id ? 'justify-end' : 'justify-start'
-            }`}
-          >
-            <div className="relative flex flex-col items-end justify-end">
-              {comment.authorId?._id === user?._id && !comment.isFile && (
-                <div className="absolute -left-8 top-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                  <button
-                    onClick={() => handleEditComment(comment._id, comment.content)}
-                    className="rounded-full bg-gray-100 p-1 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-800"
-                    aria-label="Edit message"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
+            return (
               <div
-                className={`relative flex min-w-[120px] max-w-[320px] flex-col rounded-2xl p-3 transition-all duration-200 group-hover:shadow-md ${
+                key={comment._id}
+                className={`group mb-4 flex w-full flex-row gap-1 ${
                   comment.authorId._id === user?._id
-                    ? 'rounded-tr-none bg-[#002055] text-white'
-                    : 'rounded-tl-none bg-[#9333ea] text-white'
+                    ? 'justify-end'
+                    : 'justify-start'
                 }`}
-                style={{
-                  wordWrap: 'break-word',
-                  whiteSpace: 'pre-wrap',
-                  overflowWrap: 'break-word',
-                }}
               >
-                <div className="mb-1 flex items-center space-x-2">
-                  <span className="text-sm font-medium">{comment?.authorId?.name}</span>
-                </div>
-                <div className="max-w-full">
-                  {comment.isFile ? (
-                    <div
-                      className={`flex items-center space-x-2 rounded-lg p-2 ${
-                        comment.authorId._id === user?._id
-                          ? 'bg-blue-500/15'
-                          : 'bg-green-300/80'
-                      }`}
-                    >
-                      {(() => {
-                        let parsedContent;
-                        try {
-                          parsedContent = JSON.parse(comment.content);
-                        } catch (error) {
-                          parsedContent = comment.content;
+                <div className="relative flex flex-col items-end justify-end">
+                  {comment.authorId?._id === user?._id && !comment.isFile && (
+                    <div className="absolute -left-8 top-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <button
+                        onClick={() =>
+                          handleEditComment(comment._id, comment.content)
                         }
-                        return (
-                          <div className="flex items-start space-x-1">
-                            <img
-                              src={parsedContent}
-                              alt={'File'}
-                              className="max-h-32 max-w-full rounded shadow-sm"
-                            />
-                            <span className="overflow-hidden text-ellipsis">
-                              {typeof parsedContent === 'object'
-                                ? parsedContent.originalFilename
-                                : ''}
-                            </span>
+                        className="rounded-full bg-gray-100 p-1 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-800"
+                        aria-label="Edit message"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                  <div
+                    className={`relative flex min-w-[120px] max-w-[320px] flex-col rounded-2xl p-3 transition-all duration-200 group-hover:shadow-md ${
+                      comment.authorId._id === user?._id
+                        ? 'rounded-tr-none bg-[#002055] text-white'
+                        : 'rounded-tl-none bg-[#9333ea] text-white'
+                    }`}
+                    style={{
+                      wordWrap: 'break-word',
+                      whiteSpace: 'pre-wrap',
+                      overflowWrap: 'break-word'
+                    }}
+                  >
+                    <div className="mb-1 flex items-center space-x-2">
+                      <span className="text-sm font-medium">
+                        {comment?.authorId?.name}
+                      </span>
+                    </div>
+                    <div className="max-w-full">
+                      {comment.isFile ? (
+                        <div
+                          className={`flex items-center space-x-2 rounded-lg p-2 ${
+                            comment.authorId._id === user?._id
+                              ? 'bg-blue-500/15'
+                              : 'bg-green-300/80'
+                          }`}
+                        >
+                          {(() => {
+                            let parsedContent;
+                            try {
+                              parsedContent = JSON.parse(comment.content);
+                            } catch (error) {
+                              parsedContent = comment.content;
+                            }
+                            return (
+                              <div className="flex items-start space-x-1">
+                                <img
+                                  src={parsedContent}
+                                  alt={'File'}
+                                  className="max-h-32 max-w-full rounded shadow-sm"
+                                />
+                                <span className="overflow-hidden text-ellipsis">
+                                  {typeof parsedContent === 'object'
+                                    ? parsedContent.originalFilename
+                                    : ''}
+                                </span>
+                                <a
+                                  href={
+                                    typeof parsedContent === 'object'
+                                      ? parsedContent.url
+                                      : parsedContent
+                                  }
+                                  download={
+                                    typeof parsedContent === 'object'
+                                      ? parsedContent.originalFilename
+                                      : 'file'
+                                  }
+                                  className="text-gray-900 hover:underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <ArrowUpRightFromSquare className="h-5 w-5 text-gray-500 hover:text-gray-200" />
+                                </a>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <Linkify
+                          componentDecorator={(
+                            decoratedHref,
+                            decoratedText,
+                            key
+                          ) => (
                             <a
-                              href={
-                                typeof parsedContent === 'object'
-                                  ? parsedContent.url
-                                  : parsedContent
-                              }
-                              download={
-                                typeof parsedContent === 'object'
-                                  ? parsedContent.originalFilename
-                                  : 'file'
-                              }
-                              className="text-gray-900 hover:underline"
+                              href={decoratedHref}
+                              key={key}
+                              className="text-blue-300 underline transition-colors hover:text-blue-200"
                               target="_blank"
                               rel="noopener noreferrer"
                             >
-                              <ArrowUpRightFromSquare className="h-5 w-5 text-gray-500 hover:text-gray-200" />
+                              {decoratedText}
                             </a>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  ) : (
-                    <Linkify
-                      componentDecorator={(decoratedHref, decoratedText, key) => (
-                        <a
-                          href={decoratedHref}
-                          key={key}
-                          className="text-blue-300 underline transition-colors hover:text-blue-200"
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          )}
                         >
-                          {decoratedText}
-                        </a>
+                          {comment.content}
+                        </Linkify>
                       )}
-                    >
-                      {comment.content}
-                    </Linkify>
-                  )}
+                    </div>
+                  </div>
+                  <div
+                    className={`mt-1 flex w-full flex-row items-center gap-1 ${
+                      comment.authorId._id !== user?._id
+                        ? 'justify-end'
+                        : 'justify-between'
+                    }`}
+                  >
+                    {comment.authorId._id === user?._id && (
+                      <p className="text-xs text-gray-500">
+                        {comment.seenBy?.length > 1 ? 'Seen' : 'Delivered'}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-1">
+                      {comment.editedAt && (
+                        <span className="text-[10px] italic text-gray-400">
+                          edited
+                        </span>
+                      )}
+                      <span className="text-[10px] text-gray-500">
+                        {moment(comment?.createdAt).isSame(moment(), 'day')
+                          ? moment(comment?.createdAt).format('h:mm A')
+                          : moment(comment?.createdAt).format('MMM D')}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div
-                className={`mt-1 flex w-full flex-row items-center gap-1 ${
-                  comment.authorId._id !== user?._id ? 'justify-end' : 'justify-between'
-                }`}
-              >
-                {comment.authorId._id === user?._id && (
-                  <p className="text-xs text-gray-500">
-                    {comment.seenBy?.length > 1 ? 'Seen' : 'Delivered'}
-                  </p>
-                )}
-                <div className="flex items-center gap-1">
-                  {comment.editedAt && (
-                    <span className="text-[10px] italic text-gray-400">edited</span>
-                  )}
-                  <span className="text-[10px] text-gray-500">
-                    {moment(comment?.createdAt).isSame(moment(), 'day')
-                      ? moment(comment?.createdAt).format('h:mm A')
-                      : moment(comment?.createdAt).format('MMM D')}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  </ScrollArea>
+            );
+          })}
+        </div>
+      </ScrollArea>
 
-  {/* Comment Input Section (Sticky) */}
-  <div className="basis-1/7 sticky bottom-0 rounded-b-md border-t border-gray-200 bg-gray-50 p-6">
-    {/* Editing Message Indicator */}
-    {editingCommentId && (
-      <div
-        className="mb-2 flex items-center justify-between rounded-md bg-amber-50 px-3 py-2 text-sm"
-        style={{
-          position: 'absolute', // Ensure it doesn't push other elements
-          top: '-50px', // Position it above the form
-          left: '16px', // Align with the form padding
-          width: 'calc(100% - 32px)', // Match the form width
-          zIndex: 10, // Ensure it appears above other content
-        }}
-      >
-        <span>Editing message</span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={handleCancelEdit}
-        >
-          <X className="h-4 w-4" />
-          Cancel
-        </Button>
-      </div>
-    )}
-    {/* Comment Form */}
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (editingCommentId) {
-          handleSaveEdit(editingCommentId);
-        } else {
-          const formData = new FormData(e.currentTarget);
-          const content = formData.get('content') as string;
-          handleCommentSubmit({ content });
-        }
-      }}
-      className="relative grid gap-2" // Add `relative` to contain absolutely positioned elements
-    >
-      <Label htmlFor="comment" className="sr-only">
-        Add Comment
-      </Label>
-      {files?.length === 0 && (
-        <Textarea
-          id="comment"
-          name="content"
-          {...(!editingCommentId
-            ? register('content', { required: true })
-            : {})}
-          value={editingCommentId ? editedContent : undefined}
-          onChange={(e) => {
-            if (editingCommentId) {
-              setEditedContent(e.target.value);
-            }
-          }}
-          placeholder={
-            editingCommentId ? 'Edit your message...' : 'Type your comment here...'
-          }
-          className="resize-none rounded-md"
-          rows={3}
-          onKeyDown={(e) => {
-            typingHandler();
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              if (editingCommentId) {
-                handleSaveEdit(editingCommentId);
-              } else {
-                const formData = new FormData(e.currentTarget.form);
-                const content = formData.get('content') as string;
-                handleCommentSubmit({ content });
-              }
-            }
-          }}
-          disabled={isSubmitting}
-        />
-      )}
-      <div className="flex flex-row items-center justify-center gap-2">
-        {!editingCommentId && (
-          <Button
-            type="button"
-            variant="outline"
-            size="default"
-            onClick={() => setIsImageUploaderOpen(true)}
+      {/* Comment Input Section (Sticky) */}
+      <div className="basis-1/7 sticky bottom-0 rounded-b-md border-t border-gray-200 bg-gray-50 p-6">
+        {/* Editing Message Indicator */}
+        {editingCommentId && (
+          <div
+            className="mb-2 flex items-center justify-between rounded-md bg-amber-50 px-3 py-2 text-sm"
+            style={{
+              position: 'absolute', // Ensure it doesn't push other elements
+              top: '-50px', // Position it above the form
+              left: '16px', // Align with the form padding
+              width: 'calc(100% - 32px)', // Match the form width
+              zIndex: 10 // Ensure it appears above other content
+            }}
           >
-            <Paperclip className="mr-2 h-4 w-4" />
-            Upload
-          </Button>
+            <span>Editing message</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelEdit}
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+          </div>
         )}
-        <Button type="submit" className="w-full rounded-md" variant={'outline'}>
-          {editingCommentId ? 'Update' : 'Submit'}
-        </Button>
+        {/* Comment Form */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (editingCommentId) {
+              handleSaveEdit(editingCommentId);
+            } else {
+              const formData = new FormData(e.currentTarget);
+              const content = formData.get('content') as string;
+              handleCommentSubmit({ content });
+            }
+          }}
+          className="relative grid gap-2" // Add `relative` to contain absolutely positioned elements
+        >
+          <Label htmlFor="comment" className="sr-only">
+            Add Comment
+          </Label>
+          {files?.length === 0 && (
+            <Textarea
+              id="comment"
+              name="content"
+              {...(!editingCommentId
+                ? register('content', { required: true })
+                : {})}
+              value={editingCommentId ? editedContent : undefined}
+              onChange={(e) => {
+                if (editingCommentId) {
+                  setEditedContent(e.target.value);
+                }
+              }}
+              placeholder={
+                editingCommentId
+                  ? 'Edit your message...'
+                  : 'Type your comment here...'
+              }
+              className="resize-none rounded-md"
+              rows={3}
+              onKeyDown={(e) => {
+                typingHandler();
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (editingCommentId) {
+                    handleSaveEdit(editingCommentId);
+                  } else {
+                    const formData = new FormData(e.currentTarget.form);
+                    const content = formData.get('content') as string;
+                    handleCommentSubmit({ content });
+                  }
+                }
+              }}
+              disabled={isSubmitting}
+            />
+          )}
+          <div className="flex flex-row items-center justify-center gap-2">
+            {!editingCommentId && (
+              <Button
+                type="button"
+                variant="outline"
+                size="default"
+                onClick={() => setIsImageUploaderOpen(true)}
+              >
+                <Paperclip className="mr-2 h-4 w-4" />
+                Upload
+              </Button>
+            )}
+            <Button
+              type="submit"
+              className="w-full rounded-md"
+              variant={'outline'}
+            >
+              {editingCommentId ? 'Update' : 'Submit'}
+            </Button>
+          </div>
+        </form>
+        {/* Image Uploader Component */}
+        <ImageUploader
+          open={isImageUploaderOpen}
+          onOpenChange={setIsImageUploaderOpen}
+          multiple={false}
+          onUploadComplete={(uploadedFiles) => {
+            handleCommentSubmit({
+              content: uploadedFiles.data.fileUrl,
+              isFile: true
+            });
+          }}
+          className="uc-light"
+        />
       </div>
-    </form>
-    {/* Image Uploader Component */}
-    <ImageUploader
-      open={isImageUploaderOpen}
-      onOpenChange={setIsImageUploaderOpen}
-      multiple={false}
-      onUploadComplete={(uploadedFiles) => {
-        handleCommentSubmit({
-          content: uploadedFiles.data.fileUrl,
-          isFile: true,
-        });
-      }}
-      className="uc-light"
-    />
-  </div>
-</Card>
+    </Card>
   );
 }

@@ -1,13 +1,9 @@
-
-
-
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
-import {  updateTask } from '@/redux/features/allTaskSlice';
+import { updateTask } from '@/redux/features/allTaskSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/redux/store';
 
@@ -41,28 +37,30 @@ export default function CompletedTasks() {
   const { tasks } = useSelector((state: RootState) => state.alltasks);
   const user = useSelector((state: any) => state.auth.user);
 
-
-
   useEffect(() => {
     const filterTasks = () => {
       const filtered = tasks
         .filter((task) => {
           if (!task) return false;
 
-          const taskNameMatches = (task.taskName?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-                  const isCompleted = task.status === 'completed';
-            
-                  return taskNameMatches && isCompleted;
+          const taskNameMatches = (task.taskName?.toLowerCase() || '').includes(
+            searchTerm.toLowerCase()
+          );
+          const isCompleted = task.status === 'completed';
+
+          return taskNameMatches && isCompleted;
         })
         .sort((a, b) => {
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+          return (
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          );
         });
 
       setFilteredTasks(filtered);
     };
 
     filterTasks();
-  }, [searchTerm, tasks, user._id]); 
+  }, [searchTerm, tasks, user._id]);
 
   // Enable polling to keep tasks updated
   usePollTasks({
@@ -78,16 +76,15 @@ export default function CompletedTasks() {
   // In parent component
   const handleMarkAsImportant = async (taskId: string) => {
     const originalTasks = [...tasks];
-    const currentTask = tasks.find((task) => task?._id === taskId);
+    const currentTask = filteredTasks.find((task) => task?._id === taskId);
     if (!currentTask || !user?._id) return;
-  
+
     const alreadyMarked = currentTask.importantBy?.includes(user._id);
-  
-    // Toggle the user's ID in the array
+
     const updatedImportantBy = alreadyMarked
       ? currentTask.importantBy?.filter((id) => id !== user._id) // remove
       : [...(currentTask.importantBy || []), user._id]; // add
-  
+
     // Optimistic update
     setFilteredTasks((prev) =>
       prev.map((task) =>
@@ -96,49 +93,48 @@ export default function CompletedTasks() {
           : task
       )
     );
-  
+
     try {
       await dispatch(
         updateTask({
           taskId,
           taskData: {
             importantBy: updatedImportantBy
-          },
+          }
         })
       ).unwrap();
     } catch (error) {
       setFilteredTasks(originalTasks);
       toast({
         variant: 'destructive',
-        title: 'Failed to update task importance',
+        title: 'Failed to update task importance'
       });
     }
   };
-const handleToggleTaskCompletion = async (taskId: string) => {
-      const taskToToggle = tasks.find((task) => task._id === taskId);
-      if (!taskToToggle) return;
-  
-      const updatedStatus =
-        taskToToggle.status === 'completed' ? 'pending' : 'completed';
-  
-      try {
-        await dispatch(
-          updateTask({
-            taskId,
-            taskData: { status: updatedStatus }
-          })
-        ).unwrap();
-  
-        toast({ title: 'Task status updated' });
-      } catch (error: any) {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to update task',
-          description: error?.message || 'An error occurred'
-        });
-      }
-    };
+  const handleToggleTaskCompletion = async (taskId: string) => {
+    const taskToToggle = tasks.find((task) => task._id === taskId);
+    if (!taskToToggle) return;
 
+    const updatedStatus =
+      taskToToggle.status === 'completed' ? 'pending' : 'completed';
+
+    try {
+      await dispatch(
+        updateTask({
+          taskId,
+          taskData: { status: updatedStatus }
+        })
+      ).unwrap();
+
+      toast({ title: 'Task status updated' });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to update task',
+        description: error?.message || 'An error occurred'
+      });
+    }
+  };
 
   return (
     <Card className="flex h-[calc(88vh-7rem)] flex-col overflow-hidden px-2">
@@ -149,11 +145,11 @@ const handleToggleTaskCompletion = async (taskId: string) => {
         onChange={handleSearch}
       />
       <ScrollArea className=" flex-1 overflow-y-auto px-6 scrollbar-hide">
-      <TaskList
-      tasks={filteredTasks}
-      onMarkAsImportant={handleMarkAsImportant}
-      onToggleTaskCompletion={handleToggleTaskCompletion}
-      />
+        <TaskList
+          tasks={filteredTasks}
+          onMarkAsImportant={handleMarkAsImportant}
+          onToggleTaskCompletion={handleToggleTaskCompletion}
+        />
       </ScrollArea>
     </Card>
   );

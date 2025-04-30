@@ -174,6 +174,7 @@ export default function CreatorTableList({ refreshKey }) {
           placeholder="Search..."
           value={searchTerm}
           onChange={handleSearch}
+          className='w-full'
         />
         {/* <div>
           <DynamicPagination

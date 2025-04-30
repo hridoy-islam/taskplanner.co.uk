@@ -291,7 +291,7 @@ export default function TaskPlanner() {
                 <div
                   key={task._id}
                   className={`mb-1 w-full truncate rounded p-1 text-xs font-semibold max-lg:hidden ${
-                    task.important ? 'bg-orange-400' : 'bg-green-400'
+                      task.importantBy?.includes(user?._id) ?  'bg-orange-400' : 'bg-green-400'
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -360,7 +360,7 @@ export default function TaskPlanner() {
               <div
                 key={task._id}
                 className={`mb-1 w-full truncate rounded p-1 text-xs font-semibold max-lg:hidden ${
-                  task.important ? 'bg-orange-400' : 'bg-green-400'
+                  task.importantBy?.includes(user?._id) ?  'bg-orange-400' : 'bg-green-400'
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -397,7 +397,8 @@ export default function TaskPlanner() {
               >
                 <div
                   className={`flex items-center space-x-2 rounded-lg border border-gray-200 p-3 shadow-md
-                    ${!task.seen ? 'bg-blue-100' : task.important ? 'bg-orange-100' : 'bg-white'}
+                    ${user?._id === task.assigned?._id && !task.seen ? 'bg-blue-100' : 
+                      task.importantBy?.includes(user?._id) ? 'bg-orange-100' : 'bg-white'}
                   `}
                 >
                   <div className="flex w-full flex-col items-center justify-between gap-2 lg:flex-row">

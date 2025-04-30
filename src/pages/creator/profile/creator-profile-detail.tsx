@@ -212,11 +212,11 @@ export default function UserProfileDetail() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" {...register('name')} />
+                <Input id="name" {...register('name')} className='w-full' />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" {...register('email')} type="email" />
+                <Input id="email" {...register('email')} type="email"  className='w-full'/>
               </div>
 
               <Button type="submit" variant={'outline'}>
@@ -232,6 +232,7 @@ export default function UserProfileDetail() {
                   placeholder="Enter user email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className='w-full'
                 />
                 <Button type="submit" variant={'outline'} disabled={loading}>
                   Add
@@ -284,7 +285,7 @@ export default function UserProfileDetail() {
                 placeholder="Search members..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)} // Update search query state
-                className="mb-2"
+                className="mb-2 w-full"
               />
               <ScrollArea className="h-[200px] rounded-md border p-4">
                 {filteredMembers.map((member: any) => (

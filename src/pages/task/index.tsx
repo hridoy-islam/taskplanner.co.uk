@@ -22,6 +22,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { usePollTasks } from '@/hooks/usePolling';
 import TaskList from '@/components/shared/task-list';
+import { getNextScheduledDate } from '@/utils/taskUtils';
+import moment from 'moment';
 
 type PopulatedUserReference = {
   _id: string;
@@ -186,7 +188,6 @@ export default function TaskPage() {
       description: data.description || '',
       status: 'pending',
       dueDate: undefined,
-      important: false,
       author: { _id: user?._id, name: user.name },
       assigned: {
         _id: id || '',
@@ -251,8 +252,8 @@ export default function TaskPage() {
 
   // Handle marking a task as important
   const handleMarkAsImportant = async (taskId: string) => {
-    const originalTasks = [...tasks];
-    const currentTask = tasks.find((task) => task?._id === taskId);
+    const originalTasks = [...filteredTasks];
+    const currentTask = filteredTasks.find((task) => task?._id === taskId);
     if (!currentTask || !user?._id) return;
   
     const alreadyMarked = currentTask.importantBy?.includes(user._id);
@@ -292,30 +293,77 @@ export default function TaskPage() {
 
   // Handle toggling task completion status
   const handleToggleTaskCompletion = async (taskId: string) => {
-    const taskToToggle = tasks.find((task) => task?._id === taskId);
-    if (!taskToToggle) return;
-
-    const updatedStatus =
-      taskToToggle.status === 'completed' ? 'pending' : 'completed';
-
-    try {
-      await dispatch(
-        updateTask({
-          taskId,
-          taskData: { status: updatedStatus },
-        })
-      ).unwrap();
-
-      toast({ title: 'Task status updated' });
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to update task',
-        description: error?.message || 'An error occurred',
+      const taskToToggle = filteredTasks.find((task) => task._id === taskId);
+      if (!taskToToggle) return;
+  
+      // Store original tasks for rollback in case of error
+      const originalTasks = [...filteredTasks];
+  
+      // Create updated history with current completion date
+      const updatedHistory = [
+        ...(taskToToggle.history || []),
+        {
+          date: taskToToggle.dueDate, // Use current date for completion
+          completed: true
+        }
+      ];
+  
+      // For one-time tasks, mark as completed
+      const shouldCompleteTask =
+        taskToToggle.frequency === 'once' ||
+        (taskToToggle.frequency === 'custom' &&
+          taskToToggle.customSchedule?.every((date) =>
+            updatedHistory.some((h) => moment(h.date).isSame(date, 'day'))
+          ));
+  
+      // Calculate next date using CURRENT frequency
+      const nextDate = getNextScheduledDate({
+        ...taskToToggle,
+        history: updatedHistory,
+        frequency: taskToToggle.frequency
       });
-    }
-  };
-
+  
+      // Prepare update data
+      const updateData = {
+        history: updatedHistory,
+        ...(nextDate && { dueDate: nextDate.toISOString() }),
+        ...(shouldCompleteTask && { status: 'completed' })
+      };
+  
+      try {
+        // Optimistic update
+        setFilteredTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task._id === taskId
+              ? {
+                  ...task,
+                  ...updateData,
+                  // Ensure we maintain other properties that might not be in updateData
+                  status: shouldCompleteTask ? 'completed' : task.status
+                }
+              : task
+          )
+        );
+  
+        // Dispatch the actual update
+        await dispatch(
+          updateTask({
+            taskId,
+            taskData: updateData
+          })
+        ).unwrap();
+  
+        toast({ title: 'Task status updated' });
+      } catch (error: any) {
+        // Revert on error
+        setFilteredTasks(originalTasks);
+        toast({
+          variant: 'destructive',
+          title: 'Failed to update task',
+          description: error?.message || 'An error occurred'
+        });
+      }
+    };
   return (
     <div className="flex h-full flex-col justify-between p-4 md:p-6">
       <div>

@@ -12,6 +12,7 @@ import moment from 'moment';
 import { usePollTasks } from '@/hooks/usePolling';
 import TaskList from '@/components/shared/task-list';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getNextScheduledDate } from '@/utils/taskUtils';
 
 type PopulatedUserReference = {
   _id: string;
@@ -78,7 +79,7 @@ export default function DueTasks() {
 
   const handleMarkAsImportant = async (taskId: string) => {
     const originalTasks = [...tasks];
-    const currentTask = tasks.find((task) => task?._id === taskId);
+    const currentTask = filteredTasks.find((task) => task?._id === taskId);
     if (!currentTask || !user?._id) return;
   
     const alreadyMarked = currentTask.importantBy?.includes(user._id);
@@ -119,29 +120,81 @@ export default function DueTasks() {
   };
 
   const handleToggleTaskCompletion = async (taskId: string) => {
-    const taskToToggle = tasks.find((task) => task._id === taskId);
-    if (!taskToToggle) return;
-
-    const updatedStatus =
-      taskToToggle.status === 'completed' ? 'pending' : 'completed';
-
-    try {
-      await dispatch(
-        updateTask({
-          taskId,
-          taskData: { status: updatedStatus }
-        })
-      ).unwrap();
-
-      toast({ title: 'Task status updated' });
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to update task',
-        description: error?.message || 'An error occurred'
+      const taskToToggle = tasks.find((task) => task._id === taskId);
+      if (!taskToToggle) return;
+  
+      // Store original tasks for rollback in case of error
+      const originalTasks = [...tasks];
+  
+      // Create updated history with current completion date
+      const updatedHistory = [
+        ...(taskToToggle.history || []),
+        {
+          date: taskToToggle.dueDate, // Use current date for completion
+          completed: true
+        }
+      ];
+  
+      // For one-time tasks, mark as completed
+      const shouldCompleteTask =
+        taskToToggle.frequency === 'once' ||
+        (taskToToggle.frequency === 'custom' &&
+          taskToToggle.customSchedule?.every((date) =>
+            updatedHistory.some((h) => moment(h.date).isSame(date, 'day'))
+          ));
+  
+      // Calculate next date using CURRENT frequency
+      const nextDate = getNextScheduledDate({
+        ...taskToToggle,
+        history: updatedHistory,
+        frequency: taskToToggle.frequency
       });
-    }
-  };
+  
+      // Prepare update data
+      const updateData = {
+        history: updatedHistory,
+        ...(nextDate && { dueDate: nextDate.toISOString() }),
+        ...(shouldCompleteTask && { status: 'completed' })
+      };
+  
+      try {
+        // Optimistic update
+        setFilteredTasks((prevTasks) => {
+          if (!Array.isArray(prevTasks)) {
+            return []; // Return an empty array if prevTasks is not an array
+          }
+          
+          return prevTasks.map((task) =>
+            task._id === taskId
+              ? {
+                  ...task,
+                  ...updateData,
+                  status: shouldCompleteTask ? 'completed' : task.status,
+                }
+              : task
+          );
+        });
+        
+  
+        // Dispatch the actual update
+        await dispatch(
+          updateTask({
+            taskId,
+            taskData: updateData
+          })
+        ).unwrap();
+  
+        toast({ title: 'Task status updated' });
+      } catch (error: any) {
+        // Revert on error
+        setFilteredTasks(originalTasks);
+        toast({
+          variant: 'destructive',
+          title: 'Failed to update task',
+          description: error?.message || 'An error occurred'
+        });
+      }
+    };
 
 
   return (

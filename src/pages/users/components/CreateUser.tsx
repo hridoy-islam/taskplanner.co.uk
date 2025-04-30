@@ -90,7 +90,7 @@ export default function CreateUser({ onUserCreated }) {
                 <Input
                   id="name"
                   {...register('name')}
-                  className="col-span-3"
+                  className="col-span-3 w-full"
                   required
                 />
               </div>
@@ -102,7 +102,7 @@ export default function CreateUser({ onUserCreated }) {
                   id="email"
                   type="email"
                   {...register('email')}
-                  className="col-span-3"
+                  className="col-span-3 w-full"
                   required
                 />
               </div>
@@ -114,7 +114,7 @@ export default function CreateUser({ onUserCreated }) {
                   id="password"
                   type="password"
                   {...register('password')}
-                  className="col-span-3"
+                  className="col-span-3 w-full"
                   required
                 />
               </div>

@@ -84,6 +84,7 @@ export default function DirectorTableList({ refreshKey }) {
           placeholder="Search..."
           value={searchTerm}
           onChange={handleSearch}
+          className='w-full'
         />
         {/* <div>
           <DynamicPagination

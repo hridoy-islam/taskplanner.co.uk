@@ -743,6 +743,7 @@ export default function GroupChat() {
         handleChangeRole={handleChangeRole}
         setUploadOpen={setUploadOpen}
         setIsSettingsOpen={setIsSettingsOpen}
+        comments={comments}
         router={router}/>
 
         <MessageList

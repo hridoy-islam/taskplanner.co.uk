@@ -1,6 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { loginUser, validateRequestOtp, verifyEmail } from '@/redux/features/authSlice';
+import {
+  loginUser,
+  resendOtp,
+  validateRequestOtp,
+  verifyEmail
+} from '@/redux/features/authSlice';
 import { AppDispatch, RootState } from '@/redux/store';
 import { useRouter } from '@/routes/hooks';
 import { jwtDecode } from 'jwt-decode';
@@ -9,7 +14,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import taskplan from '@/assets/imges/home/otp.png';
 import logo from '@/assets/imges/home/logos/tlogo.png';
 import { Link } from 'react-router-dom';
-import  axiosInstance  from '@/lib/axios';
+import axiosInstance from '@/lib/axios';
 
 export default function VerifyPage() {
   const [otp, setOtp] = useState(Array(4).fill(''));
@@ -24,6 +29,8 @@ export default function VerifyPage() {
   const { user } = useSelector((state: RootState) => state.auth);
 
   const handleKeyDown = (e) => {
+    const index = inputRefs.current.indexOf(e.target);
+
     if (
       !/^[0-9]{1}$/.test(e.key) &&
       e.key !== 'Backspace' &&
@@ -34,14 +41,14 @@ export default function VerifyPage() {
       e.preventDefault();
     }
 
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      const index = inputRefs.current.indexOf(e.target);
-      if (index > 0) {
-        setOtp((prevOtp) => [
-          ...prevOtp.slice(0, index - 1),
-          '',
-          ...prevOtp.slice(index)
-        ]);
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      setOtp((prevOtp) => {
+        const updatedOtp = [...prevOtp];
+        updatedOtp[index] = '';
+        return updatedOtp;
+      });
+
+      if (e.key === 'Backspace' && index > 0) {
         inputRefs.current[index - 1].focus();
       }
     }
@@ -98,32 +105,31 @@ export default function VerifyPage() {
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
     const otpCode = otp.join('');
-    
+
     if (!user?.email) {
       setError('Email missing');
       return;
     }
-  
+
     try {
-      const resultAction = await dispatch(verifyEmail({
-        email: user.email,
-        otp: otpCode
-      }));
-  
+      const resultAction = await dispatch(
+        verifyEmail({
+          email: user.email,
+          otp: otpCode
+        })
+      );
+
       if (verifyEmail.fulfilled.match(resultAction)) {
-        router.push('/dashboard');
+        router.push('/personal-details');
       }
     } catch (err) {
       setError('Verification failed. Please try again.');
     }
   };
-  
 
   const handleResendOtp = async () => {
     try {
-      console.log('Resending OTP to', email);
-      // TODO: Replace this with your actual resend OTP logic
-      // await dispatch(resendOtp({ email }));
+      await dispatch(resendOtp({ email: user?.email }));
       setResendCooldown(30);
       setIsCooldownActive(true);
     } catch (err) {
@@ -146,100 +152,100 @@ export default function VerifyPage() {
 
   return (
     <div className="grid min-h-screen place-items-center bg-gray-50 px-4 lg:px-0">
-  <div className="w-full max-w-md space-y-6">
-    <Card className="p-6 shadow-lg border border-gray-200">
-      <div className="flex flex-col space-y-4 text-center">
-        <h2 className="text-xl font-medium text-gray-900">
-        VERIFY YOUR EMAIL ADDRESS
-        </h2>
-        <div>
-        <p className="text-gray-700 font-medium">
-            A verification code has been sent to
-            <br />
-            <span className="font-bold text-sm ">{user?.email}</span>
-          </p>
-        </div>
-        <p className="text-sm text-gray-600">
-            Please check your inbox and enter the verification code below to verify your email address. 
+      <div className="w-full max-w-2xl  space-y-6">
+        <Card className="border border-gray-200 p-6 shadow-lg">
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <h2 className="text-xl font-medium text-gray-900">
+              VERIFY YOUR EMAIL ADDRESS
+            </h2>
+            <div>
+              <p className="font-medium text-gray-700">
+                A verification code has been sent to
+                <br />
+                <span className="text-sm font-bold ">{user?.email}</span>
+              </p>
+            </div>
+            <p className="text-sm text-gray-600">
+              Please check your inbox and enter the verification code below to
+              verify your email address.
+            </p>
 
-          </p>
+            {error && <p className="text-sm text-red-500">{error}</p>}
 
+            <form
+              id="otp-form"
+              className="flex justify-center gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleOtpSubmit(e);
+              }}
+            >
+              {otp.map((digit, index) => (
+                <input
+                  key={index}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={handleInput}
+                  onKeyDown={handleKeyDown}
+                  onFocus={handleFocus}
+                  onPaste={handlePaste}
+                  ref={(el) => (inputRefs.current[index] = el)}
+                  className="flex h-12 w-12 items-center justify-center rounded-lg border border-gray-300 bg-white text-center text-xl font-medium shadow-sm outline-none focus:ring-2 focus:ring-primary sm:h-14 sm:w-14 sm:text-2xl"
+                />
+              ))}
+            </form>
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+            <Button
+              disabled={otp.some((digit) => digit === '')}
+              onClick={handleOtpSubmit}
+              className="mt-4 flex w-[200px] justify-center bg-taskplanner text-white hover:bg-taskplanner/90"
+            >
+              Verify OTP
+            </Button>
 
-        <form
-          id="otp-form"
-          className="flex justify-between gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleOtpSubmit(e);
-          }}
-        >
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              type="text"
-              maxLength={1}
-              value={digit}
-              onChange={handleInput}
-              onKeyDown={handleKeyDown}
-              onFocus={handleFocus}
-              onPaste={handlePaste}
-              ref={(el) => (inputRefs.current[index] = el)}
-              className="flex h-12 w-12 items-center justify-center rounded-lg border border-gray-300 bg-white text-center text-xl font-medium shadow-sm outline-none focus:ring-2 focus:ring-primary sm:h-14 sm:w-14 sm:text-2xl"
-            />
-          ))}
-        </form>
-
-        <Button
-          disabled={otp.some((digit) => digit === '')}
-          onClick={handleOtpSubmit}
-          className="mt-4 w-full bg-taskplanner text-white"
-        >
-          Verify OTP
-        </Button>
-
-        <div className="mt-2 flex items-center justify-center space-x-1 text-sm">
-          <span className="text-gray-600">
-            Didn&apos;t receive the code?
-          </span>
-          <button
-            className={`font-medium text-black transition-opacity duration-200 ${isCooldownActive ? 'cursor-not-allowed opacity-70' : 'hover:text-black/90'}`}
-            onClick={handleResendOtp}
-            disabled={isCooldownActive}
-            type="button"
-          >
-            {isCooldownActive ? (
-              <span className="flex items-center">
-                <svg
-                  className="mr-1 h-3 w-3 animate-spin"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Resend in {resendCooldown}s
+            <div className="mt-2 flex items-center justify-center space-x-1 text-sm">
+              <span className="text-gray-600">
+                Didn&apos;t receive the code?
               </span>
-            ) : (
-              <span className="text-gray-600 font-semibold hover:underline">Resend code</span>
-            )}
-          </button>
-        </div>
+              <button
+                className={`font-medium text-black transition-opacity duration-200 ${isCooldownActive ? 'cursor-not-allowed opacity-70' : 'hover:text-black/90'}`}
+                onClick={handleResendOtp}
+                disabled={isCooldownActive}
+                type="button"
+              >
+                {isCooldownActive ? (
+                  <span className="flex items-center">
+                    <svg
+                      className="mr-1 h-3 w-3 animate-spin"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Resend in {resendCooldown}s
+                  </span>
+                ) : (
+                  <span className="font-semibold text-gray-600 hover:underline">
+                    Resend code
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </Card>
       </div>
-    </Card>
-  </div>
-</div>
-
+    </div>
   );
 }

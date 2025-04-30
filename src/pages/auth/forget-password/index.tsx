@@ -113,9 +113,9 @@ export default function ForgotPassword() {
               </div>
               {/* <ForgotForm /> */}
               <p className="mt-4 px-8 text-center text-sm text-muted">
-                Don't have an account?{' '}
-                <Link to="/signup" className="underline underline-offset-4">
-                  Sign up
+                Back to {' '}
+                <Link to="/login" className="underline underline-offset-4">
+                  Sign In
                 </Link>
                 .
               </p>

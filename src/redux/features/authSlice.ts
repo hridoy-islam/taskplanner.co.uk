@@ -65,6 +65,7 @@ interface RegisterResponse {
   email: string;
   role: string;
   authorized:boolean
+  isValided: boolean
 }
 
 interface UserResponse {
@@ -143,7 +144,7 @@ export const authWithFbORGoogle = createAsyncThunk<
 export const requestOtp = createAsyncThunk<ForgetResponse, forgetCredentials>(
   'auth/forget',
   async (userCredentials) => {
-    const request = await axios.post(
+    const request = await axios.patch(
       `${import.meta.env.VITE_API_URL}/auth/forget`,
       userCredentials,
       {
@@ -164,7 +165,7 @@ export const validateRequestOtp = createAsyncThunk<
   ValidateOtpResponse,
   validateOtpCredentials
 >('auth/validate', async (userCredentials) => {
-  const request = await axios.post(
+  const request = await axios.patch(
     `${import.meta.env.VITE_API_URL}/auth/validate`,
     userCredentials,
     {
@@ -183,15 +184,15 @@ export const validateRequestOtp = createAsyncThunk<
 export const changePassword = createAsyncThunk<
   ChangePasswordResponse,
   ChangePasswordCredentials
->('users/:id', async (userCredentials) => {
+>('auth/reset', async (userCredentials) => {
   const request = await axios.patch(
-    `${import.meta.env.VITE_API_URL}/users/${userCredentials.userId}`,
+    `${import.meta.env.VITE_API_URL}/auth/reset`,
     userCredentials,
     {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json', //this line solved cors
-        Authorization: `Bearer ${userCredentials.token}`
+        // Authorization: `Bearer ${userCredentials.token}`
       }
     }
   );
@@ -199,6 +200,7 @@ export const changePassword = createAsyncThunk<
 
   return response;
 });
+
 
 export const logout = createAsyncThunk<void>('user/logout', async () => {
   localStorage.removeItem('taskplanner');
@@ -214,6 +216,33 @@ export const verifyEmail = createAsyncThunk(
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response.data);
+    }
+  }
+);
+
+export const resendOtp = createAsyncThunk(
+  'auth/resendOtp',
+  async ({ email}: { email: string}, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(
+    `${import.meta.env.VITE_API_URL}/auth/resend-otp`, { email });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response.data);
+    }
+  }
+);
+
+
+export const personalInformation = createAsyncThunk(
+  'auth/personalInformation', 
+  async ({ userId, profileData }: { userId: string; profileData: Record<string, any> }) => {
+    try {
+      const response = await axiosInstance.patch(`/auth/users/${userId}`, profileData);
+      return response.data.data; 
+    } catch (error) {
+      
+      throw new Error('Failed to update profile');
     }
   }
 );
@@ -293,13 +322,61 @@ const authSlice = createSlice({
         state.refreshToken = refreshToken;
         state.user = {
           ...decoded,
-          authorized: true
+          isValided: true
         };
         state.error = null;
       })
       .addCase(verifyEmail.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Verification failed';
+      })
+      .addCase(resendOtp.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(resendOtp.fulfilled, (state,action) => {
+        const { accessToken, refreshToken } = action.payload.data;
+        const decoded = jwtDecode(accessToken);
+        
+        state.loading = false;
+        state.token = accessToken;
+        state.refreshToken = refreshToken;
+        state.user = {
+          ...decoded,
+        };
+        state.error = null;
+      })
+      .addCase(resendOtp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || 'Failed to resend OTP';
+      }).addCase(changePassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(changePassword.fulfilled, (state, action) => {
+        state.loading = false;
+        // Optionally handle the response from the changePassword API here (e.g., reset token or user state)
+        state.error = null;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || 'Failed to change password';
+      }).addCase(personalInformation.pending, (state) => {
+        state.loading = true;
+        state.error = null; // Reset errors
+      })
+      .addCase(personalInformation.fulfilled, (state, action: any) => {
+        state.loading = false;
+        state.user = {
+          ...action.payload, // assuming the payload contains user data
+          authorized: true,   // adding the 'authorized' field to the user object
+        };
+        state.error = null;
+      })
+      
+      .addCase(personalInformation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error?.message || 'Failed to update profile information';
       });
   }
 });

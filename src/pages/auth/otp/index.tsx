@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { validateRequestOtp } from '@/redux/features/authSlice';
+import { resendOtp, validateRequestOtp } from '@/redux/features/authSlice';
 import { AppDispatch } from '@/redux/store';
 import { useRouter } from '@/routes/hooks';
 import { jwtDecode } from 'jwt-decode';
@@ -21,7 +21,10 @@ export default function Otp() {
   const router = useRouter();
   const email = localStorage.getItem('tp_otp_email');
 
+  
   const handleKeyDown = (e) => {
+    const index = inputRefs.current.indexOf(e.target);
+
     if (
       !/^[0-9]{1}$/.test(e.key) &&
       e.key !== 'Backspace' &&
@@ -32,14 +35,14 @@ export default function Otp() {
       e.preventDefault();
     }
 
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      const index = inputRefs.current.indexOf(e.target);
-      if (index > 0) {
-        setOtp((prevOtp) => [
-          ...prevOtp.slice(0, index - 1),
-          '',
-          ...prevOtp.slice(index)
-        ]);
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      setOtp((prevOtp) => {
+        const updatedOtp = [...prevOtp];
+        updatedOtp[index] = '';
+        return updatedOtp;
+      });
+
+      if (e.key === 'Backspace' && index > 0) {
         inputRefs.current[index - 1].focus();
       }
     }
@@ -97,7 +100,7 @@ export default function Otp() {
     try {
       console.log('Resending OTP to', email);
       // TODO: Replace this with your actual resend OTP logic
-      // await dispatch(resendOtp({ email }));
+      await dispatch(resendOtp({ email }));
       setResendCooldown(30);
       setIsCooldownActive(true);
     } catch (err) {
@@ -217,7 +220,7 @@ export default function Otp() {
                 </button>
               </div>
 
-              <p className="mt-4 text-center text-sm text-muted-foreground">
+              {/* <p className="mt-4 text-center text-sm text-muted-foreground">
                 Don't have an account?{' '}
                 <Link
                   to="/signup"
@@ -225,7 +228,7 @@ export default function Otp() {
                 >
                   Sign up
                 </Link>
-              </p>
+              </p> */}
             </div>
           </Card>
         </div>
