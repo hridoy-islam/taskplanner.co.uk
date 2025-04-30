@@ -425,8 +425,8 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                   taskNameTextareaRef.current?.blur();
                 }
               }}
-              className="resize-none text-xl font-semibold text-gray-900"
-              rows={1}
+              className=" text-xl font-semibold text-gray-900 md:min-w-[350px]"
+              rows={2}
             />
           ) : (
             <h1

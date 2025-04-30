@@ -20,7 +20,7 @@ import { useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { io } from 'socket.io-client';
 import Linkify from 'react-linkify';
-import { toast } from 'sonner';
+
 import { useRouter } from '@/routes/hooks';
 import { FileUploaderRegular } from '@uploadcare/react-uploader';
 import '@uploadcare/react-uploader/core.css';
@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { ImageUploader } from '@/components/shared/image-uploader';
 import axios from 'axios';
+import { useToast } from '@/components/ui/use-toast';
 
 UC.defineComponents(UC);
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
@@ -71,6 +72,7 @@ export default function TaskDetails({
   const [displayedComments, setDisplayedComments] = useState<any[]>([]);
   const [maxComments, setMaxComments] = useState(50);
   const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (commentsEndRef.current) {
@@ -145,9 +147,12 @@ export default function TaskDetails({
       };
 
       if (task?._id !== newComment?.taskId) {
-        toast(`Task: ${response?.taskName || 'new message arrived'}`, {
-          description: `Message: ${response?.content}`
+        toast({
+          title: `Task: ${response?.taskName || 'New message arrived'}`,
+          description: `Message: ${response?.content}`,
+          variant: 'success' // You can change the variant to success or other variants based on your needs.
         });
+        
       } else {
         setComments((prevComments) => {
           if (!prevComments.some((comment) => comment._id === newComment._id)) {

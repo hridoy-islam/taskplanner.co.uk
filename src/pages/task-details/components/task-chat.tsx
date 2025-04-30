@@ -19,7 +19,6 @@ import { useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { io } from 'socket.io-client';
 import Linkify from 'react-linkify';
-import { toast } from 'sonner';
 import { useRouter } from '@/routes/hooks';
 import { FileUploaderRegular } from '@uploadcare/react-uploader';
 import '@uploadcare/react-uploader/core.css';
@@ -61,7 +60,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ImageUploader } from './file-uploader';
 import Loader from '@/components/shared/loader';
 import { Card } from '@/components/ui/card';
-
+import { useToast } from '@/components/ui/use-toast';
 UC.defineComponents(UC);
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
 let socket, selectedChatCompare;
@@ -94,6 +93,7 @@ export default function TaskChat({ task }: TaskChatProps) {
   const [editedContent, setEditedContent] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
@@ -138,7 +138,7 @@ export default function TaskChat({ task }: TaskChatProps) {
 
   const handleSaveEdit = async (commentId: string) => {
     if (!editedContent.trim()) {
-      toast.error('Comment cannot be empty');
+      toast({title:'Comment cannot be empty', variant:'destructive'});
       return;
     }
 
@@ -165,11 +165,11 @@ export default function TaskChat({ task }: TaskChatProps) {
         setEditingCommentId(null);
         setEditedContent('');
         reset({ content: '' });
-        toast.success('Comment updated successfully');
+        toast({title:'Comment updated successfully'});
       }
     } catch (error) {
       console.error('Error updating comment:', error);
-      toast.error('Failed to update comment');
+      toast({title:'Failed to update comment', varient:'destructive'});
     }
   };
 
@@ -234,9 +234,12 @@ export default function TaskChat({ task }: TaskChatProps) {
       };
 
       if (task?._id !== newComment?.taskId) {
-        toast(`Task: ${response?.taskName || 'new message arrived'}`, {
-          description: `Message: ${response?.content}`
+        toast({
+          title: `Task: ${response?.taskName || 'New message arrived'}`,
+          description: `Message: ${response?.content}`,
+          variant: 'success' // You can change the variant to success or other variants based on your needs.
         });
+        
       } else {
         setComments((prevComments) => {
           if (

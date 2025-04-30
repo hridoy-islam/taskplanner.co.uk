@@ -366,15 +366,17 @@ export function Header() {
   );
 }
 
+
 const ListItem = React.forwardRef<
   HTMLAnchorElement,
-  React.ComponentPropsWithoutRef<'a'>
->(({ className, title, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<'a'> & { title: string; href: string }
+>(({ className, title, children, href, ...props }, ref) => {
   return (
     <li>
       <NavigationMenuLink asChild>
-        <a
-          ref={ref}
+        <Link
+          ref={ref as any} // Cast ref to `any` because `Link` doesn't directly accept a ref of type `HTMLAnchorElement`
+          to={href} // Use `to` prop instead of `href` for `Link`
           className={cn(
             'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-taskplanner hover:text-white focus:bg-taskplanner focus:text-white',
             className
@@ -383,7 +385,7 @@ const ListItem = React.forwardRef<
         >
           <div className="text-sm font-semibold leading-none">{title}</div>
           <p className="line-clamp-2 text-sm leading-snug">{children}</p>
-        </a>
+        </Link>
       </NavigationMenuLink>
     </li>
   );

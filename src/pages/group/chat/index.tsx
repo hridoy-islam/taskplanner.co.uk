@@ -8,7 +8,8 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useRouter } from '@/routes/hooks';
 import { useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/use-toast';
+
 import { useForm } from 'react-hook-form';
 
 import { GroupSidebar } from './components/group-sidebar';
@@ -56,6 +57,7 @@ export default function GroupChat() {
   const [isAccessible, setIsAccessible] = useState(true);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isSideGroupVisible, setIsSideGroupVisible] = useState(false);
+  const { toast } = useToast();
 
   const goDown = () => {
     if (commentsEndRef.current) {
@@ -232,7 +234,7 @@ export default function GroupChat() {
             !prevComments.some((comment) => comment._id === newComment._id)
         );
         if (newComments.length === 0 && pageNumber !== 1) {
-          toast(`all messages already fetched`);
+          toast({title:`all messages already fetched`});
         }
         return [...newComments, ...prevComments];
       });
@@ -249,8 +251,7 @@ export default function GroupChat() {
       return fetchedComments;
     } catch (error) {
       console.error('Error fetching comments:', error);
-      toast.error(`error occured!`, {
-        description: `Message: ${error?.response?.data?.message}`
+      toast({title:`error occured!`, variant:'destructive', 
       });
     }
   };
@@ -312,15 +313,13 @@ export default function GroupChat() {
       };
 
       if (currentPath !== newComment?.taskId) {
-        toast(`Group: ${response?.taskName || 'new message arrived'}`, {
+        toast({
+          title: `Group: ${response?.taskName || 'New message arrived'}`,
           description: `Message: ${response?.content}`,
-          action: {
-            label: 'View',
-            onClick: () => {
-              router.push(`/dashboard/group/${newComment?.taskId}`);
-            }
-          }
+          
+          
         });
+        
       } else {
         appendComment(newComment);
       }
@@ -366,7 +365,7 @@ export default function GroupChat() {
 
           // Clear editing state
           setEditingMessage(null)
-          toast.success("Message updated successfully")
+          toast({title:"Message updated successfully"})
         }
       } else {
         // Create a new message
@@ -396,8 +395,7 @@ export default function GroupChat() {
       reset()
     } catch (error) {
       console.error("Error posting comment:", error)
-      toast.error(`error occured!`, {
-        description: `Message: ${error?.response?.data?.message}`,
+      toast({title:`error occured!`
       })
       const typer = {
         room: currentPath,
@@ -538,16 +536,12 @@ export default function GroupChat() {
         data
       );
       if (response.data.success) {
-        toast(`Success!`, {
-          description: `Message: ${response?.data?.message}`
-        });
+       
       }
       fetchGroupDetails();
     } catch (error) {
       console.error(error);
-      toast(`err: something went wrong`, {
-        description: `Message: ${error?.response?.data?.message || error?.message}`
-      });
+     
     } finally {
       setIsSettingsOpen(false);
     }
@@ -561,17 +555,11 @@ export default function GroupChat() {
     };
     try {
       const response = await axiosInstance.post(`/group/addmember`, data);
-      if (response.data.success) {
-        toast(`Success!`, {
-          description: `Message: ${response?.data?.message}`
-        });
-      }
+     
       fetchGroupDetails();
     } catch (error) {
       console.error(error);
-      toast(`err: something went wrong`, {
-        description: `Message: ${error?.response?.data?.message || error?.message}`
-      });
+   
     }
   };
 
@@ -583,19 +571,16 @@ export default function GroupChat() {
     try {
       const response = await axiosInstance.post(`/group/removemember`, data);
       if (response.data.success) {
-        toast(`Success!`, {
-          description: `Message: ${response?.data?.message}`
-        });
+      
       }
       fetchGroupDetails();
       if (id === user?._id) {
-        toast(`you left the chat`);
+        toast({title:`you left the chat`});
         router.push('/dashboard/group');
       }
     } catch (error) {
       console.error(error);
-      toast(`err: something went wrong`, {
-        description: `Message: ${error?.response?.data?.message || error?.message}`
+      toast({title:`something went wrong`
       });
     }
   };
@@ -609,20 +594,14 @@ export default function GroupChat() {
     };
     try {
       const response = await axiosInstance.post(`/group/updateuserrole`, data);
-      if (response.data.success) {
-        toast(`Success!`, {
-          description: `Message: ${response?.data?.message}`
-        });
-      }
+      
       fetchGroupDetails();
       if (id === user?._id) {
-        toast(`you role has been changed`);
+        toast({title:`you role has been changed`});
       }
     } catch (error) {
       console.error(error);
-      toast(`err: something went wrong`, {
-        description: `Message: ${error?.response?.data?.message || error?.message}`
-      });
+      
     }
   };
 

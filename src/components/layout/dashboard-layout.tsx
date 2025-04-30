@@ -4,7 +4,6 @@ import Sidebar from '../shared/sidebar';
 import MobileSidebar from '../shared/mobile-sidebar';
 import { MenuIcon } from 'lucide-react';
 import UserNav from '../shared/user-nav';
-import { Toaster } from '@/components/ui/sonner';
 import AutoLogout from '../shared/auto-logout';
 import { NotificationDropdown } from '../shared/notification-dropdown';
 
@@ -44,7 +43,6 @@ export default function DashboardLayout({
         <main className="relative mx-2 my-3 mr-2 flex-1 overflow-y-hidden rounded-xl  border border-gray-300 bg-gray-100 focus:outline-none md:mx-0 md:mr-4 ">
           {children}
         </main>
-        <Toaster />
       </div>
     </div>
   );
