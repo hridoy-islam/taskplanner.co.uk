@@ -5,6 +5,7 @@ import Linkify from 'react-linkify';
 import { ArrowUpRightFromSquare, DownloadIcon } from 'lucide-react';
 import moment from 'moment';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useEffect, useRef } from 'react';
 
 export function MessageList({
   commentsEndRef,
@@ -14,18 +15,28 @@ export function MessageList({
   user,
   groupDetails,
   limit,
-  setEditingMessage
+  setEditingMessage,
 }) {
   const handleEditClick = (comment) => {
     // Instead of managing edit state locally, pass it up to parent
     setEditingMessage({
       id: comment._id,
-      content: comment.content
+      content: comment.content,
     });
   };
 
+  // Reference to the scroll container
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+ useEffect(() => {
+  if (commentsEndRef.current) {
+    commentsEndRef.current.scrollIntoView({ behavior: 'auto' });
+  }
+}, [comments]);
+
+
   return (
-    <ScrollArea ref={commentsEndRef} className="flex-grow overflow-y-auto">
+    <ScrollArea ref={scrollContainerRef} className="flex-grow overflow-y-auto">
       <div className="flex w-full justify-center">
         {remainingMessages >= limit && (
           <Button
@@ -80,7 +91,7 @@ export function MessageList({
                   style={{
                     wordWrap: 'break-word',
                     whiteSpace: 'pre-wrap',
-                    overflowWrap: 'break-word'
+                    overflowWrap: 'break-word',
                   }}
                 >
                   <div className="mb-1 flex items-center space-x-2">
@@ -186,36 +197,11 @@ export function MessageList({
                     </span>
                   </div>
                 </div>
-
-                {/* Seen by details (only for partial reads) */}
-                {/* {isUser && groupDetails?.members && (
-                  <div className="mt-1 flex w-full flex-row items-center">
-                    {(() => {
-                      const filteredMembers =
-                        groupDetails.members?.filter(
-                          (member) =>
-                            member.lastMessageReadId === comment?._id &&
-                            member._id !== comment?.creatorId &&
-                            member._id !== user?._id
-                        ) || [];
-
-                      const totalMembers = groupDetails?.members?.length || 0;
-                      const seenCount = comment?.seenBy?.length || 0;
-                      const allSeen = seenCount === totalMembers;
-
-                      return !allSeen && filteredMembers.length > 0 ? (
-                        <p className="text-[11px] text-gray-500">
-                          Seen by:{' '}
-                          {filteredMembers.map((item) => item.name).join(', ')}
-                        </p>
-                      ) : null;
-                    })()}
-                  </div>
-                )} */}
               </div>
             </div>
           );
         })}
+         <div ref={commentsEndRef} />
       </div>
     </ScrollArea>
   );

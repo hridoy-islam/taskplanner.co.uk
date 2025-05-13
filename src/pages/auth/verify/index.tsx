@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
   loginUser,
+  logout,
   resendOtp,
   validateRequestOtp,
   verifyEmail
@@ -13,20 +14,21 @@ import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import taskplan from '@/assets/imges/home/otp.png';
 import logo from '@/assets/imges/home/logos/tlogo.png';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '@/lib/axios';
+import { LogOut } from 'lucide-react';
 
 export default function VerifyPage() {
   const [otp, setOtp] = useState(Array(4).fill(''));
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(30);
   const [isCooldownActive, setIsCooldownActive] = useState(false);
-
   const dispatch = useDispatch<AppDispatch>();
   const inputRefs = useRef([]);
   const router = useRouter();
   const email = localStorage.getItem('tp_otp_email');
   const { user } = useSelector((state: RootState) => state.auth);
+  const navigate = useNavigate();
 
   const handleKeyDown = (e) => {
     const index = inputRefs.current.indexOf(e.target);
@@ -150,9 +152,23 @@ export default function VerifyPage() {
     return () => clearTimeout(timer);
   }, [isCooldownActive, resendCooldown]);
 
+  const handleLogout = async () => {
+    await dispatch(logout());
+    navigate('/'); // Redirect to login after logout
+  };
+
   return (
-    <div className="grid min-h-screen place-items-center bg-gray-50 px-4 lg:px-0">
-      <div className="w-full max-w-2xl  space-y-6">
+    <div className="grid min-h-screen place-items-center bg-gray-50 px-4 lg:px-8">
+      <div className=" -mt-44  flex w-full flex-row items-end justify-end gap-2 font-medium">
+        <Button
+          className="gap-2 bg-black text-white  hover:bg-black/80"
+          onClick={handleLogout}
+        >
+          <LogOut className="w-5" />
+          <h1>Log out</h1>
+        </Button>
+      </div>
+      <div className="-mt-60 w-full  max-w-2xl space-y-6">
         <Card className="border border-gray-200 p-6 shadow-lg">
           <div className="flex flex-col items-center space-y-4 text-center">
             <h2 className="text-xl font-medium text-gray-900">

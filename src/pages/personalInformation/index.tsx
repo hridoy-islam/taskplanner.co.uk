@@ -1,16 +1,17 @@
 // pages/personalInformation.tsx
 import { useState } from 'react';
-import { User, Briefcase, Info } from 'lucide-react';
+import { User, Briefcase, Info, LogOut } from 'lucide-react';
 import ProfileSection from './components/ProfileSection';
 import CompanySection from './components/CompanySection';
 import AdditionalInfoSection from './components/AdditionalInfoSection';
 import ProgressTracker from './components/ProgressTracker';
 import { toast } from '@/components/ui/use-toast';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/redux/store';
+import { AppDispatch, RootState } from '@/redux/store';
 import { useNavigate } from 'react-router-dom';
-import { personalInformation } from '@/redux/features/authSlice';
+import { logout, personalInformation } from '@/redux/features/authSlice';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { Button } from '@/components/ui/button';
 
 export type ProfileFormData = {
   profile: {
@@ -41,10 +42,10 @@ export default function PersonalInformationPage() {
   const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
   const { user } = useSelector((state: RootState) => state.auth);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const [profileQuestion, setProfileQuestion] = useState(0);
   const [companyQuestion, setCompanyQuestion] = useState(0);
   const [additionalQuestion, setAdditionalQuestion] = useState(0);
+  const dispatch = useDispatch<AppDispatch>();
 
   const [formData, setFormData] = useState<ProfileFormData>({
     profile: {
@@ -68,10 +69,11 @@ export default function PersonalInformationPage() {
     }
   });
 
-  const [currentSection, setCurrentSection] = useState<'profile' | 'company' | 'additional'>('profile');
+  const [currentSection, setCurrentSection] = useState<
+    'profile' | 'company' | 'additional'
+  >('profile');
 
-
-  const {  clearSavedState } = useFormPersistence({
+  const { clearSavedState } = useFormPersistence({
     formData,
     setFormData,
     currentSection,
@@ -81,13 +83,16 @@ export default function PersonalInformationPage() {
     companyQuestion,
     setCompanyQuestion,
     additionalQuestion,
-    setAdditionalQuestion,
+    setAdditionalQuestion
   });
 
-  const isProfileComplete = formData.profile.jobTitle.trim() !== '' && formData.profile.bio.trim() !== '';
+  const isProfileComplete =
+    formData.profile.jobTitle.trim() !== '' &&
+    formData.profile.bio.trim() !== '';
   const isCompanyComplete =
     !formData.company.isEmployed ||
-    (formData.company.companyType.trim() !== '' && formData.company.companyName.trim() !== '');
+    (formData.company.companyType.trim() !== '' &&
+      formData.company.companyName.trim() !== '');
   const isAdditionalInfoComplete =
     formData.additionalInfo.howDidYouHear.trim() !== '' &&
     formData.additionalInfo.industryType.trim() !== '' &&
@@ -110,13 +115,20 @@ export default function PersonalInformationPage() {
     return isAdditionalInfoComplete ? 'completed' : 'inactive';
   };
 
-  const handleUpdateSection = (section: 'profile' | 'company' | 'additional') => {
+  const handleUpdateSection = (
+    section: 'profile' | 'company' | 'additional'
+  ) => {
     setCurrentSection(section);
-    const savedQuestionIndex = localStorage.getItem(`question_index_${section}`);
+    const savedQuestionIndex = localStorage.getItem(
+      `question_index_${section}`
+    );
     if (savedQuestionIndex) {
-      if (section === 'profile') setProfileQuestion(parseInt(savedQuestionIndex, 10));
-      if (section === 'company') setCompanyQuestion(parseInt(savedQuestionIndex, 10));
-      if (section === 'additional') setAdditionalQuestion(parseInt(savedQuestionIndex, 10));
+      if (section === 'profile')
+        setProfileQuestion(parseInt(savedQuestionIndex, 10));
+      if (section === 'company')
+        setCompanyQuestion(parseInt(savedQuestionIndex, 10));
+      if (section === 'additional')
+        setAdditionalQuestion(parseInt(savedQuestionIndex, 10));
     }
   };
 
@@ -126,20 +138,28 @@ export default function PersonalInformationPage() {
     try {
       const personalData: Record<string, any> = {};
 
-      if (formData.profile.jobTitle) personalData.jobTitle = formData.profile.jobTitle;
+      if (formData.profile.jobTitle)
+        personalData.jobTitle = formData.profile.jobTitle;
       if (formData.profile.bio) personalData.bio = formData.profile.bio;
-      if (formData.profile.socialLinks?.length) personalData.socialLinks = formData.profile.socialLinks;
+      if (formData.profile.socialLinks?.length)
+        personalData.socialLinks = formData.profile.socialLinks;
 
-      if (formData.company.companyType) personalData.companyType = formData.company.companyType;
-      if (formData.company.companyWebsite) personalData.companyWebsite = formData.company.companyWebsite;
-      if (formData.company.companyAddress) personalData.address = formData.company.companyAddress;
-      if (formData.company.companyPhone) personalData.phone = formData.company.companyPhone;
-      if (formData.company.companyEmail) personalData.companyEmail = formData.company.companyEmail;
+      if (formData.company.companyType)
+        personalData.companyType = formData.company.companyType;
+      if (formData.company.companyWebsite)
+        personalData.companyWebsite = formData.company.companyWebsite;
+      if (formData.company.companyAddress)
+        personalData.address = formData.company.companyAddress;
+      if (formData.company.companyPhone)
+        personalData.phone = formData.company.companyPhone;
+      if (formData.company.companyEmail)
+        personalData.companyEmail = formData.company.companyEmail;
 
       if (formData.additionalInfo.industryType)
         personalData.industryType = formData.additionalInfo.industryType;
       if (formData.additionalInfo.numberOfEmployees)
-        personalData.numberOfEmployees = formData.additionalInfo.numberOfEmployees;
+        personalData.numberOfEmployees =
+          formData.additionalInfo.numberOfEmployees;
       if (formData.additionalInfo.howDidYouHear)
         personalData.heardAboutUs = formData.additionalInfo.howDidYouHear;
 
@@ -154,7 +174,9 @@ export default function PersonalInformationPage() {
         clearSavedState(); // Clear localStorage after successful submission
         navigate('/dashboard');
       } else {
-        throw new Error(resultAction.error?.message || 'Failed to update profile');
+        throw new Error(
+          resultAction.error?.message || 'Failed to update profile'
+        );
       }
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -224,15 +246,33 @@ export default function PersonalInformationPage() {
     }
   ];
 
-  const completedSections = [isProfileComplete, isCompanyComplete, isAdditionalInfoComplete].filter(Boolean)
-    .length;
+  const completedSections = [
+    isProfileComplete,
+    isCompanyComplete,
+    isAdditionalInfoComplete
+  ].filter(Boolean).length;
   const progressPercentage = (completedSections / 3) * 100;
+
+
+   const handleLogout = async () => {
+      await dispatch(logout());
+      navigate('/'); // Redirect to login after logout
+    };
+  
 
   return (
     <div className="min-h-screen bg-gray-50 p-20 pb-20">
+      <div className="scroll -mt-16 flex flex-row items-end justify-end gap-2 font-medium">
+        <Button className='bg-black text-white hover:bg-black/80  gap-2' onClick={handleLogout}>
+        <LogOut className='w-5'/>
+        <h1>Log out</h1>
+        </Button>
+      </div>
       <div className="mx-auto max-w-3xl">
         <header className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-800">Complete Your Profile</h1>
+          <h1 className="text-3xl font-bold text-gray-800">
+            Complete Your Profile
+          </h1>
           <p className="mt-2 text-gray-600">
             Tell us about yourself to get the most out of our platform
           </p>
@@ -243,7 +283,9 @@ export default function PersonalInformationPage() {
               currentSection={currentSection}
               onSelectSection={(section) => {
                 if (section.status !== 'inactive') {
-                  handleUpdateSection(section.id as 'profile' | 'company' | 'additional');
+                  handleUpdateSection(
+                    section.id as 'profile' | 'company' | 'additional'
+                  );
                 }
               }}
               progress={progressPercentage}

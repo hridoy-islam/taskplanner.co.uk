@@ -2,6 +2,9 @@ import { motion } from "framer-motion";
 
  export default function TaskManagementPage () {
   return (
+    <div className="bg-white">
+
+  
     <div className="container mx-auto  py-8">
 
       <motion.section
@@ -12,7 +15,7 @@ import { motion } from "framer-motion";
       >
         <div className="md:w-1/2">
           <h1 className="text-5xl font-bold text-gray-800 mb-6 leading-tight">
-            Your brain's for ideas, not remembering
+          Effective Team Management for Modern Workspaces
           </h1>
           <p className="text-xl text-gray-600 mb-8">
             Capture all those tasks in Todoist and feel an instant sense of clarity and control.
@@ -25,9 +28,7 @@ import { motion } from "framer-motion";
             >
               Start for free
             </motion.button>
-            <div className="text-sm text-gray-500">
-              Then US$6 per member/month billed yearly
-            </div>
+            
           </div>
         </div>
         <div className="md:w-1/2  h-80 bg-gray-100  rounded-xl object-cover"><img src="https://img.freepik.com/free-vector/timing-project-scheduling_74855-4584.jpg?t=st=1745929588~exp=1745933188~hmac=fd1788e9e7d6764846ff5258794caf8d5a5626a2b5bdbeca1d90fbb41a34f05b&w=1060" className="object-cover" /></div>
@@ -191,6 +192,7 @@ import { motion } from "framer-motion";
           Start for free
         </motion.button>
       </motion.section>
+    </div>
     </div>
   );
 };

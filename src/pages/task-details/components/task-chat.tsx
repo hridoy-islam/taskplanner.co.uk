@@ -103,21 +103,22 @@ export default function TaskChat({ task }: TaskChatProps) {
     setIsDialogOpen(false);
   };
 
-  useEffect(() => {
-    if (commentsEndRef.current) {
-      commentsEndRef.current.scrollTop = commentsEndRef.current.scrollHeight;
-    }
-  }, [displayedComments?.length]);
+  // useEffect(() => {
+  //   if (commentsEndRef.current) {
+  //     commentsEndRef.current.scrollTop = commentsEndRef.current.scrollHeight;
+  //   }
+  // }, [displayedComments?.length]);
 
-  const goDown = () => {
-    if (commentsEndRef.current) {
-      commentsEndRef.current.scrollTop = commentsEndRef.current.scrollHeight;
-    }
-  };
+  // const goDown = () => {
+  //   if (commentsEndRef.current) {
+  //     commentsEndRef.current.scrollTop = commentsEndRef.current.scrollHeight;
+  //   }
+  // };
 
-  useEffect(() => {
-    goDown();
-  }, [comments.length]);
+  // useEffect(() => {
+  //   goDown();
+  // }, [comments.length]);
+
 
   useEffect(() => {
     socket = io(ENDPOINT);
@@ -138,7 +139,7 @@ export default function TaskChat({ task }: TaskChatProps) {
 
   const handleSaveEdit = async (commentId: string) => {
     if (!editedContent.trim()) {
-      toast({title:'Comment cannot be empty', variant:'destructive'});
+      toast({ title: 'Comment cannot be empty', variant: 'destructive' });
       return;
     }
 
@@ -165,11 +166,11 @@ export default function TaskChat({ task }: TaskChatProps) {
         setEditingCommentId(null);
         setEditedContent('');
         reset({ content: '' });
-        toast({title:'Comment updated successfully'});
+        toast({ title: 'Comment updated successfully' });
       }
     } catch (error) {
       console.error('Error updating comment:', error);
-      toast({title:'Failed to update comment', varient:'destructive'});
+      toast({ title: 'Failed to update comment', varient: 'destructive' });
     }
   };
 
@@ -239,7 +240,6 @@ export default function TaskChat({ task }: TaskChatProps) {
           description: `Message: ${response?.content}`,
           variant: 'success' // You can change the variant to success or other variants based on your needs.
         });
-        
       } else {
         setComments((prevComments) => {
           if (
@@ -372,12 +372,12 @@ export default function TaskChat({ task }: TaskChatProps) {
 
   const saveFileToDb = async () => {};
 
-  const applyScrollPosition = (scrollPosition) => {
-    if (commentsEndRef.current) {
-      commentsEndRef.current.scrollTop =
-        commentsEndRef.current.scrollHeight - scrollPosition;
-    }
-  };
+  // const applyScrollPosition = (scrollPosition) => {
+  //   if (commentsEndRef.current) {
+  //     commentsEndRef.current.scrollTop =
+  //       commentsEndRef.current.scrollHeight - scrollPosition;
+  //   }
+  // };
 
   const handleLoadMoreComments = () => {
     const scrollPosition = calculateScrollPosition();
@@ -387,6 +387,27 @@ export default function TaskChat({ task }: TaskChatProps) {
       applyScrollPosition(scrollPosition);
     }, 0);
   };
+
+
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+  if (scrollContainerRef.current) {
+    scrollContainerRef.current.scrollTop =
+      scrollContainerRef.current.scrollHeight;
+  }
+}, [displayedComments,comments, task?._id, isLoading]);
+
+
+  useEffect(() => {
+    if (commentsEndRef.current) {
+      commentsEndRef.current.scrollIntoView({ behavior: 'auto' });
+    }
+  }, [displayedComments, comments]);
+
+
+
+
 
   if (isLoading) {
     return (
@@ -520,8 +541,8 @@ export default function TaskChat({ task }: TaskChatProps) {
         </Dialog>
       </div>
 
-      <ScrollArea className="flex-1 overflow-y-auto p-6 ">
-        <div ref={commentsEndRef} className="space-y-4">
+      <ScrollArea  className="flex-1 overflow-y-auto p-6 ">
+        <div ref={scrollContainerRef} className="space-y-4">
           {comments.length > displayedComments.length && (
             <div className="text-center">
               <Loader />
@@ -683,6 +704,7 @@ export default function TaskChat({ task }: TaskChatProps) {
               </div>
             );
           })}
+          <div ref={commentsEndRef} />
         </div>
       </ScrollArea>
 
