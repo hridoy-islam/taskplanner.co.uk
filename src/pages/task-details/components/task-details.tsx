@@ -142,7 +142,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         setTempTaskName(task.taskName);
         setTempDesc(task.description);
         setTempDueDate(task.dueDate);
-        setFrequency(task.frequency || 'once');
+        setFrequency(task.frequency ?? 'once');
 
         if (task.scheduledDays && task.scheduledDays.length > 0) {
           const newSelectedDays = Array(7).fill(false);
@@ -173,7 +173,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         }
       }
     }
-  }, [task,onUpdate]);
+  }, [task, onUpdate]);
 
   useEffect(() => {
     if (localTask && user?._id) {
@@ -255,6 +255,11 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         scheduledDate: null,
         customSchedule: null
       });
+      setLocalTask((prev) => ({
+        ...prev,
+        frequency: 'weekdays',
+        scheduledDays: selectedDayIndices
+      }));
     } catch (error) {
       console.error('Failed to update weekdays selection:', error);
     }
@@ -282,9 +287,13 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         frequency: TaskFrequency.MONTHLY,
         scheduledDays: null,
         scheduledDate: day, // Store the selected day
-        customSchedule: null,
-       
+        customSchedule: null
       });
+      setLocalTask((prev) => ({
+        ...prev,
+        frequency: TaskFrequency.MONTHLY,
+        scheduledDate: day
+      }));
     } catch (error) {
       console.error('Failed to update monthly schedule:', error);
     }
@@ -345,6 +354,21 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     return moment(date).format('MMM DD, YYYY');
   };
 
+
+  const areAllCustomDatesCompleted = (task: TaskDetailsProps['task']) => {
+  if (!task || task.frequency !== TaskFrequency.CUSTOM || !task.customSchedule) {
+    return false;
+  }
+
+  return task.customSchedule.every((scheduleDate) =>
+    task.history?.some(
+      (entry) => moment(entry.date).isSame(scheduleDate, 'day') && entry.completed
+    )
+  );
+};
+
+
+
   const handleStatusChange = async () => {
     if (!localTask) return;
 
@@ -356,14 +380,20 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         completed: true
       }
     ];
-
+    console.log('Checking shouldCompleteTask', {
+      frequency: localTask.frequency,
+      isOnce: localTask.frequency === TaskFrequency.ONCE
+    });
     // For one-time tasks, mark as completed
-    const shouldCompleteTask =
-      localTask.frequency === TaskFrequency.ONCE ||
-      (localTask.frequency === TaskFrequency.CUSTOM &&
-        localTask.customSchedule?.every((date) =>
-          updatedHistory.some((h) => moment(h.date).isSame(date, 'day'))
-        ));
+   const shouldCompleteTask =
+      localTask.frequency === 'once' ||
+      localTask.frequency === null ||
+      (localTask.frequency === 'custom' &&
+        areAllCustomDatesCompleted({
+          ...localTask,
+          history: updatedHistory
+        }));
+
 
     // Calculate next date using CURRENT frequency
     const nextDate = getNextScheduledDate({
@@ -373,7 +403,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     });
 
     // Prepare update data
-    const updateData = {
+     const updateData = {
       history: updatedHistory,
       ...(nextDate && { dueDate: nextDate.toISOString() }),
       ...(shouldCompleteTask && { status: 'completed' })
@@ -398,7 +428,19 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   if (!localTask) {
     return <div className="p-6 text-center">Loading task details...</div>;
   }
+  const isOnceCompleted =
+    frequency === TaskFrequency.ONCE && localTask?.status === 'completed';
 
+  const isCustomCompleted =
+    frequency === TaskFrequency.CUSTOM &&
+    localTask?.customSchedule?.length > 0 &&
+    localTask.customSchedule.every((date) =>
+      localTask.history?.some(
+        (entry) => moment(entry.date).isSame(date, 'day') && entry.completed
+      )
+    );
+  const isTaskCompleted = isOnceCompleted || isCustomCompleted;
+  console.log('status', localTask?.status);
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-row items-start justify-between space-y-1">
@@ -461,9 +503,16 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
               : 'Complete'}
           </Button> */}
 
+           {localTask.status === 'completed' || 
+         (frequency === 'custom' && areAllCustomDatesCompleted(localTask)) ? (
+          <Button disabled variant="secondary">
+            Completed
+          </Button>
+        ) : (
           <Button variant="secondary" onClick={handleStatusChange}>
             Complete
           </Button>
+        )}
         </div>
       </div>
 
@@ -563,7 +612,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
             <SelectItem value={TaskFrequency.WEEKLY}>Weekly</SelectItem>
             <SelectItem value={TaskFrequency.WEEKDAYS}>Weekdays</SelectItem>
             <SelectItem value={TaskFrequency.MONTHLY}>Monthly</SelectItem>
-            <SelectItem value={TaskFrequency.CUSTOM}>Custom</SelectItem>
+            {/* <SelectItem value={TaskFrequency.CUSTOM}>Custom</SelectItem> */}
           </SelectContent>
         </Select>
 
