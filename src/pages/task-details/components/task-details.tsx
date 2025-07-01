@@ -188,6 +188,16 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
       setSelectedDates([
         { startDate: new Date(), endDate: new Date(), key: 'selection' }
       ]);
+
+      // Immediately update localTask state
+      setLocalTask((prev) => ({
+        ...prev,
+        frequency: null, // or 'once' depending on your backend
+        scheduledDays: null,
+        scheduledDate: null,
+        customSchedule: null
+      }));
+
       try {
         await onUpdate({
           frequency: null,
@@ -197,11 +207,19 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         });
       } catch (error) {
         console.error('Failed to update frequency:', error);
+        // Revert localTask on error
+        setLocalTask((prev) => ({ ...prev, frequency: localTask?.frequency }));
       }
       return;
     }
 
     setFrequency(value);
+
+    // Immediately update localTask for other frequencies too
+    setLocalTask((prev) => ({
+      ...prev,
+      frequency: value as TaskFrequency
+    }));
 
     if (value !== 'weekdays' && value !== 'custom' && value !== 'monthly') {
       try {
@@ -213,6 +231,8 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         });
       } catch (error) {
         console.error('Failed to update frequency:', error);
+        // Revert localTask on error
+        setLocalTask((prev) => ({ ...prev, frequency: localTask?.frequency }));
       }
     }
 
@@ -354,20 +374,22 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     return moment(date).format('MMM DD, YYYY');
   };
 
-
   const areAllCustomDatesCompleted = (task: TaskDetailsProps['task']) => {
-  if (!task || task.frequency !== TaskFrequency.CUSTOM || !task.customSchedule) {
-    return false;
-  }
+    if (
+      !task ||
+      task.frequency !== TaskFrequency.CUSTOM ||
+      !task.customSchedule
+    ) {
+      return false;
+    }
 
-  return task.customSchedule.every((scheduleDate) =>
-    task.history?.some(
-      (entry) => moment(entry.date).isSame(scheduleDate, 'day') && entry.completed
-    )
-  );
-};
-
-
+    return task.customSchedule.every((scheduleDate) =>
+      task.history?.some(
+        (entry) =>
+          moment(entry.date).isSame(scheduleDate, 'day') && entry.completed
+      )
+    );
+  };
 
   const handleStatusChange = async () => {
     if (!localTask) return;
@@ -380,12 +402,9 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         completed: true
       }
     ];
-    console.log('Checking shouldCompleteTask', {
-      frequency: localTask.frequency,
-      isOnce: localTask.frequency === TaskFrequency.ONCE
-    });
-    // For one-time tasks, mark as completed
-   const shouldCompleteTask =
+
+    // For one-time tasks, mark as completed - use localTask.frequency instead of frequency state
+    const shouldCompleteTask =
       localTask.frequency === 'once' ||
       localTask.frequency === null ||
       (localTask.frequency === 'custom' &&
@@ -394,23 +413,22 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           history: updatedHistory
         }));
 
-
-    // Calculate next date using CURRENT frequency
+    // Calculate next date using localTask.frequency instead of frequency state
     const nextDate = getNextScheduledDate({
       ...localTask,
       history: updatedHistory,
-      frequency: frequency as TaskFrequency
+      frequency: localTask.frequency as TaskFrequency // Use localTask.frequency here
     });
 
     // Prepare update data
-     const updateData = {
+    const updateData = {
       history: updatedHistory,
       ...(nextDate && { dueDate: nextDate.toISOString() }),
       ...(shouldCompleteTask && { status: 'completed' })
     };
 
     try {
-      // Optimistic update
+      // Optimistic update - this will immediately disable the button
       setLocalTask({
         ...localTask,
         ...updateData
@@ -503,16 +521,16 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
               : 'Complete'}
           </Button> */}
 
-           {localTask.status === 'completed' || 
-         (frequency === 'custom' && areAllCustomDatesCompleted(localTask)) ? (
-          <Button disabled variant="secondary">
-            Completed
-          </Button>
-        ) : (
-          <Button variant="secondary" onClick={handleStatusChange}>
-            Complete
-          </Button>
-        )}
+          {localTask.status === 'completed' ||
+          (frequency === 'custom' && areAllCustomDatesCompleted(localTask)) ? (
+            <Button disabled variant="secondary">
+              Completed
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={handleStatusChange}>
+              Complete
+            </Button>
+          )}
         </div>
       </div>
 
