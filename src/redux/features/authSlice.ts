@@ -331,26 +331,27 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message || 'Verification failed';
       })
-      .addCase(resendOtp.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(resendOtp.fulfilled, (state,action) => {
-        const { accessToken, refreshToken } = action.payload.data;
-        const decoded = jwtDecode(accessToken);
+      // .addCase(resendOtp.pending, (state) => {
+      //   state.loading = true;
+      //   state.error = null;
+      // })
+      // .addCase(resendOtp.fulfilled, (state,action) => {
+      //   const { accessToken, refreshToken } = action.payload.data;
+      //   const decoded = jwtDecode(accessToken);
         
-        state.loading = false;
-        state.token = accessToken;
-        state.refreshToken = refreshToken;
-        state.user = {
-          ...decoded,
-        };
-        state.error = null;
-      })
-      .addCase(resendOtp.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.message || 'Failed to resend OTP';
-      }).addCase(changePassword.pending, (state) => {
+      //   state.loading = false;
+      //   state.token = accessToken;
+      //   state.refreshToken = refreshToken;
+      //   state.user = {
+      //     ...decoded,
+      //   };
+      //   state.error = null;
+      // })
+      // .addCase(resendOtp.rejected, (state, action) => {
+      //   state.loading = false;
+      //   state.error = action.payload?.message || 'Failed to resend OTP';
+      // })
+      .addCase(changePassword.pending, (state) => {
         state.loading = true;
         state.error = null;
       })

@@ -48,12 +48,10 @@ export default function UpcomingTasksPage() {
         .filter((task) => {
           if (!task) return false;
 
-          // Match task name with the search term (case-insensitive)
+         
           const taskNameMatches = (task.taskName?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-          // Check if task is pending
           const isPending = task.status === 'pending';
         
-          // Check if the task has a due date
           if (!task.dueDate) return false;
 
           const due = moment(task.dueDate).startOf('day');

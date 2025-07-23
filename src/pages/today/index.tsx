@@ -47,7 +47,6 @@ export default function TodayPage() {
         .filter((task) => {
           if (!task) return false;
 
-          // Match task name with the search term (case-insensitive)
           const matchesSearch = (task.taskName?.toLowerCase() || '').includes(
             searchTerm.toLowerCase()
           );
