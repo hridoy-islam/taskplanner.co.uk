@@ -142,6 +142,9 @@ export default function CompanyTableList({ refreshKey }) {
               {(user.role === 'admin' || user.role === 'director') && (
                 <TableHead>Company Status</TableHead>
               )}
+                {(user.role === 'admin' || user.role === 'director') && (
+                              <TableHead>Authorized</TableHead>
+                            )}
               {(user.role === 'admin' || user.role === 'director') && (
                 <TableHead className='text-center'>Add User</TableHead>
               )}
@@ -179,6 +182,52 @@ export default function CompanyTableList({ refreshKey }) {
                     </span>
                   </TableCell>
                 )}
+
+                   {(user.role === 'admin' || user.role === 'director') && (
+                                  <TableCell className="items-center">
+                                    <div className="flex flex-row items-center justify-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!(company.isValided && company.authorized)}
+                                        onChange={async (e) => {
+                                          const isChecked = e.target.checked;
+                
+                                          try {
+                                            const response = await axiosInstance.patch(
+                                              `/users/${company._id}`,
+                                              {
+                                                isValided: isChecked,
+                                                authorized: isChecked
+                                              }
+                                            );
+                
+                                            if (response.data.success) {
+                                              toast({
+                                                title: `company ${isChecked ? 'authorized' : 'unauthorized'} successfully`
+                                              });
+                                              // Refresh data to reflect updated state
+                                              fetchData(
+                                                currentPage,
+                                                entriesPerPage,
+                                                searchTerm
+                                              );
+                                            } else {
+                                              throw new Error('Update failed');
+                                            }
+                                          } catch (error) {
+                                            toast({
+                                              title: 'Failed to update authorization',
+                                              variant: 'destructive'
+                                            });
+                                          }
+                                        }}
+                                        className="h-5 w-5 cursor-pointer rounded border-2 border-gray-400 bg-transparent accent-gray-700 focus:ring-0"
+                                        aria-label={`Authorize ${company.name}`}
+                                      />
+                                    </div>
+                                  </TableCell>
+                                )}
+                
 
                 {(user.role === 'admin' || user.role === 'director') && (
                   <TableCell>

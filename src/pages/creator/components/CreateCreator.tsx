@@ -34,6 +34,15 @@ export default function CreateCreator({ onUserCreated }) {
     if (user?.role === 'company') {
       data.company = user?._id;
     }
+    if (data.authorized) {
+      data.isValided = true;
+      data.authorized = true;
+    } else {
+      // Optional: explicitly set to false if needed
+      data.isValided = false;
+      data.authorized = false;
+    }
+
     setIsLoading(true); // Set loading state
     setError(null); // Reset any previous errors
 
@@ -111,6 +120,20 @@ export default function CreateCreator({ onUserCreated }) {
                   className="col-span-3 w-full"
                   required
                 />
+              </div>
+              {/* Authorized Checkbox */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="authorized" className="text-right">
+                  Authorized
+                </Label>
+                <div className="col-span-3 flex items-center">
+                  <input
+                    type="checkbox"
+                    id="authorized"
+                    {...register('authorized')}
+                    className="mr-2 h-5 w-5 bg-transparent  accent-gray-700"
+                  />
+                </div>
               </div>
               {error && <p className="text-red-500">{error}</p>}
             </div>

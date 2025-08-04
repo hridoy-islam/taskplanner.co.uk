@@ -187,7 +187,7 @@ export default function UserTableList({ refreshKey }) {
           placeholder="Search..."
           value={searchTerm}
           onChange={handleSearch}
-          className='w-full'
+          className="w-full"
         />
         {/* <div>
           <DynamicPagination
@@ -213,6 +213,9 @@ export default function UserTableList({ refreshKey }) {
                 user.role === 'company' ||
                 user.role === 'creator') && <TableHead>User Status</TableHead>}
 
+              {(user.role === 'admin' || user.role === 'director') && (
+                <TableHead>Authorized</TableHead>
+              )}
               {(user.role === 'admin' || user.role === 'director') && (
                 <TableHead>Add User</TableHead>
               )}
@@ -270,7 +273,50 @@ export default function UserTableList({ refreshKey }) {
                     </span>
                   </TableCell>
                 )}
+                {(user.role === 'admin' || user.role === 'director') && (
+                  <TableCell className="items-center">
+                    <div className="flex flex-row items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={!!(stuff.isValided && stuff.authorized)}
+                        onChange={async (e) => {
+                          const isChecked = e.target.checked;
 
+                          try {
+                            const response = await axiosInstance.patch(
+                              `/users/${stuff._id}`,
+                              {
+                                isValided: isChecked,
+                                authorized: isChecked
+                              }
+                            );
+
+                            if (response.data.success) {
+                              toast({
+                                title: `User ${isChecked ? 'authorized' : 'unauthorized'} successfully`
+                              });
+                              // Refresh data to reflect updated state
+                              fetchData(
+                                currentPage,
+                                entriesPerPage,
+                                searchTerm
+                              );
+                            } else {
+                              throw new Error('Update failed');
+                            }
+                          } catch (error) {
+                            toast({
+                              title: 'Failed to update authorization',
+                              variant: 'destructive'
+                            });
+                          }
+                        }}
+                        className="h-5 w-5 cursor-pointer rounded border-2 border-gray-400 bg-transparent accent-gray-700 focus:ring-0"
+                        aria-label={`Authorize ${stuff.name}`}
+                      />
+                    </div>
+                  </TableCell>
+                )}
                 {(user.role === 'admin' || user.role === 'director') && (
                   <TableCell>
                     <div className="flex flex-row items-center justify-center">

@@ -137,27 +137,33 @@ export default function CreatorTableList({ refreshKey }) {
     try {
       const payload = {
         colleagueId,
-        action,
+        action
       };
 
-      const response = await axiosInstance.patch(`users/addmember/${userId}`, payload);
+      const response = await axiosInstance.patch(
+        `users/addmember/${userId}`,
+        payload
+      );
 
       if (response.data.success) {
         toast({
-          title: action === 'add' ? 'User Added Successfully' : 'User Removed Successfully',
+          title:
+            action === 'add'
+              ? 'User Added Successfully'
+              : 'User Removed Successfully'
         });
         fetchData(currentPage, entriesPerPage, searchTerm); // Refresh the data
       } else {
         toast({
           title: 'Something Went Wrong',
-          variant: 'destructive',
+          variant: 'destructive'
         });
       }
     } catch (error) {
       console.error('Error updating colleagues:', error);
       toast({
         title: 'Error updating colleagues',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
@@ -174,7 +180,7 @@ export default function CreatorTableList({ refreshKey }) {
           placeholder="Search..."
           value={searchTerm}
           onChange={handleSearch}
-          className='w-full'
+          className="w-full"
         />
         {/* <div>
           <DynamicPagination
@@ -198,6 +204,9 @@ export default function CreatorTableList({ refreshKey }) {
               {(user.role === 'admin' ||
                 user.role === 'director' ||
                 user.role === 'company') && <TableHead>User Status</TableHead>}
+              {(user.role === 'admin' || user.role === 'director') && (
+                <TableHead>Authorized</TableHead>
+              )}
               {(user.role === 'admin' || user.role === 'director') && (
                 <TableHead>Add User</TableHead>
               )}
@@ -254,23 +263,79 @@ export default function CreatorTableList({ refreshKey }) {
                     </span>
                   </TableCell>
                 )}
+                {(user.role === 'admin' || user.role === 'director') && (
+                  <TableCell className="items-center">
+                    <div className="flex flex-row items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={!!(creator.isValided && creator.authorized)}
+                        onChange={async (e) => {
+                          const isChecked = e.target.checked;
+
+                          try {
+                            const response = await axiosInstance.patch(
+                              `/users/${creator._id}`,
+                              {
+                                isValided: isChecked,
+                                authorized: isChecked
+                              }
+                            );
+
+                            if (response.data.success) {
+                              toast({
+                                title: `Creator ${isChecked ? 'authorized' : 'unauthorized'} successfully`
+                              });
+                              // Refresh data to reflect updated state
+                              fetchData(
+                                currentPage,
+                                entriesPerPage,
+                                searchTerm
+                              );
+                            } else {
+                              throw new Error('Update failed');
+                            }
+                          } catch (error) {
+                            toast({
+                              title: 'Failed to update authorization',
+                              variant: 'destructive'
+                            });
+                          }
+                        }}
+                        className="h-5 w-5 cursor-pointer rounded border-2 border-gray-400 bg-transparent accent-gray-700 focus:ring-0"
+                        aria-label={`Authorize ${creator.name}`}
+                      />
+                    </div>
+                  </TableCell>
+                )}
 
                 {(user.role === 'admin' || user.role === 'director') && (
                   <TableCell>
-                  <div className="flex flex-row items-center justify-center">
-                    {isColleague(creator) ? (
-                      <UserCheck
-                        className="cursor-pointer"
-                        onClick={() => handleAddRemoveColleague(creator._id, user._id, 'remove')}
-                      />
-                    ) : (
-                      <UserPlus
-                        className="cursor-pointer"
-                        onClick={() => handleAddRemoveColleague(creator._id, user._id, 'add')}
-                      />
-                    )}
-                  </div>
-                </TableCell>
+                    <div className="flex flex-row items-center justify-center">
+                      {isColleague(creator) ? (
+                        <UserCheck
+                          className="cursor-pointer"
+                          onClick={() =>
+                            handleAddRemoveColleague(
+                              creator._id,
+                              user._id,
+                              'remove'
+                            )
+                          }
+                        />
+                      ) : (
+                        <UserPlus
+                          className="cursor-pointer"
+                          onClick={() =>
+                            handleAddRemoveColleague(
+                              creator._id,
+                              user._id,
+                              'add'
+                            )
+                          }
+                        />
+                      )}
+                    </div>
+                  </TableCell>
                 )}
               </TableRow>
             ))}
