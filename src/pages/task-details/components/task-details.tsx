@@ -515,13 +515,8 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
               }`}
             />
           </Button>
-          {/* <Button variant="secondary" onClick={handleStatusChange}>
-            {localTask.history?.some((entry) => entry.completed)
-              ? 'Undo'
-              : 'Complete'}
-          </Button> */}
 
-          {localTask.status === 'completed' ||
+          {/* {localTask.status === 'completed' ||
           (frequency === 'custom' && areAllCustomDatesCompleted(localTask)) ? (
             <Button disabled variant="secondary">
               Completed
@@ -530,7 +525,20 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
             <Button variant="secondary" onClick={handleStatusChange}>
               Complete
             </Button>
-          )}
+          )} */}
+
+          {user?._id === String(localTask.author?._id) &&
+            (localTask.status === 'completed' ||
+            (frequency === TaskFrequency.CUSTOM &&
+              areAllCustomDatesCompleted(localTask)) ? (
+              <Button disabled variant="secondary">
+                Completed
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={handleStatusChange}>
+                Complete
+              </Button>
+            ))}
         </div>
       </div>
 
