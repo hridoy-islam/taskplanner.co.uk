@@ -57,10 +57,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import axios from 'axios';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ImageUploader } from './file-uploader';
 import Loader from '@/components/shared/loader';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { FileUploader } from './file-uploader';
 UC.defineComponents(UC);
 const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
 let socket, selectedChatCompare;
@@ -809,7 +809,7 @@ export default function TaskChat({ task }: TaskChatProps) {
           </div>
         </form>
         {/* Image Uploader Component */}
-        <ImageUploader
+        <FileUploader
           open={isImageUploaderOpen}
           onOpenChange={setIsImageUploaderOpen}
           multiple={false}
