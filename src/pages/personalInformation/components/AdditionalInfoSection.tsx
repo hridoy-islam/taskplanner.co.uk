@@ -25,7 +25,13 @@ export default function AdditionalInfoSection({
   setCurrentQuestion,
 }) {
   const [animating, setAnimating] = useState(false);
-
+const handleBack = () => {
+  if (currentQuestion > 0) {
+    setCurrentQuestion(currentQuestion - 1);
+  } else {
+    onBack(); // parent section
+  }
+};
   // Load saved question position from localStorage if it exists
   useEffect(() => {
     const savedQuestionPosition = localStorage.getItem(
@@ -253,7 +259,7 @@ export default function AdditionalInfoSection({
           <div className="flex justify-between bg-gray-50 p-4">
             <Button
               variant="ghost"
-              onClick={goToPreviousQuestion}
+              onClick={handleBack}
               className="bg-taskplanner text-white hover:bg-taskplanner/90"
             >
               Back

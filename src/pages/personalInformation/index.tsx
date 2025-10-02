@@ -89,10 +89,16 @@ export default function PersonalInformationPage() {
   const isProfileComplete =
     formData.profile.jobTitle.trim() !== '' &&
     formData.profile.bio.trim() !== '';
-  const isCompanyComplete =
-    !formData.company.isEmployed ||
-    (formData.company.companyType.trim() !== '' &&
-      formData.company.companyName.trim() !== '');
+  const isCompanyComplete = formData.company.isEmployed
+  ? formData.company.companyType.trim() !== '' &&
+    formData.company.companyName.trim() !== '' &&
+    formData.company.companyAddress.trim() !== '' &&
+    formData.company.companyWebsite.trim() !== '' &&
+    formData.company.companyEmail.trim() !== '' &&
+    formData.company.companyPhone.trim() !== ''
+  : true;
+
+
   const isAdditionalInfoComplete =
     formData.additionalInfo.howDidYouHear.trim() !== '' &&
     formData.additionalInfo.industryType.trim() !== '' &&
@@ -115,22 +121,21 @@ export default function PersonalInformationPage() {
     return isAdditionalInfoComplete ? 'completed' : 'inactive';
   };
 
-  const handleUpdateSection = (
-    section: 'profile' | 'company' | 'additional'
-  ) => {
-    setCurrentSection(section);
-    const savedQuestionIndex = localStorage.getItem(
-      `question_index_${section}`
-    );
-    if (savedQuestionIndex) {
-      if (section === 'profile')
-        setProfileQuestion(parseInt(savedQuestionIndex, 10));
-      if (section === 'company')
-        setCompanyQuestion(parseInt(savedQuestionIndex, 10));
-      if (section === 'additional')
-        setAdditionalQuestion(parseInt(savedQuestionIndex, 10));
-    }
-  };
+const handleUpdateSection = (section: 'profile' | 'company' | 'additional') => {
+  setCurrentSection(section);
+
+  const savedQuestionIndex = localStorage.getItem(`question_index_${section}`);
+  if (savedQuestionIndex) {
+    if (section === 'profile') setProfileQuestion(parseInt(savedQuestionIndex, 10));
+    if (section === 'company') setCompanyQuestion(parseInt(savedQuestionIndex, 10));
+    if (section === 'additional') setAdditionalQuestion(parseInt(savedQuestionIndex, 10));
+  } else {
+    if (section === 'profile') setProfileQuestion(0);
+    if (section === 'company') setCompanyQuestion(0);
+    if (section === 'additional') setAdditionalQuestion(0);
+  }
+};
+
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -215,35 +220,37 @@ export default function PersonalInformationPage() {
       icon: Briefcase,
       status: getCompanyStatus(),
       component: (
-        <CompanySection
-          formData={formData}
-          setFormData={setFormData}
-          onBack={() => handleUpdateSection('profile')}
-          onComplete={() => handleUpdateSection('additional')}
-          isComplete={isCompanyComplete}
-          currentQuestion={companyQuestion}
-          setCurrentQuestion={setCompanyQuestion}
-        />
-      )
+  <CompanySection
+    formData={formData}
+    setFormData={setFormData}
+    onBack={() => handleUpdateSection('profile')}
+    onComplete={() => handleUpdateSection('additional')}
+    isComplete={isCompanyComplete}
+    currentQuestion={companyQuestion} // ✅ must pass current question
+    setCurrentQuestion={setCompanyQuestion} // ✅ setter
+  />
+)
+
     },
     {
-      id: 'additional',
-      title: 'Additional Info',
-      icon: Info,
-      status: getAdditionalStatus(),
-      component: (
-        <AdditionalInfoSection
-          formData={formData}
-          setFormData={setFormData}
-          onBack={() => handleUpdateSection('company')}
-          onComplete={handleSubmit}
-          isSubmitting={isSubmitting}
-          isComplete={isAdditionalInfoComplete}
-          currentQuestion={companyQuestion}
-          setCurrentQuestion={setCompanyQuestion}
-        />
-      )
-    }
+  id: 'additional',
+  title: 'Additional Info',
+  icon: Info,
+  status: getAdditionalStatus(),
+  component: (
+    <AdditionalInfoSection
+      formData={formData}
+      setFormData={setFormData}
+      onBack={() => handleUpdateSection('company')}
+      onComplete={handleSubmit}
+      isSubmitting={isSubmitting}
+      isComplete={isAdditionalInfoComplete}
+      currentQuestion={additionalQuestion} // ✅ fix here
+      setCurrentQuestion={setAdditionalQuestion} // ✅ fix here
+    />
+  )
+}
+
   ];
 
   const completedSections = [
