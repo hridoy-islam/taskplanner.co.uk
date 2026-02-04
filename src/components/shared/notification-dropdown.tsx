@@ -150,11 +150,8 @@ export function NotificationDropdown() {
       />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="icon" className="relative">
-            {/* <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-red-500" />
-          )} */}
+          <Button variant={'ghost'} size="icon" className="relative shadow-none bg-transparent hover:bg-transparent hover:text-taskplanner ">
+            
 
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (

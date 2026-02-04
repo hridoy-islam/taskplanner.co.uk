@@ -20,7 +20,7 @@ export default function PopupModal({ renderModal }: TPopupModalProps) {
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        className={'!bg-background !px-1'}
+        className={'!bg-taskplanner !px-1'}
       >
         <ScrollArea className="h-[80dvh] px-6  ">
           {renderModal(onClose)}

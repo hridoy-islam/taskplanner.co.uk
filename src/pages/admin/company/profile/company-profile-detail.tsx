@@ -10,7 +10,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useParams } from 'react-router-dom';
-import axiosInstance from '../../../lib/axios';
+import axiosInstance from '../../../../lib/axios';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/use-toast';
 import { convertToLowerCase } from '@/lib/utils';

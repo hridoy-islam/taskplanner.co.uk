@@ -2,8 +2,8 @@ import ProtectedRoute from '@/components/shared/ProtectedRoute';
 import AssignedTaskPage from '@/pages/assignedtask';
 import ForgotPassword from '@/pages/auth/forget-password';
 import SignUpPage from '@/pages/auth/sign-up';
-import CompanyPage from '@/pages/company';
-import CompanyProfileDetail from '@/pages/company/profile/company-profile-detail';
+import CompanyPage from '@/pages/admin/company';
+import CompanyProfileDetail from '@/pages/admin/company/profile/company-profile-detail';
 import CompletedTaskPage from '@/pages/completedtask';
 import CreatorPage from '@/pages/creator';
 import CreatorProfileDetail from '@/pages/creator/profile/creator-profile-detail';
@@ -57,6 +57,9 @@ import Careers from '@/pages/career';
 import TermsAndConditions from '@/pages/terms';
 import PrivacyPolicyPage from '@/pages/privacyPolicy';
 import SecurityPolicyPage from '@/pages/securiyPolicy';
+import AdminDashboardPage from '@/pages/admin/AdminDashboard';
+import ManagerPage from '@/pages/admin/manager';
+import AdminUserPage from '@/pages/admin/user';
 
 const DashboardLayout = lazy(
   () => import('@/components/layout/dashboard-layout')
@@ -68,7 +71,91 @@ const DashboardPage = lazy(() => import('@/pages/dashboard'));
 // ----------------------------------------------------------------------
 
 export default function AppRouter() {
-  const dashboardRoutes = [
+  const AdmindashboardRoutes = [
+    {
+      path: '/dashboard/admin',
+      element: (
+        <DashboardLayout>
+          <ProtectedRoute
+            allowedRoles={['admin', 'director']}
+          >
+            <Suspense>
+              <Outlet />
+            </Suspense>
+          </ProtectedRoute>
+        </DashboardLayout>
+      ),
+      children: [
+        {
+          element: <AdminDashboardPage />,
+          index: true
+        },
+       
+       
+       
+        {
+          path: 'director',
+          element: (
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DirectorPage />
+            </ProtectedRoute>
+          )
+        },
+        {
+          path: 'director/:id',
+          element: (
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DirectorProfileDetail />
+            </ProtectedRoute>
+          )
+        },
+        {
+          path: 'company',
+          element: (
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CompanyPage />
+            </ProtectedRoute>
+          )
+        },
+        {
+          path: 'company/:id',
+          element: (
+            <ProtectedRoute allowedRoles={['admin',]}>
+              <CompanyProfileDetail />
+            </ProtectedRoute>
+          )
+        },
+        
+        {
+          path: 'notifications',
+          element: <NotificationsPage />
+        },
+         {
+          path: 'manager',
+          element: (
+            <ProtectedRoute
+              allowedRoles={['admin']}
+            >
+              <ManagerPage />
+            </ProtectedRoute>
+          )
+        },
+         {
+          path: 'users',
+          element: (
+            <ProtectedRoute
+              allowedRoles={['admin']}
+            >
+              <AdminUserPage />
+            </ProtectedRoute>
+          )
+        },
+      ]
+    }
+  ];
+
+
+   const dashboardRoutes = [
     {
       path: '/dashboard',
       element: (
@@ -394,7 +481,8 @@ export default function AppRouter() {
   const routes = useRoutes([
     ...dashboardRoutes,
     ...publicRoutes,
-    ...layoutRoutes
+    ...layoutRoutes,
+    ...AdmindashboardRoutes
   ]);
 
   return routes;

@@ -88,7 +88,7 @@ export default function Sidebar({ className }: SidebarProps) {
         {!isMinimized && <h1 className="text-2xl font-bold">Task Planner</h1>}
         <ChevronsLeft
           className={cn(
-            'size-8 cursor-pointer rounded-full border bg-background text-foreground',
+            'size-8 cursor-pointer rounded-full border bg-taskplanner text-foreground',
             isMinimized && 'rotate-180'
           )}
           onClick={handleToggle}

@@ -167,7 +167,7 @@ export default function UserAuthForm() {
 
           <Button
             disabled={loading}
-            className="ml-auto w-full bg-background text-white hover:bg-background"
+            className="ml-auto w-full bg-taskplanner text-white hover:bg-taskplanner"
             type="submit"
           >
             Login
@@ -187,7 +187,7 @@ export default function UserAuthForm() {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
+          <span className="bg-taskplanner px-2 text-muted-foreground">
             Or continue with
           </span>
         </div>

@@ -180,7 +180,7 @@ export default function NewPassword() {
 
                     <Button
                       disabled={loading || fieldsDisabled}
-                      className="w-full bg-background text-white hover:bg-background"
+                      className="w-full bg-taskplanner text-white hover:bg-taskplanner"
                       type="submit"
                     >
                       Submit

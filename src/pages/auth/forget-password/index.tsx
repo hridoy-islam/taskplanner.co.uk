@@ -103,7 +103,7 @@ export default function ForgotPassword() {
 
                     <Button
                       disabled={loading}
-                      className="ml-auto w-full bg-background text-white hover:bg-background"
+                      className="ml-auto w-full bg-taskplanner text-white hover:bg-taskplanner"
                       type="submit"
                     >
                       Reset Password

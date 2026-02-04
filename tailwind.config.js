@@ -21,7 +21,9 @@ module.exports = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
-        taskplanner: 'hsl(var(--taskplanner))',
+      taskplanner: 'hsl(var(--taskplanner) / <alpha-value>)',
+tpsecondary: 'hsl(var(--taskplanner-secondary) / <alpha-value>)',
+
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
