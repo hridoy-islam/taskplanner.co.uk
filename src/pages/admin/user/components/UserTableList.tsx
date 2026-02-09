@@ -281,9 +281,6 @@ export default function UserTableList() {
               <TableHead className="text-xs font-semibold uppercase tracking-wider text-black">
                 Company
               </TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wider text-black">
-                Creator
-              </TableHead>
               
               {/* Assignments */}
               {isAdminOrDirector && (
@@ -291,11 +288,7 @@ export default function UserTableList() {
                   Assign Company
                 </TableHead>
               )}
-              {(isAdminOrDirector || user.role === 'company') && (
-                <TableHead className="w-[180px] text-xs font-semibold uppercase tracking-wider text-black">
-                  Assign Manager
-                </TableHead>
-              )}
+            
 
               {/* Status & Auth */}
               <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-black">
@@ -363,18 +356,12 @@ export default function UserTableList() {
 
                   {/* 2. Current Company */}
                   <TableCell>
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-black">
                       {item.company ? item.company.name : '-'}
                     </span>
                   </TableCell>
 
-                  {/* 3. Current Creator */}
-                  <TableCell>
-                    <span className="text-sm text-gray-700">
-                      {item.creator ? item.creator.name : '-'}
-                    </span>
-                  </TableCell>
-
+                 
                   {/* 4. Assign Company (Admin Only) */}
                   {isAdminOrDirector && (
                     <TableCell>
@@ -405,35 +392,7 @@ export default function UserTableList() {
                     </TableCell>
                   )}
 
-                  {/* 5. Assign Creator (Admin & Company) */}
-                  {(isAdminOrDirector || user.role === 'company') && (
-                    <TableCell>
-                      <Select
-                        options={creators}
-                        value={null}
-                        onChange={(selectedOption) =>
-                          handleAssignmentChange(selectedOption, item._id, 'creator')
-                        }
-                        isClearable
-                        placeholder="Assign..."
-                        className="text-xs"
-                        menuPortalTarget={document.body}
-                        menuPosition="fixed"
-                        styles={{
-                          control: (base) => ({
-                            ...base,
-                            minHeight: '32px',
-                            height: '32px',
-                            borderColor: '#e2e8f0'
-                          }),
-                          dropdownIndicator: (base) => ({ ...base, padding: '4px' }),
-                          valueContainer: (base) => ({ ...base, padding: '0 8px' }),
-                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                          menu: (base) => ({ ...base, zIndex: 9999 })
-                        }}
-                      />
-                    </TableCell>
-                  )}
+                  
 
                   {/* 6. Status Switch */}
                   <TableCell className="text-center">

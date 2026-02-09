@@ -18,30 +18,36 @@ export const navItems = [
     href: '/dashboard/admin',
     icon: 'dashboard',
     label: 'Dashboard',
-    roles: [ 'admin']
+    roles: ['admin']
   },
   {
     title: 'Company',
     href: '/dashboard/admin/company',
     icon: 'company',
     label: 'Company',
-    roles: [ 'admin']
+    roles: ['admin']
   },
   {
     title: 'Manager',
     href: '/dashboard/admin/manager',
     icon: 'dashboard',
     label: 'Dashboard',
-    roles: [ 'admin']
+    roles: ['admin']
   },
   {
     title: 'Users',
     href: '/dashboard/admin/users',
     icon: 'users',
     label: 'Users',
-    roles: [ 'admin']
+    roles: ['admin']
   },
-
+  {
+    title: 'Subscription Plans',
+    href: '/dashboard/admin/subscription-plans',
+    icon: 'users',
+    label: 'Users',
+    roles: ['admin']
+  },
 
   {
     title: 'Today',
@@ -79,20 +85,12 @@ export const navItems = [
     roles: ['user', 'company', 'creator']
   },
 
-  
-  {
-    title: 'Company',
-    href: '/dashboard/company',
-    icon: 'company',
-    label: 'Company',
-    roles: ['admin', 'director']
-  },
   {
     title: 'Manager',
     href: '/dashboard/creator',
     icon: 'creator',
     label: 'Manager',
-    roles: [ 'company']
+    roles: ['company']
   },
   {
     title: 'Users',
@@ -101,13 +99,7 @@ export const navItems = [
     label: 'Users',
     roles: ['company', 'creator']
   },
-  {
-    title: 'Subscription Plan',
-    href: '/dashboard/subscription',
-    icon: 'subscription',
-    label: 'Subscription',
-    roles: ['admin']
-  }
+ 
 ];
 
 export default function Header({ onMenuClick }: HeaderProps) {

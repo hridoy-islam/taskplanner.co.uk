@@ -12,22 +12,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Search,
-  Pencil
-} from 'lucide-react';
+import { Search, Pencil, Eye } from 'lucide-react';
 import axiosInstance from '../../../../lib/axios';
 import { toast } from '@/components/ui/use-toast';
 import { useSelector } from 'react-redux';
 import CreateCompany from './CreateCompany';
 import UpdateCompany from './UpdateCompany';
 import { BlinkingDots } from '@/components/shared/blinking-dots';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function CompanyTableList() {
   const { user } = useSelector((state: any) => state.auth);
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-
+  const navigate = useNavigate()
   // 1. Separate Input State from Search Trigger State
   const [inputValue, setInputValue] = useState(''); // Stores text as you type
   const [searchTerm, setSearchTerm] = useState(''); // Stores value only when 'Search' is clicked
@@ -37,29 +35,28 @@ export default function CompanyTableList() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Edit State
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(
+    null
+  );
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
 
   const handleUserRefresh = () => {
     setRefreshKey((prev) => prev + 1);
   };
 
-  const fetchData = useCallback(
-    async (page, entriesPerPage, term = '') => {
-      setIsLoading(true);
-      try {
-        const res = await axiosInstance.get(
-          `/users?role=company&page=${page}&limit=${entriesPerPage}&searchTerm=${term}`
-        );
-        setUsers(res.data.data.result);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+  const fetchData = useCallback(async (page, entriesPerPage, term = '') => {
+    setIsLoading(true);
+    try {
+      const res = await axiosInstance.get(
+        `/users?role=company&page=${page}&limit=${entriesPerPage}&searchTerm=${term}`
+      );
+      setUsers(res.data.data.result);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Effect only runs when 'searchTerm' (committed value) changes, not on every keystroke
   useEffect(() => {
@@ -86,6 +83,10 @@ export default function CompanyTableList() {
     setSelectedCompanyId(id);
     setIsUpdateDialogOpen(true);
   };
+
+  const handleViewClick = (id: string) => {
+    navigate(`/dashboard/admin/company/${id}`);
+  }
 
   const getInitials = (name: string) => {
     return name?.slice(0, 2).toUpperCase() || 'CO';
@@ -128,19 +129,18 @@ export default function CompanyTableList() {
   const isAdmin = user.role === 'admin' || user.role === 'director';
 
   return (
-    <div className="w-full space-y-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-      
+    <div className="w-full space-y-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       {/* --- Minimal Header --- */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className='flex flex-col md:flex-row items-start md:items-center gap-4'>
+        <div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-taskplanner">
               Company List
             </h2>
           </div>
-          
+
           {/* 3. Updated Search Section */}
-          <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="flex w-full items-center gap-2 md:w-auto">
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
@@ -151,12 +151,12 @@ export default function CompanyTableList() {
                 className="h-10 w-full rounded-lg border-gray-300 bg-gray-50 pl-9 transition-all focus:border-taskplanner focus:bg-white"
               />
             </div>
-            <Button 
-                onClick={handleSearchClick}
-                variant="default"
-                className="h-10 px-4"
+            <Button
+              onClick={handleSearchClick}
+              variant="default"
+              className="h-10 px-4"
             >
-                Search
+              Search
             </Button>
           </div>
         </div>
@@ -190,14 +190,14 @@ export default function CompanyTableList() {
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={5}>
-                 <BlinkingDots/>
+                  <BlinkingDots />
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={5}
-                  className="h-24 text-center text-taskplanner font-bold"
+                  className="h-24 text-center font-bold text-taskplanner"
                 >
                   No companies found.
                 </TableCell>
@@ -218,9 +218,15 @@ export default function CompanyTableList() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="text-sm font-semibold leading-tight text-gray-900">
+                        {/* Updated Link Component */}
+                        <Link
+                          to={`/company/${company._id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-semibold leading-tight text-gray-900 hover:text-blue-600 hover:underline"
+                        >
                           {company.name}
-                        </span>
+                        </Link>
                         <span className="text-xs text-black">
                           {company.email}
                         </span>
@@ -231,7 +237,7 @@ export default function CompanyTableList() {
                   {/* Status Switch */}
                   {isAdmin && (
                     <TableCell className="text-center">
-                      <div className="flex justify-center items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <Switch
                           checked={!company.isDeleted}
                           onCheckedChange={() =>
@@ -247,23 +253,33 @@ export default function CompanyTableList() {
                     <TableCell className="text-center">
                       <div className="flex justify-center">
                         <Checkbox
-                            checked={!!(company.isValided && company.authorized)}
-                            onCheckedChange={() => toggleAuthorization(company)}
+                          checked={!!(company.isValided && company.authorized)}
+                          onCheckedChange={() => toggleAuthorization(company)}
                         />
                       </div>
                     </TableCell>
                   )}
 
                   {/* Edit Button */}
-                  <TableCell className="pr-6 text-right">
-                    <Button
-                      variant="default"
-                      size="icon"
-                      className='h-8 w-8'
-                      onClick={() => handleEditClick(company._id)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                  <TableCell className="text-right">
+                    <div className="flex flex-row items-center justify-end gap-2">
+                      <Button
+                        variant="default"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleEditClick(company._id)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleViewClick(company._id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -272,7 +288,7 @@ export default function CompanyTableList() {
         </Table>
       </div>
 
-      <UpdateCompany 
+      <UpdateCompany
         companyId={selectedCompanyId}
         open={isUpdateDialogOpen}
         onOpenChange={setIsUpdateDialogOpen}

@@ -14,7 +14,7 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard'); // Adjust the path as needed
+      navigate('/dashboard/admin'); // Adjust the path as needed
     }
   }, [user, navigate]);
 

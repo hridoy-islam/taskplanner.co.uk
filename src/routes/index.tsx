@@ -60,6 +60,10 @@ import SecurityPolicyPage from '@/pages/securiyPolicy';
 import AdminDashboardPage from '@/pages/admin/AdminDashboard';
 import ManagerPage from '@/pages/admin/manager';
 import AdminUserPage from '@/pages/admin/user';
+import SubscriptionPlanPage from '@/pages/admin/SubscriptionPlan';
+import { CompanyDetailsPage } from '@/pages/admin/company/companyDetails';
+import CompanyDashboardPage from '@/pages/company/CompanyDashboard';
+import CompanyLayout from '@/components/layout/company-layout';
 
 const DashboardLayout = lazy(
   () => import('@/components/layout/dashboard-layout')
@@ -76,9 +80,7 @@ export default function AppRouter() {
       path: '/dashboard/admin',
       element: (
         <DashboardLayout>
-          <ProtectedRoute
-            allowedRoles={['admin', 'director']}
-          >
+          <ProtectedRoute allowedRoles={['admin', 'director']}>
             <Suspense>
               <Outlet />
             </Suspense>
@@ -90,9 +92,7 @@ export default function AppRouter() {
           element: <AdminDashboardPage />,
           index: true
         },
-       
-       
-       
+
         {
           path: 'director',
           element: (
@@ -120,46 +120,50 @@ export default function AppRouter() {
         {
           path: 'company/:id',
           element: (
-            <ProtectedRoute allowedRoles={['admin',]}>
-              <CompanyProfileDetail />
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CompanyDetailsPage />
             </ProtectedRoute>
           )
         },
-        
+
         {
           path: 'notifications',
           element: <NotificationsPage />
         },
-         {
+        {
           path: 'manager',
           element: (
-            <ProtectedRoute
-              allowedRoles={['admin']}
-            >
+            <ProtectedRoute allowedRoles={['admin']}>
               <ManagerPage />
             </ProtectedRoute>
           )
         },
-         {
+        {
           path: 'users',
           element: (
-            <ProtectedRoute
-              allowedRoles={['admin']}
-            >
+            <ProtectedRoute allowedRoles={['admin']}>
               <AdminUserPage />
             </ProtectedRoute>
           )
         },
+        {
+          path: 'subscription-plans',
+          element: (
+            <ProtectedRoute allowedRoles={['admin']}>
+              <SubscriptionPlanPage />
+            </ProtectedRoute>
+          )
+        }
       ]
     }
   ];
 
 
-   const dashboardRoutes = [
+   const CompanyDashboardRoutes = [
     {
-      path: '/dashboard',
+      path: '/company/:id',
       element: (
-        <DashboardLayout>
+        <CompanyLayout>
           <ProtectedRoute
             allowedRoles={['admin', 'director', 'company', 'creator', 'user']}
           >
@@ -167,11 +171,11 @@ export default function AppRouter() {
               <Outlet />
             </Suspense>
           </ProtectedRoute>
-        </DashboardLayout>
+        </CompanyLayout>
       ),
       children: [
         {
-          element: <DashboardPage />,
+          element: <CompanyDashboardPage />,
           index: true
         },
         {
@@ -479,7 +483,7 @@ export default function AppRouter() {
   ];
 
   const routes = useRoutes([
-    ...dashboardRoutes,
+    ...CompanyDashboardRoutes,
     ...publicRoutes,
     ...layoutRoutes,
     ...AdmindashboardRoutes

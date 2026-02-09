@@ -42,7 +42,6 @@ const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
   company: z.string().optional(),
-  creator: z.string().optional(),
   authorized: z.boolean().default(false),
 });
 
@@ -211,28 +210,7 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
                 />
             )}
 
-            {/* --- Manager/Creator Select --- */}
-            <FormField
-              control={form.control}
-              name="creator"
-              render={({ field }) => (
-                <FormItem className="w-full">
-                  <FormLabel>Assign Manager</FormLabel>
-                   <FormControl>
-                        <Select
-                            options={creators}
-                            value={creators.find((c) => c.value === field.value)}
-                            onChange={(val) => field.onChange(val?.value)}
-                            isDisabled={!form.getValues('company') && user.role !== 'company'}
-                            placeholder={isLoadingCreators ? "Loading..." : "Select a manager..."}
-                            className="w-full text-sm"
-                           
-                        />
-                    </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+           
 
             {/* Stacked Fields - No Grid */}
             <FormField
