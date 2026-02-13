@@ -41,11 +41,20 @@ const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  company: z.string().optional(),
+  // Company is now mandatory
+  company: z.string().min(1, { message: 'Company is required.' }),
+  // Role is now mandatory (enum ensures only specific values)
+  role: z.enum(['creator', 'user'], { required_error: 'Role is required.' }),
   authorized: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+// Role Options for React-Select
+const ROLE_OPTIONS = [
+  { value: 'creator', label: 'Manager' }, // Maps to 'creator'
+  { value: 'user', label: 'Staff' },      // Maps to 'user'
+];
 
 export default function CreateUser({ onUserCreated }: { onUserCreated: () => void }) {
   const { user } = useSelector((state: any) => state.auth);
@@ -53,10 +62,8 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
   const dispatch = useDispatch<AppDispatch>();
   const [isOpen, setIsOpen] = useState(false);
   
-  // Dropdown Data States (Formatted for react-select)
+  // Dropdown Data States
   const [companies, setCompanies] = useState<{ value: string; label: string }[]>([]);
-  const [creators, setCreators] = useState<{ value: string; label: string }[]>([]);
-  const [isLoadingCreators, setIsLoadingCreators] = useState(false);
 
   // 2. Initialize Form
   const form = useForm<FormValues>({
@@ -66,7 +73,7 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
       email: '',
       password: '',
       company: '',
-      creator: '',
+      role: undefined, // undefined forces user to select
       authorized: false,
     },
   });
@@ -85,10 +92,9 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
           console.error("Failed to fetch companies", error);
         }
       } 
-      // If user IS a company, set their ID immediately
+      // If logged-in user IS a company, set their ID immediately
       else if (user.role === 'company') {
         form.setValue('company', user._id);
-        fetchCreators(user._id); // Auto-fetch their creators
       }
     };
 
@@ -97,59 +103,32 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
     }
   }, [isOpen, user.role, user._id, form]);
 
-  // 4. Fetch Creators when Company Changes
-  const fetchCreators = async (companyId: string) => {
-    if (!companyId) {
-        setCreators([]);
-        return;
-    }
-    setIsLoadingCreators(true);
-    try {
-      const res = await axiosInstance.get(`/users?role=creator&company=${companyId}&limit=1000`);
-      setCreators(res.data.data.result.map((c: any) => ({ value: c._id, label: c.name })));
-    } catch (error) {
-      console.error("Failed to fetch creators", error);
-      toast({ title: 'Failed to load managers', variant: 'destructive' });
-    } finally {
-      setIsLoadingCreators(false);
-    }
-  };
-
-  const handleCompanyChange = (selectedOption: any) => {
-    const companyId = selectedOption?.value || '';
-    form.setValue('company', companyId);
-    form.setValue('creator', ''); // Reset manager when company changes
-    fetchCreators(companyId);
-  };
-
-  // 5. Handle Submission
+  // 4. Handle Submission
   const onSubmit = async (values: FormValues) => {
     const payload: any = {
       ...values,
-      role: 'user',
+      role: values.role, // Use the selected role (creator/user)
       email: convertToLowerCase(values.email),
       isValided: values.authorized,
       authorized: values.authorized,
     };
 
-    // Ensure relationships are set correctly based on role
+    // Double check: If logged in as company, ensure company ID is strictly enforces
     if (user.role === 'company') {
         payload.company = user._id;
     }
-    // If Admin selected a company via dropdown, it's already in `values.company`
 
     try {
       await dispatch(registerUser(payload)).unwrap();
       
       toast({
         title: 'Success',
-        description: 'User account created successfully.',
+        description: `User (${values.role === 'creator' ? 'Manager' : 'Staff'}) created successfully.`,
         variant: 'default',
       });
 
       form.reset();
-      setCompanies([]);
-      setCreators([]);
+      // Reset dropdown states if necessary, though react-hook-form handles values
       setIsOpen(false);
       onUserCreated(); 
     } catch (error: any) {
@@ -172,36 +151,35 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
         </Button>
       </DialogTrigger>
       
-      <DialogContent className=" overflow-y-auto max-h-[97vh]">
+      <DialogContent className="overflow-y-auto max-h-[97vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5 text-gray-500" />
             Create New User
           </DialogTitle>
           <DialogDescription>
-            Enter the credentials below to create a new user account.
+            Assign a company and role (Manager or Staff) below.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 w-full">
             
-            {/* --- Company Select (Admin Only) --- */}
+            {/* --- 1. Company Select (Mandatory for Admin, Hidden for Company) --- */}
             {showCompanySelect && (
                 <FormField
                 control={form.control}
                 name="company"
                 render={({ field }) => (
                     <FormItem className="w-full">
-                    <FormLabel>Assign Company</FormLabel>
+                    <FormLabel>Assign Company <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                         <Select
                             options={companies}
                             value={companies.find((c) => c.value === field.value)}
-                            onChange={(val) => handleCompanyChange(val)}
+                            onChange={(val) => field.onChange(val?.value)}
                             placeholder="Select a company..."
                             className="w-full text-sm"
-                           
                         />
                     </FormControl>
                     <FormMessage />
@@ -210,21 +188,40 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
                 />
             )}
 
-           
+            {/* --- 2. Role Select (Mandatory) --- */}
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>Assign Role <span className="text-red-500">*</span></FormLabel>
+                  <FormControl>
+                    <Select
+                      options={ROLE_OPTIONS}
+                      value={ROLE_OPTIONS.find((r) => r.value === field.value)}
+                      onChange={(val) => field.onChange(val?.value)}
+                      placeholder="Select Role ..."
+                      className="w-full text-sm"
+                    />
+                  </FormControl>
+                  
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            {/* Stacked Fields - No Grid */}
+            {/* --- 3. Standard Inputs --- */}
             <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
                 <FormItem className="w-full">
-                <FormLabel>Full Name</FormLabel>
+                <FormLabel>Full Name <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
                     <Input 
                         placeholder="Jane Doe" 
                         {...field} 
                         disabled={isSubmitting} 
-                        className="w-full"
                     />
                 </FormControl>
                 <FormMessage />
@@ -237,14 +234,13 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
             name="email"
             render={({ field }) => (
                 <FormItem className="w-full">
-                <FormLabel>Email Address</FormLabel>
+                <FormLabel>Email Address <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
                     <Input 
                         placeholder="user@example.com" 
                         type="email" 
                         {...field} 
                         disabled={isSubmitting} 
-                        className="w-full"
                     />
                 </FormControl>
                 <FormMessage />
@@ -257,14 +253,13 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
               name="password"
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Password <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input 
                         placeholder="******" 
                         type="password" 
                         {...field} 
                         disabled={isSubmitting} 
-                        className="w-full"
                     />
                   </FormControl>
                   <FormMessage />
@@ -290,7 +285,7 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
                       Authorize User
                     </FormLabel>
                     <FormDescription className="text-xs">
-                      Grant immediate valid status.
+                      Grant immediate access to the platform.
                     </FormDescription>
                   </div>
                 </FormItem>

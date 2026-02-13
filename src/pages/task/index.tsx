@@ -41,11 +41,11 @@ type Task = {
   assigned?: string | PopulatedUserReference;
   updatedAt: string;
   seen: boolean;
-  tempId?: string; // Add this field to track optimistic updates
+  tempId?: string; 
 };
 
 export default function TaskPage() {
-  const { id } = useParams();
+  const { id, uid } = useParams();
   const { toast } = useToast();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -142,15 +142,15 @@ export default function TaskPage() {
         const authorId = typeof task.author === 'object' ? task.author._id : task.author;
         const assignedId = typeof task.assigned === 'object' ? task.assigned._id : task.assigned;
   
-        const condition1 = authorId === id && assignedId === user._id;
-        const condition2 = authorId === user._id && assignedId === id;
+        const condition1 = authorId === uid && assignedId === user._id;
+        const condition2 = authorId === user._id && assignedId === uid;
   
         return matchesSearch && isPending && (condition1 || condition2);
       })
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   
     setFilteredTasks(filtered);
-  }, [searchTerm, tasks, id, optimisticTasks, user]);
+  }, [searchTerm, tasks, uid, optimisticTasks, user]);
   
   
   usePollTasks({
@@ -161,7 +161,7 @@ export default function TaskPage() {
 
   const fetchUserDetails = async () => {
     try {
-      const response = await axiosInstance.get(`/users/${id}`);
+      const response = await axiosInstance.get(`/users/${uid}`);
       setUserDetail(response.data.data);
     } catch (error) {
       toast({
@@ -173,14 +173,14 @@ export default function TaskPage() {
 
   useEffect(() => {
     fetchUserDetails();
-  }, [id]);
+  }, [uid]);
 
   const onSubmit = async (data) => {
     if (loading || !user || !userDetail) return;
     setLoading(true);
   
     const tempId = `temp-${Date.now()}`;
-    const isSameUser = user?._id === id;
+    const isSameUser = user?._id === uid;
 
     const optimisticTask: Task = {
       _id: tempId,
@@ -190,7 +190,7 @@ export default function TaskPage() {
       dueDate: undefined,
       author: { _id: user?._id, name: user.name },
       assigned: {
-        _id: id || '',
+        _id: uid || '',
         name: userDetail?.name || 'Unassigned',
       },
       seen: isSameUser,
@@ -211,7 +211,7 @@ export default function TaskPage() {
           taskName: data.taskName,
           description: data.description || '',
           author: user?._id,
-          assigned: id,
+          assigned: uid,
           seen: isSameUser,
         })
       ).unwrap();
@@ -371,7 +371,7 @@ export default function TaskPage() {
         <Breadcrumbs
           items={[
             { title: 'Dashboard', link: '/dashboard' },
-            { title: userDetail?.name || 'User Tasks', link: `/task/${id}` },
+            { title: userDetail?.name || 'User Tasks', link: `/task/${uid}` },
           ]}
         />
       </div>

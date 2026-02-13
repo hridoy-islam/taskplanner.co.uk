@@ -12,11 +12,20 @@ export default function SignInPage() {
   const { user } = useSelector((state: any) => state.auth);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user) {
-      navigate('/dashboard/admin'); // Adjust the path as needed
-    }
-  }, [user, navigate]);
+useEffect(() => {
+  if (!user) return;
+
+  if (user.role === 'admin') {
+    navigate('/dashboard/admin');
+  } 
+  else if (user.role === 'company') {
+    navigate(`/company/${user._id}`);
+  } 
+  else {
+    navigate(`/company/${user.company}/user/${user._id}`);
+  }
+}, [user, navigate]);
+
 
   return (
     <div className="relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">

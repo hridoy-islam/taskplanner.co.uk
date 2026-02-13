@@ -19,8 +19,9 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import CreateUser from './CreateUser';
-import UpdateUser from './UpdateUser'; // New Component
+import UpdateUser from './UpdateUser';
 import { BlinkingDots } from '@/components/shared/blinking-dots';
+import { DynamicPagination } from '@/components/shared/DynamicPagination';
 
 export default function UserTableList() {
   const { user } = useSelector((state: any) => state.auth);
@@ -31,19 +32,33 @@ export default function UserTableList() {
   const [inputValue, setInputValue] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // --- NEW: Filter States (UI Selection) ---
+  const [selectedCompany, setSelectedCompany] = useState<any>(null);
+  const [selectedRole, setSelectedRole] = useState<any>(null);
+
+  // --- NEW: Active Filter States (Applied on Search) ---
+  const [activeCompany, setActiveCompany] = useState<string | null>(null);
+  const [activeRole, setActiveRole] = useState<string | null>(null);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(100);
-  
+
   // Dropdown options
   const [companies, setCompanies] = useState([]);
   const [creators, setCreators] = useState([]);
-  
+
   const [internalRefreshKey, setInternalRefreshKey] = useState(0);
 
   // Edit Dialog State
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+
+  // --- NEW: Role Options ---
+  const roleOptions = [
+    { label: 'Manager', value: 'creator' },
+    { label: 'User', value: 'user' },
+  ];
 
   const handleRefresh = () => {
     setInternalRefreshKey((prev) => prev + 1);
@@ -53,19 +68,24 @@ export default function UserTableList() {
     return name?.slice(0, 2).toUpperCase() || 'US';
   };
 
+  // --- UPDATED: fetchData to accept filters ---
   const fetchData = useCallback(
-    async (page, entriesPerPage, term = '') => {
+    async (page, entriesPerPage, term = '', companyFilter = null, roleFilter = null) => {
       setIsLoading(true);
       try {
-        let endpoint;
-        // Construct query based on role
-        if (user.role === 'company') {
-          endpoint = `/users?role=user&company=${user._id}&page=${page}&limit=${entriesPerPage}&searchTerm=${term}`;
-        } else if (user.role === 'creator') {
-          endpoint = `/users?role=user&creator=${user._id}&page=${page}&limit=${entriesPerPage}&searchTerm=${term}`;
+        let endpoint = `/users?page=${page}&limit=${entriesPerPage}&searchTerm=${term}`;
+
+        // Apply Role Filter
+        if (roleFilter) {
+             endpoint += `&role=${roleFilter}`;
         } else {
-          // Admin/Director sees all users
-          endpoint = `/users?role=user&page=${page}&limit=${entriesPerPage}&searchTerm=${term}`;
+             // Default: fetch both user and creator if no specific role selected
+             endpoint += `&role=user&role=creator`;
+        }
+
+        // Apply Company Filter
+        if (companyFilter) {
+            endpoint += `&company=${companyFilter}`;
         }
 
         const res = await axiosInstance.get(endpoint);
@@ -82,10 +102,10 @@ export default function UserTableList() {
 
   const fetchDropdownData = useCallback(async () => {
     try {
-      // Fetch Companies (For Admin)
+      // Fetch Companies (For Admin/Director)
       if (user.role === 'admin' || user.role === 'director') {
         const resCompanies = await axiosInstance.get(
-          `/users?role=company&limit=1000&isDeleted=false`
+          `/users?role=company&limit=all&isDeleted=false`
         );
         setCompanies(
           resCompanies.data.data.result.map((c: any) => ({
@@ -95,12 +115,16 @@ export default function UserTableList() {
         );
       }
 
-      // Fetch Creators (For Admin and Company)
-      if (user.role === 'admin' || user.role === 'director' || user.role === 'company') {
-        // If Company, fetch only their creators
-        const creatorQuery = user.role === 'company' 
-            ? `/users?role=creator&company=${user._id}&limit=1000`
-            : `/users?role=creator&limit=1000`;
+      // Fetch Creators... (Rest of existing logic)
+      if (
+        user.role === 'admin' ||
+        user.role === 'director' ||
+        user.role === 'company'
+      ) {
+        const creatorQuery =
+          user.role === 'company'
+            ? `/users?role=creator&company=${user._id}&limit=all`
+            : `/users?role=creator&limit=all`;
 
         const resCreators = await axiosInstance.get(creatorQuery);
         setCreators(
@@ -115,15 +139,16 @@ export default function UserTableList() {
     }
   }, [user]);
 
-  // Effect triggers on searchTerm change
+  // --- UPDATED: Effect triggers on Active Filters changes ---
   useEffect(() => {
-    fetchData(currentPage, entriesPerPage, searchTerm);
+    fetchData(currentPage, entriesPerPage, searchTerm, activeCompany, activeRole);
     fetchDropdownData();
   }, [
     currentPage,
     entriesPerPage,
     searchTerm,
-   
+    activeCompany, // Trigger fetch when activeCompany changes
+    activeRole,    // Trigger fetch when activeRole changes
     internalRefreshKey,
     fetchData,
     fetchDropdownData
@@ -134,8 +159,12 @@ export default function UserTableList() {
     setInputValue(event.target.value);
   };
 
+  // --- UPDATED: Apply Filters on Click ---
   const handleSearchClick = () => {
     setSearchTerm(inputValue);
+    // Move selected UI state to Active state
+    setActiveCompany(selectedCompany?.value || null);
+    setActiveRole(selectedRole?.value || null);
     setCurrentPage(1);
   };
 
@@ -151,30 +180,6 @@ export default function UserTableList() {
   };
 
   // --- ACTIONS ---
-
-  const handleAssignmentChange = async (selectedOption: any, userId: string, field: 'company' | 'creator') => {
-    if (!selectedOption && field !== 'company') return; // Allow clearing? usually react-select clear returns null
-    
-    // Construct payload
-    const updatedFields: any = {};
-    if (selectedOption) {
-        updatedFields[field] = selectedOption.value;
-    } else {
-        // Handle clearing if needed, backend might require specific logic for unassigning
-        // updatedFields[field] = null; 
-    }
-
-    try {
-      const response = await axiosInstance.patch(`/users/${userId}`, updatedFields);
-      if (response.data.success) {
-        toast({ title: `${field === 'company' ? 'Company' : 'Creator'} Assigned Successfully` });
-        handleRefresh();
-      }
-    } catch (err) {
-      toast({ title: 'Assignment failed', variant: 'destructive' });
-    }
-  };
-
   const toggleIsDeleted = async (userId: string, currentStatus: boolean) => {
     try {
       const res = await axiosInstance.patch(`/users/${userId}`, {
@@ -207,48 +212,26 @@ export default function UserTableList() {
     }
   };
 
-  const handleAddRemoveColleague = async (
-    userId: string,
-    colleagueId: string,
-    action: string
-  ) => {
-    try {
-      const response = await axiosInstance.patch(`users/addmember/${userId}`, {
-        colleagueId,
-        action
-      });
-
-      if (response.data.success) {
-        toast({
-          title: action === 'add' ? 'Added to network' : 'Removed from network'
-        });
-        handleRefresh();
-      }
-    } catch (error) {
-      toast({ title: 'Error updating colleagues', variant: 'destructive' });
-    }
-  };
-
-  const isColleague = (targetUser: any) => {
-    return targetUser.colleagues && targetUser.colleagues.includes(user._id);
-  };
-
   const isAdminOrDirector = user.role === 'admin' || user.role === 'director';
 
   return (
     <div className="w-full space-y-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       {/* --- Header --- */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-          <div>
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-col items-start gap-4 xl:flex-row xl:items-center w-full">
+          <div className="shrink-0">
             <h2 className="text-2xl font-semibold tracking-tight text-taskplanner">
               User List
             </h2>
           </div>
-          
-          {/* Search Section */}
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <div className="relative w-full md:w-72">
+
+          <div className="flex flex-col gap-2 md:flex-row md:items-center w-full ">
+            
+            {/* 1. Company Filter (Admin/Director Only) */}
+            
+
+            {/* 3. Search Input */}
+            <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
                 placeholder="Search users"
@@ -258,16 +241,55 @@ export default function UserTableList() {
                 className="h-10 w-full rounded-lg border-gray-300 bg-gray-50 pl-9 transition-all focus:border-taskplanner focus:bg-white"
               />
             </div>
-            <Button 
-                onClick={handleSearchClick}
-                variant="default"
-                className="h-10 px-4"
+            {isAdminOrDirector && (
+                <div className="w-full md:w-56">
+                    <Select
+                        options={companies}
+                        value={selectedCompany}
+                        onChange={setSelectedCompany}
+                        placeholder="Select Company"
+                        isClearable
+                        styles={{
+                            control: (base) => ({
+                                ...base,
+                                minHeight: '40px',
+                                borderColor: '#e2e8f0',
+                            }),
+                        }}
+                    />
+                </div>
+            )}
+
+            <div className="w-full md:w-40">
+                <Select
+                    options={roleOptions}
+                    value={selectedRole}
+                    onChange={setSelectedRole}
+                    placeholder="Select Role"
+                    isClearable
+                    styles={{
+                        control: (base) => ({
+                            ...base,
+                            minHeight: '40px',
+                            borderColor: '#e2e8f0',
+                        }),
+                    }}
+                />
+            </div>
+            {/* 4. Search Button */}
+            <Button
+              onClick={handleSearchClick}
+              variant="default"
+              className="h-10 px-6 shrink-0"
             >
-                Search
+              Search
             </Button>
           </div>
         </div>
-        <CreateUser onUserCreated={handleRefresh} />
+        
+        <div className="shrink-0">
+            <CreateUser onUserCreated={handleRefresh} />
+        </div>
       </div>
 
       {/* --- Table --- */}
@@ -281,32 +303,23 @@ export default function UserTableList() {
               <TableHead className="text-xs font-semibold uppercase tracking-wider text-black">
                 Company
               </TableHead>
-              
-              {/* Assignments */}
+
               {isAdminOrDirector && (
                 <TableHead className="w-[180px] text-xs font-semibold uppercase tracking-wider text-black">
-                  Assign Company
+                  Role
                 </TableHead>
               )}
-            
 
-              {/* Status & Auth */}
               <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-black">
-                  Status
+                Status
               </TableHead>
-              
+
               {isAdminOrDirector && (
                 <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-black">
                   Auth
                 </TableHead>
               )}
-              
-              {/* Actions */}
-              {isAdminOrDirector && (
-                <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-black">
-                  Network
-                </TableHead>
-              )}
+
               <TableHead className="pr-6 text-right text-xs font-semibold uppercase tracking-wider text-black">
                 Action
               </TableHead>
@@ -334,7 +347,7 @@ export default function UserTableList() {
                   key={item._id}
                   className="group border-b border-gray-100 hover:bg-gray-50/50"
                 >
-                  {/* 1. User Info */}
+                  {/* User Info */}
                   <TableCell className="py-3 pl-6">
                     <div className="flex items-center gap-4">
                       <Avatar className="h-9 w-9 border border-gray-100 bg-white">
@@ -347,54 +360,28 @@ export default function UserTableList() {
                         <span className="text-sm font-semibold leading-tight text-gray-900">
                           {item.name}
                         </span>
-                        <span className="text-xs text-black">
-                          {item.email}
-                        </span>
+                        <span className="text-xs text-black">{item.email}</span>
                       </div>
                     </div>
                   </TableCell>
 
-                  {/* 2. Current Company */}
+                  {/* Current Company */}
                   <TableCell>
                     <span className="text-sm text-black">
                       {item.company ? item.company.name : '-'}
                     </span>
                   </TableCell>
 
-                 
-                  {/* 4. Assign Company (Admin Only) */}
+                  {/* Role */}
                   {isAdminOrDirector && (
                     <TableCell>
-                      <Select
-                        options={companies}
-                        value={null}
-                        onChange={(selectedOption) =>
-                          handleAssignmentChange(selectedOption, item._id, 'company')
-                        }
-                        isClearable
-                        placeholder="Assign..."
-                        className="text-xs"
-                        menuPortalTarget={document.body}
-                        menuPosition="fixed"
-                        styles={{
-                          control: (base) => ({
-                            ...base,
-                            minHeight: '32px',
-                            height: '32px',
-                            borderColor: '#e2e8f0'
-                          }),
-                          dropdownIndicator: (base) => ({ ...base, padding: '4px' }),
-                          valueContainer: (base) => ({ ...base, padding: '0 8px' }),
-                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                          menu: (base) => ({ ...base, zIndex: 9999 })
-                        }}
-                      />
+                        <span className="text-sm font-semibold uppercase text-black">
+                        {item.role ? item.role : '-'}
+                        </span>
                     </TableCell>
                   )}
 
-                  
-
-                  {/* 6. Status Switch */}
+                  {/* Status Switch */}
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-2">
                       <Switch
@@ -402,12 +389,12 @@ export default function UserTableList() {
                         onCheckedChange={() =>
                           toggleIsDeleted(item._id, item.isDeleted)
                         }
-                        disabled={!isAdminOrDirector && user.role !== 'company'} // Creators usually can't delete users entirely?
+                        disabled={!isAdminOrDirector && user.role !== 'company'}
                       />
                     </div>
                   </TableCell>
 
-                  {/* 7. Auth Checkbox */}
+                  {/* Auth Checkbox */}
                   {isAdminOrDirector && (
                     <TableCell className="text-center">
                       <div className="flex justify-center">
@@ -419,38 +406,7 @@ export default function UserTableList() {
                     </TableCell>
                   )}
 
-                  {/* 8. Network Actions */}
-                  {isAdminOrDirector && (
-                    <TableCell className="text-center">
-                      <div className="flex justify-center">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() =>
-                            handleAddRemoveColleague(
-                              item._id,
-                              user._id,
-                              isColleague(item) ? 'remove' : 'add'
-                            )
-                          }
-                          className={cn(
-                            'h-8 w-8 rounded-full transition-all hover:bg-gray-100',
-                            isColleague(item)
-                              ? 'bg-green-50 text-green-600 hover:bg-green-100'
-                              : 'text-gray-400 hover:text-taskplanner'
-                          )}
-                        >
-                          {isColleague(item) ? (
-                            <UserCheck className="h-4 w-4" />
-                          ) : (
-                            <UserPlus className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
-
-                  {/* 9. Edit Button */}
+                  {/* Edit Button */}
                   <TableCell className="pr-6 text-right">
                     <Button
                       variant="default"
@@ -466,6 +422,18 @@ export default function UserTableList() {
             )}
           </TableBody>
         </Table>
+
+        {users.length > 40 && (
+          <div className="pt-4">
+            <DynamicPagination
+              pageSize={entriesPerPage}
+              setPageSize={setEntriesPerPage}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
 
       <UpdateUser

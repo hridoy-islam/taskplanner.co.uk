@@ -22,6 +22,7 @@ import moment from 'moment';
 import { addNewTag, deleteTag, fetchTags } from '@/redux/features/tagSlice';
 import usePollTags from '@/hooks/usePolltag';
 import usePollNotes from '@/hooks/usePollNote';
+import UpdateNote from '@/components/shared/update-note';
 interface Note {
   _id: string;
   title: string;
@@ -550,14 +551,15 @@ export default function NotesPage() {
         isSubmitting={isSubmitting}
       />
 
-      <UpdateNoteDialog
-        selectedNote={selectedNote}
+      <UpdateNote
+        selectNote={selectedNote}
         isOpen={openUpdate}
         onClose={closeUpdateModal}
         onConfirm={onUpdateConfirm}
         loading={loading}
+        title="Update"
+        description="Edit the Note Title."
       />
-
       <ShareDialog
         isShareDialogOpen={isShareDialogOpen}
         setIsShareDialogOpen={setIsShareDialogOpen}

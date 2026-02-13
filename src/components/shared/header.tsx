@@ -123,8 +123,24 @@ export function Header() {
     setOpenSubmenu(openSubmenu === menu ? null : menu);
   };
 
-  const handleRoute = () => {
-    navigate(user ? '/dashboard' : '/signup');
+const handleRoute = () => {
+    // 1. If not logged in, go to Signup/Getting Started
+    if (!user) {
+      navigate('/signup');
+      return;
+    }
+
+    // 2. If logged in, route based on Role
+    if (user.role === 'admin') {
+      navigate('/dashboard/admin');
+    } 
+    else if (user.role === 'company') {
+      navigate(`/company/${user._id}`);
+    } 
+    else {
+      // Regular user / Employee
+      navigate(`/company/${user.company}/user/${user._id}`);
+    }
   };
 
   return (

@@ -7,7 +7,13 @@ import {
   ArrowRight,
   UserRoundCheck,
   CircleUser,
-  CalendarDays
+  CalendarDays,
+  RotateCcw,
+  CheckCheck,
+  Clock,
+  ChevronDown,
+  ArrowLeft,
+  Pencil // Added for Edit button
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect, useRef } from 'react';
@@ -35,8 +41,22 @@ import { DateRangePicker } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import { getNextScheduledDate } from '@/utils/taskUtils';
-import { on } from 'events';
-
+import { BlinkingDots } from '@/components/shared/blinking-dots';
+import axiosInstance from '@/lib/axios';
+import { useNavigate } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 interface User {
   id?: string;
   name?: string;
@@ -59,6 +79,12 @@ interface IHistory {
   completed: boolean;
 }
 
+interface CompletedBy {
+  _id?: string;
+  userId: User | string;
+  createdAt?: string;
+}
+
 interface TaskDetailsProps {
   task: {
     _id: string;
@@ -75,7 +101,7 @@ interface TaskDetailsProps {
     frequency?: TaskFrequency;
     scheduledDays?: number[];
     scheduledDate?: number;
-
+    completedBy?: CompletedBy[];
     customSchedule?: Date[];
     history?: IHistory[];
   } | null;
@@ -85,20 +111,18 @@ interface TaskDetailsProps {
 export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   const [localTask, setLocalTask] = useState<TaskDetailsProps['task']>(null);
   const [isImportant, setIsImportant] = useState(false);
-  const [editingTaskName, setEditingTaskName] = useState(false);
-  const [editingDesc, setEditingDesc] = useState(false);
-  const [editingDueDate, setEditingDueDate] = useState(false);
+
+  // Dialog State
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
+  // Form States (now used for the Dialog)
   const [tempTaskName, setTempTaskName] = useState('');
   const [tempDesc, setTempDesc] = useState('');
   const [tempDueDate, setTempDueDate] = useState('');
-  const user = useSelector((state: any) => state.auth.user);
-  const taskNameTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const descTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const dueDateInputRef = useRef<HTMLInputElement>(null);
   const [frequency, setFrequency] = useState<TaskFrequency | string>('none');
   const [selectedDays, setSelectedDays] = useState<boolean[]>(
     Array(7).fill(false)
-  ); // For weekdays
+  );
   const [selectedDates, setSelectedDates] = useState([
     { startDate: new Date(), endDate: new Date(), key: 'selection' }
   ]);
@@ -112,68 +136,55 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     startDate: string;
     endDate: string;
   } | null>(null);
-
   const [monthlyDay, setMonthlyDay] = useState<number | null>();
 
-  // Handle clicks outside the date picker
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        pickerRef.current &&
-        !pickerRef.current.contains(event.target as Node)
-      ) {
-        setShowPicker(false);
-      }
-    };
-    if (showPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showPicker]);
+  const user = useSelector((state: any) => state.auth.user);
+  const navigate = useNavigate();
 
-  // Initialize task data and frequency-related state
+  // Initialize task data
   useEffect(() => {
     if (!localTask || localTask._id !== task?._id) {
       setLocalTask(task);
-
-      if (task) {
-        setTempTaskName(task.taskName);
-        setTempDesc(task.description);
-        setTempDueDate(task.dueDate);
-        setFrequency(task.frequency ?? 'once');
-
-        if (task.scheduledDays && task.scheduledDays.length > 0) {
-          const newSelectedDays = Array(7).fill(false);
-          task.scheduledDays.forEach((day) => {
-            newSelectedDays[day] = true;
-          });
-          setSelectedDays(newSelectedDays);
-        }
-        if (task.frequency === TaskFrequency.MONTHLY) {
-          setMonthlyDay(task?.scheduledDate || 1); // Default to 1 if not specified
-        }
-        if (task.customSchedule && task.customSchedule.length > 0) {
-          const sortedSchedule = [...task.customSchedule].sort(
-            (a, b) => new Date(a).getTime() - new Date(b).getTime()
-          );
-
-          const firstDate = new Date(sortedSchedule[0]);
-          const lastDate = new Date(sortedSchedule[sortedSchedule.length - 1]);
-
-          setSelectedDates([
-            { startDate: firstDate, endDate: lastDate, key: 'selection' }
-          ]);
-
-          setSelectedDateRange({
-            startDate: moment(firstDate).format('MMM DD, YYYY'),
-            endDate: moment(lastDate).format('MMM DD, YYYY')
-          });
-        }
-      }
+      syncFormState(task);
     }
-  }, [task, onUpdate]);
+  }, [task]);
+
+  const syncFormState = (taskData: any) => {
+    if (!taskData) return;
+    setTempTaskName(taskData.taskName || '');
+    setTempDesc(taskData.description || '');
+    setTempDueDate(taskData.dueDate || '');
+    setFrequency(taskData.frequency ?? 'once');
+    setMonthlyDay(taskData?.scheduledDate || 1);
+
+    if (taskData.scheduledDays && taskData.scheduledDays.length > 0) {
+      const newSelectedDays = Array(7).fill(false);
+      taskData.scheduledDays.forEach((day: number) => {
+        newSelectedDays[day] = true;
+      });
+      setSelectedDays(newSelectedDays);
+      setTempSelectedDays(newSelectedDays); // Sync temp days too
+    } else {
+      setSelectedDays(Array(7).fill(false));
+      setTempSelectedDays(Array(7).fill(false));
+    }
+
+    if (taskData.customSchedule && taskData.customSchedule.length > 0) {
+      const sortedSchedule = [...taskData.customSchedule].sort(
+        (a: any, b: any) => new Date(a).getTime() - new Date(b).getTime()
+      );
+      const firstDate = new Date(sortedSchedule[0]);
+      const lastDate = new Date(sortedSchedule[sortedSchedule.length - 1]);
+
+      setSelectedDates([
+        { startDate: firstDate, endDate: lastDate, key: 'selection' }
+      ]);
+      setSelectedDateRange({
+        startDate: moment(firstDate).format('MMM DD, YYYY'),
+        endDate: moment(lastDate).format('MMM DD, YYYY')
+      });
+    }
+  };
 
   useEffect(() => {
     if (localTask && user?._id) {
@@ -181,61 +192,214 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     }
   }, [localTask, user?._id]);
 
-  const handleFrequencyChange = async (value: string) => {
-    if (value === 'once') {
-      setFrequency('once');
-      setSelectedDays(Array(7).fill(false));
-      setSelectedDates([
-        { startDate: new Date(), endDate: new Date(), key: 'selection' }
-      ]);
+  // Handle opening the dialog - refresh state from current localTask
+  const handleEditClick = () => {
+    syncFormState(localTask);
+    setIsEditOpen(true);
+  };
 
-      // Immediately update localTask state
-      setLocalTask((prev) => ({
-        ...prev,
-        frequency: null, // or 'once' depending on your backend
-        scheduledDays: null,
-        scheduledDate: null,
-        customSchedule: null
-      }));
+  // --- Logic Helpers ---
 
-      try {
-        await onUpdate({
-          frequency: null,
-          scheduledDays: null,
-          scheduledDate: null,
-          customSchedule: null
-        });
-      } catch (error) {
-        console.error('Failed to update frequency:', error);
-        // Revert localTask on error
-        setLocalTask((prev) => ({ ...prev, frequency: localTask?.frequency }));
+  const getAuthorId = () => {
+    if (!localTask?.author) return null;
+    return typeof localTask.author === 'string'
+      ? localTask.author
+      : localTask.author._id;
+  };
+
+  const isAuthor = user?._id === getAuthorId();
+
+  const checkIsCompletedByUser = (targetUserId: string) => {
+    if (!localTask?.completedBy) return false;
+    return localTask.completedBy.some((entry) => {
+      const entryUserId =
+        typeof entry.userId === 'string' ? entry.userId : entry.userId._id;
+      return entryUserId === targetUserId;
+    });
+  };
+
+  const isCompletedByMe = user?._id ? checkIsCompletedByUser(user._id) : false;
+  const hasAnyCompletion =
+    localTask?.completedBy && localTask.completedBy.length > 0;
+
+  // --- Actions ---
+
+  const handleComplete = async () => {
+    if (!localTask || !user?._id) return;
+    const newCompletedByEntry = { userId: user._id };
+    const updatedCompletedBy = [
+      ...(localTask.completedBy || []),
+      newCompletedByEntry
+    ];
+    const updatedHistory = [
+      ...(localTask.history || []),
+      { date: new Date(), completed: true }
+    ];
+    try {
+      const updatePayload = {
+        completedBy: updatedCompletedBy,
+        history: updatedHistory
+      };
+      setLocalTask({
+        ...localTask,
+        completedBy: updatedCompletedBy as any,
+        history: updatedHistory
+      });
+      await onUpdate(updatePayload);
+    } catch (error) {
+      console.error('Failed to complete task:', error);
+    }
+  };
+
+  const handleFinishTask = async () => {
+    if (!localTask || !user?._id) return;
+    const newCompletedByEntry = { userId: user._id };
+    const filteredCompletedBy = (localTask.completedBy || []).filter((c) => {
+      const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
+      return cId !== user._id;
+    });
+    const updatedCompletedBy = [...filteredCompletedBy, newCompletedByEntry];
+    try {
+      const updatePayload = {
+        status: 'completed',
+        completedBy: updatedCompletedBy
+      };
+      setLocalTask({
+        ...localTask,
+        status: 'completed',
+        completedBy: updatedCompletedBy as any
+      });
+      await onUpdate(updatePayload);
+    } catch (error) {
+      console.error('Failed to finish task:', error);
+    }
+  };
+
+  const handleReassign = async () => {
+    if (!localTask) return;
+    try {
+      const filteredCompletedBy = (localTask.completedBy || []).filter((c) => {
+        const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
+        return cId !== user._id;
+      });
+      const updatedHistory = [...(localTask.history || [])];
+      if (updatedHistory.length > 0) {
+        updatedHistory.pop();
       }
-      return;
+      setLocalTask({
+        ...localTask,
+        status: 'pending',
+        completedBy: filteredCompletedBy as any,
+        history: updatedHistory
+      });
+      const response = await axiosInstance.patch(
+        `/task/reassign/${localTask._id}`
+      );
+      await onUpdate(response.data);
+    } catch (error) {
+      console.error('Failed to reassign task:', error);
+    }
+  };
+
+  // --- Edit Form Handlers ---
+
+  const handleSaveChanges = async () => {
+    if (!localTask) return;
+
+    const updates: any = {};
+    let hasChanges = false;
+
+    if (tempTaskName.trim() !== localTask.taskName) {
+      updates.taskName = tempTaskName.trim();
+      hasChanges = true;
+    }
+    if (tempDesc !== localTask.description) {
+      updates.description = tempDesc;
+      hasChanges = true;
+    }
+    if (tempDueDate !== localTask.dueDate) {
+      updates.dueDate = tempDueDate;
+      hasChanges = true;
     }
 
+    // Frequency Logic
+    if (frequency !== localTask.frequency) {
+      updates.frequency = frequency;
+      hasChanges = true;
+    }
+
+    // Handle Frequency Specific Data
+    if (frequency === 'once') {
+      if (localTask.frequency !== 'once') {
+        updates.scheduledDays = null;
+        updates.scheduledDate = null;
+        updates.customSchedule = null;
+        hasChanges = true;
+      }
+    } else if (frequency === 'weekdays') {
+      const selectedDayIndices = selectedDays
+        .map((selected, index) => (selected ? index : null))
+        .filter((index) => index !== null);
+
+      // Simple array comparison
+      const currentDays = localTask.scheduledDays || [];
+      const isDifferent =
+        JSON.stringify(selectedDayIndices.sort()) !==
+        JSON.stringify(currentDays.sort());
+
+      if (isDifferent || frequency !== localTask.frequency) {
+        updates.scheduledDays = selectedDayIndices;
+        updates.scheduledDate = null;
+        updates.customSchedule = null;
+        hasChanges = true;
+      }
+    } else if (frequency === TaskFrequency.MONTHLY) {
+      if (
+        monthlyDay !== localTask.scheduledDate ||
+        frequency !== localTask.frequency
+      ) {
+        updates.scheduledDate = monthlyDay;
+        updates.scheduledDays = null;
+        updates.customSchedule = null;
+        hasChanges = true;
+      }
+    } else if (frequency === TaskFrequency.CUSTOM) {
+      // We assume applyCustomDates updates the state 'selectedDates' or 'selectedDateRange'
+      // But for the logic to hold, we need to regenerate the date array if changed
+      // In this refactor, we regenerate dates here for safety
+      const { startDate, endDate } = selectedDates[0];
+      const dates: Date[] = [];
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        dates.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // This is a heavy check, so we trust if the frequency changed or user picked new dates
+      // For simplicity, if type is custom, we send the custom schedule from the picker state
+      updates.customSchedule = dates;
+      updates.scheduledDays = null;
+      updates.scheduledDate = null;
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      try {
+        await onUpdate(updates);
+        // Optimistic update of local task (merged)
+        setLocalTask((prev) => (prev ? { ...prev, ...updates } : null));
+        setIsEditOpen(false);
+      } catch (error) {
+        console.error('Failed to update task', error);
+      }
+    } else {
+      setIsEditOpen(false);
+    }
+  };
+
+  // Form Field Handlers
+  const handleFrequencyChange = (value: string) => {
     setFrequency(value);
-
-    // Immediately update localTask for other frequencies too
-    setLocalTask((prev) => ({
-      ...prev,
-      frequency: value as TaskFrequency
-    }));
-
-    if (value !== 'weekdays' && value !== 'custom' && value !== 'monthly') {
-      try {
-        await onUpdate({
-          frequency: value,
-          scheduledDays: null,
-          scheduledDate: null,
-          customSchedule: null
-        });
-      } catch (error) {
-        console.error('Failed to update frequency:', error);
-        // Revert localTask on error
-        setLocalTask((prev) => ({ ...prev, frequency: localTask?.frequency }));
-      }
-    }
-
     if (value === 'weekdays') {
       setTempSelectedDays([...selectedDays]);
       setShowWeekdaysPicker(true);
@@ -253,36 +417,9 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     setTempSelectedDays(newTempDays);
   };
 
-  const handleSelect = (ranges: any) => {
-    const { startDate, endDate } = ranges.selection;
-    setSelectedDates([ranges.selection]);
-    setSelectedDateRange({
-      startDate: moment(startDate).format('MMM DD, YYYY'),
-      endDate: moment(endDate).format('MMM DD, YYYY')
-    });
-  };
-
-  const handleWeekdaysApply = async () => {
+  const handleWeekdaysApply = () => {
     setSelectedDays([...tempSelectedDays]);
     setShowWeekdaysPicker(false);
-    const selectedDayIndices = tempSelectedDays
-      .map((selected, index) => (selected ? index : null))
-      .filter((index) => index !== null);
-    try {
-      await onUpdate({
-        frequency: 'weekdays',
-        scheduledDays: selectedDayIndices,
-        scheduledDate: null,
-        customSchedule: null
-      });
-      setLocalTask((prev) => ({
-        ...prev,
-        frequency: 'weekdays',
-        scheduledDays: selectedDayIndices
-      }));
-    } catch (error) {
-      console.error('Failed to update weekdays selection:', error);
-    }
   };
 
   const handleWeekdaysCancel = () => {
@@ -290,55 +427,13 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     setTempSelectedDays([...selectedDays]);
   };
 
-  const handleMonthlyDaySelect = async (day: number) => {
-    setMonthlyDay(day);
-
-    // Calculate the next due date based on the selected day
-    const now = moment();
-    let nextDate = moment().date(day);
-
-    // If the selected day has already passed this month, go to next month
-    if (now.date() > day || (now.date() === day && now.hour() >= 12)) {
-      nextDate = nextDate.add(1, 'month');
-    }
-
-    try {
-      await onUpdate({
-        frequency: TaskFrequency.MONTHLY,
-        scheduledDays: null,
-        scheduledDate: day, // Store the selected day
-        customSchedule: null
-      });
-      setLocalTask((prev) => ({
-        ...prev,
-        frequency: TaskFrequency.MONTHLY,
-        scheduledDate: day
-      }));
-    } catch (error) {
-      console.error('Failed to update monthly schedule:', error);
-    }
-  };
-
-  const applyCustomDates = async () => {
-    if (frequency !== 'custom') return;
-    const { startDate, endDate } = selectedDates[0];
-    const dates: Date[] = [];
-    const currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
-      dates.push(new Date(currentDate));
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    try {
-      await onUpdate({
-        frequency: 'custom',
-        scheduledDays: null,
-        scheduledDate: null,
-        customSchedule: dates
-      });
-      setShowPicker(false);
-    } catch (error) {
-      console.error('Failed to update custom dates:', error);
-    }
+  const handleSelectDateRange = (ranges: any) => {
+    const { startDate, endDate } = ranges.selection;
+    setSelectedDates([ranges.selection]);
+    setSelectedDateRange({
+      startDate: moment(startDate).format('MMM DD, YYYY'),
+      endDate: moment(endDate).format('MMM DD, YYYY')
+    });
   };
 
   const handleMarkAsImportant = async () => {
@@ -374,493 +469,422 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     return moment(date).format('MMM DD, YYYY');
   };
 
-  const areAllCustomDatesCompleted = (task: TaskDetailsProps['task']) => {
-    if (
-      !task ||
-      task.frequency !== TaskFrequency.CUSTOM ||
-      !task.customSchedule
-    ) {
-      return false;
-    }
-
-    return task.customSchedule.every((scheduleDate) =>
-      task.history?.some(
-        (entry) =>
-          moment(entry.date).isSame(scheduleDate, 'day') && entry.completed
-      )
-    );
-  };
-
-  const handleStatusChange = async () => {
-    if (!localTask) return;
-
-    // Create updated history with current completion date
-    const updatedHistory = [
-      ...(localTask.history || []),
-      {
-        date: localTask.dueDate, // Use current date for completion
-        completed: true
-      }
-    ];
-
-    // For one-time tasks, mark as completed - use localTask.frequency instead of frequency state
-    const shouldCompleteTask =
-      localTask.frequency === 'once' ||
-      localTask.frequency === null ||
-      (localTask.frequency === 'custom' &&
-        areAllCustomDatesCompleted({
-          ...localTask,
-          history: updatedHistory
-        }));
-
-    // Calculate next date using localTask.frequency instead of frequency state
-    const nextDate = getNextScheduledDate({
-      ...localTask,
-      history: updatedHistory,
-      frequency: localTask.frequency as TaskFrequency // Use localTask.frequency here
-    });
-
-    // Prepare update data
-    const updateData = {
-      history: updatedHistory,
-      ...(nextDate && { dueDate: nextDate.toISOString() }),
-      ...(shouldCompleteTask && { status: 'completed' })
-    };
-
-    try {
-      // Optimistic update - this will immediately disable the button
-      setLocalTask({
-        ...localTask,
-        ...updateData
-      });
-
-      // Send update to backend
-      await onUpdate(updateData);
-    } catch (error) {
-      console.error('Failed to update status:', error);
-      // Revert on error
-      setLocalTask(localTask);
-    }
-  };
-
   if (!localTask) {
-    return <div className="p-6 text-center">Loading task details...</div>;
-  }
-  const isOnceCompleted =
-    frequency === TaskFrequency.ONCE && localTask?.status === 'completed';
-
-  const isCustomCompleted =
-    frequency === TaskFrequency.CUSTOM &&
-    localTask?.customSchedule?.length > 0 &&
-    localTask.customSchedule.every((date) =>
-      localTask.history?.some(
-        (entry) => moment(entry.date).isSame(date, 'day') && entry.completed
-      )
+    return (
+      <div className="flex h-40 items-center justify-center text-sm font-medium text-black">
+        <BlinkingDots size="large" color="bg-taskplanner" />
+      </div>
     );
-  const isTaskCompleted = isOnceCompleted || isCustomCompleted;
-  console.log('status', localTask?.status);
+  }
+
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-row items-start justify-between space-y-1">
-        <div className="flex">
-          {editingTaskName ? (
-            <Textarea
-              ref={taskNameTextareaRef}
-              value={tempTaskName}
-              onChange={(e) => setTempTaskName(e.target.value)}
-              onBlur={async () => {
-                if (tempTaskName.trim() !== localTask.taskName) {
-                  setLocalTask({ ...localTask, taskName: tempTaskName.trim() });
-                  try {
-                    await onUpdate({ taskName: tempTaskName.trim() });
-                  } catch (error) {
-                    console.error('Failed to update task name:', error);
-                  }
-                }
-                setEditingTaskName(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  taskNameTextareaRef.current?.blur();
-                }
-              }}
-              className=" text-xl font-semibold text-gray-900 md:min-w-[350px]"
-              rows={2}
-            />
-          ) : (
-            <h1
-              className="cursor-pointer text-wrap break-words rounded p-1 text-justify text-xl font-semibold text-gray-900 hover:bg-gray-100"
-              onClick={() => setEditingTaskName(true)}
-            >
-              {localTask.taskName}
-            </h1>
-          )}
-        </div>
-        <div className="flex flex-row items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleMarkAsImportant}
-            className={`group rounded-full p-2 transition-colors duration-200 ${
-              isImportant ? 'bg-amber-50' : 'hover:bg-amber-50'
-            }`}
-            aria-label={isImportant ? 'Remove importance' : 'Mark as important'}
-          >
-            <Star
-              className={`h-5 w-5 transition-colors duration-200 ${
-                isImportant
-                  ? 'fill-amber-500 text-amber-500'
-                  : 'text-gray-400 group-hover:text-amber-400'
-              }`}
-            />
-          </Button>
-
-          {/* {localTask.status === 'completed' ||
-          (frequency === 'custom' && areAllCustomDatesCompleted(localTask)) ? (
-            <Button disabled variant="secondary">
-              Completed
-            </Button>
-          ) : (
-            <Button variant="secondary" onClick={handleStatusChange}>
-              Complete
-            </Button>
-          )} */}
-
-          {user?._id === String(localTask.author?._id) &&
-            (localTask.status === 'completed' ||
-            (frequency === TaskFrequency.CUSTOM &&
-              areAllCustomDatesCompleted(localTask)) ? (
-              <Button disabled variant="secondary">
-                Completed
-              </Button>
-            ) : (
-              <Button variant="secondary" onClick={handleStatusChange}>
-                Complete
-              </Button>
-            ))}
-        </div>
-      </div>
-
-      {/* Due Date */}
-      <div className="flex flex-row items-center justify-between gap-2">
-        <Badge
-          variant="outline"
-          className="flex h-7 max-w-[150px] items-center gap-1 bg-red-700 text-sm"
-        >
-          {/* <CalendarIcon className="h-4 w-4 text-white" /> */}
-          {editingDueDate ? (
-            <input
-              ref={dueDateInputRef}
-              type="date"
-              value={tempDueDate}
-              onChange={(e) => setTempDueDate(e.target.value)}
-              onBlur={async () => {
-                if (tempDueDate !== localTask.dueDate) {
-                  setLocalTask({ ...localTask, dueDate: tempDueDate });
-                  try {
-                    await onUpdate({ dueDate: tempDueDate });
-                  } catch (error) {
-                    console.error('Failed to update due date:', error);
-                  }
-                }
-                setEditingDueDate(false);
-              }}
-              className="rounded-full bg-red-700 px-2 py-1 text-xs font-medium text-white focus:outline-none"
-            />
-          ) : (
-            <span
-              className="cursor-pointer rounded-full bg-red-700 px-2 py-1 text-xs font-medium text-white hover:bg-red-700"
-              onClick={() => setEditingDueDate(true)}
-            >
-              {localTask.dueDate
-                ? formatDate(localTask.dueDate)
-                : 'No due date'}
-            </span>
-          )}
-        </Badge>
-        <div className="flex flex-row items-center justify-center gap-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge
-                  variant="outline"
-                  className="flex items-center gap-1 bg-green-100 px-2 py-1 text-[6px] text-black lg:text-xs"
-                >
-                  <UserRoundCheck className="h-2.5 w-2.5" />
-                  {getUserDisplayName(localTask?.author)}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">
-                  Created By {getUserDisplayName(localTask?.author)}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Badge className="flex items-center gap-1 px-2 py-1 text-xs">
-            <ArrowRight className="h-1.5 w-1.5 lg:h-2.5 lg:w-2.5" />
-          </Badge>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge
-                  variant="outline"
-                  className="flex items-center gap-1 bg-purple-100 px-2 py-1 text-[6px] text-black lg:text-xs"
-                >
-                  <CircleUser className="h-2.5 w-2.5" />
-                  {getUserDisplayName(localTask?.assigned)}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">
-                  Assigned To {getUserDisplayName(localTask?.assigned)}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </div>
-
-      {/* Frequency */}
-      <div className="flex flex-col space-y-2">
-        <h2 className="text-sm font-bold text-gray-700">Frequency</h2>
-        <Select
-          value={frequency as string}
-          onValueChange={handleFrequencyChange}
-        >
-          <SelectTrigger className="w-40 border-gray-400">
-            <SelectValue placeholder="Select frequency" />
-          </SelectTrigger>
-          <SelectContent className="border-gray-400">
-            <SelectItem value={TaskFrequency.ONCE}>Once</SelectItem>
-            <SelectItem value={TaskFrequency.DAILY}>Daily</SelectItem>
-            <SelectItem value={TaskFrequency.WEEKLY}>Weekly</SelectItem>
-            <SelectItem value={TaskFrequency.WEEKDAYS}>Weekdays</SelectItem>
-            <SelectItem value={TaskFrequency.MONTHLY}>Monthly</SelectItem>
-            {/* <SelectItem value={TaskFrequency.CUSTOM}>Custom</SelectItem> */}
-          </SelectContent>
-        </Select>
-
-        {/* Weekdays Picker */}
-        {frequency === TaskFrequency.WEEKDAYS && (
-          <div className="flex flex-col space-y-2">
-            <div className="mt-2 flex flex-wrap gap-4">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
-                (day, index) => (
-                  <label key={day} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={
-                        showWeekdaysPicker
-                          ? tempSelectedDays[index]
-                          : selectedDays[index]
-                      }
-                      onChange={() => handleCheckboxChange(index)}
-                      className="form-checkbox h-5 w-5 text-blue-600 transition duration-150 ease-in-out focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-medium text-gray-700">
-                      {day}
-                    </span>
-                  </label>
-                )
-              )}
-            </div>
-
-            {showWeekdaysPicker && (
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleWeekdaysCancel}
-                >
-                  Cancel
-                </Button>
-                <Button size="sm" onClick={handleWeekdaysApply}>
-                  Apply
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-        {frequency === TaskFrequency.MONTHLY && (
-          <div className="space-y-3 pt-2">
-            <div className="flex flex-col space-y-2">
-              <label
-                htmlFor="monthly-day-select"
-                className="text-sm font-medium text-gray-700"
+    <div className=" rounded-lg bg-white p-2">
+      {/* Top Header Row */}
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex-1 space-y-2">
+          {/* Breadcrumb / Meta */}
+          <div className="flex items-center justify-between gap-2 text-xs font-medium">
+            <div className="flex flex-row items-center gap-2">
+              <Button
+                size={'sm'}
+                onClick={() => navigate(-1)}
               >
-                Monthly recurrence
-              </label>
-              <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-500">On day</span>
-                <Select
-                  value={monthlyDay?.toString() || ''}
-                  onValueChange={(value) =>
-                    handleMonthlyDaySelect(parseInt(value))
-                  }
-                >
-                  <SelectTrigger
-                    id="monthly-day-select"
-                    className="w-24 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                    aria-label="Select day of month"
-                  >
-                    <SelectValue placeholder="Day" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-md border-gray-300 shadow-lg">
-                    <SelectGroup>
-                      <SelectLabel>Specific Day</SelectLabel>
-                      <div className="grid grid-cols-7 gap-1 p-2">
-                        {Array.from({ length: 31 }, (_, i) => i + 1).map(
-                          (day) => (
-                            <SelectItem
-                              key={day}
-                              value={day.toString()}
-                              className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-gray-100"
-                            >
-                              {day}
+                <ArrowLeft className="h-4 w-5 mr-1" /> Back 
+              </Button>
+              {/* <span className="font-bold uppercase tracking-wider">
+                Task Details
+              </span> */}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {/* Edit Button */}
+              <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" onClick={handleEditClick} className="gap-2">
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[90vh] w-[85vw] max-w-[1200px] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Edit Task</DialogTitle>
+                    <DialogDescription>
+                      Make changes to your task here. Click save when you're
+                      done.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    {/* Task Name */}
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="taskName">Task Name</Label>
+                      <Input
+                        id="taskName"
+                        value={tempTaskName}
+                        onChange={(e) => setTempTaskName(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={tempDesc}
+                        onChange={(e) => setTempDesc(e.target.value)}
+                        className="min-h-[30vh]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 space-y-4">
+                      {/* Due Date */}
+                      <div className="mt-4 space-y-2">
+                        <Label htmlFor="dueDate">Due Date</Label>
+                        <div className="relative">
+                          <DatePicker
+                            selected={tempDueDate}
+                            onChange={(date: Date) => setTempDueDate(date)}
+                            dateFormat="dd-MM-yyyy"
+                            placeholderText="Select due date"
+                            className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 pl-10 text-base"
+                            popperClassName="react-datepicker-popper"
+                            wrapperClassName="w-full"
+                          />
+                          <CalendarIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        </div>
+                      </div>
+
+                      {/* Frequency */}
+                      <div className="space-y-2">
+                        <Label>Frequency</Label>
+                        <Select
+                          value={frequency as string}
+                          onValueChange={handleFrequencyChange}
+                        >
+                          <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                            <SelectValue placeholder="Select frequency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={TaskFrequency.ONCE}>
+                              Once
                             </SelectItem>
-                          )
+                            <SelectItem value={TaskFrequency.DAILY}>
+                              Daily
+                            </SelectItem>
+                            <SelectItem value={TaskFrequency.WEEKLY}>
+                              Weekly
+                            </SelectItem>
+                            <SelectItem value={TaskFrequency.WEEKDAYS}>
+                              Weekdays
+                            </SelectItem>
+                            <SelectItem value={TaskFrequency.MONTHLY}>
+                              Monthly
+                            </SelectItem>
+                            <SelectItem value={TaskFrequency.CUSTOM}>
+                              Custom Range
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Dynamic Frequency Settings */}
+                    {(frequency === TaskFrequency.WEEKDAYS ||
+                      frequency === TaskFrequency.MONTHLY ||
+                      frequency === TaskFrequency.CUSTOM) && (
+                      <div className="rounded-md border border-gray-100 bg-gray-50 p-4">
+                        {frequency === TaskFrequency.WEEKDAYS && (
+                          <div className="space-y-3">
+                            <span className="text-xs font-semibold">
+                              Active Days
+                            </span>
+
+                            <div className="flex flex-wrap gap-2">
+                              {[
+                                'Sun',
+                                'Mon',
+                                'Tue',
+                                'Wed',
+                                'Thu',
+                                'Fri',
+                                'Sat'
+                              ].map((day, index) => {
+                                const isSelected = selectedDays[index];
+
+                                return (
+                                  <label
+                                    key={day}
+                                    className={`cursor-pointer rounded border px-3 py-1.5 text-xs font-medium transition-colors ${
+                                      isSelected
+                                        ? 'border-black bg-black text-white'
+                                        : 'border-gray-200 bg-white text-black hover:border-gray-300'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() =>
+                                        setSelectedDays((prev) =>
+                                          prev.map((d, i) =>
+                                            i === index ? !d : d
+                                          )
+                                        )
+                                      }
+                                      className="hidden"
+                                    />
+                                    {day}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {frequency === TaskFrequency.MONTHLY && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">
+                              Repeat monthly on day:
+                            </span>
+                            <Select
+                              value={monthlyDay?.toString() || ''}
+                              onValueChange={(value) =>
+                                setMonthlyDay(parseInt(value))
+                              }
+                            >
+                              <SelectTrigger className="h-8 w-20 bg-white">
+                                <SelectValue placeholder="1" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
+                                {Array.from(
+                                  { length: 31 },
+                                  (_, i) => i + 1
+                                ).map((day) => (
+                                  <SelectItem key={day} value={day.toString()}>
+                                    {day}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {frequency === TaskFrequency.CUSTOM && (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">
+                                Date Range
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowPicker(!showPicker)}
+                                className="h-7 text-xs"
+                              >
+                                {showPicker ? 'Hide Calendar' : 'Change Range'}
+                              </Button>
+                            </div>
+                            {showPicker && (
+                              <div className="rounded-md border bg-white p-2 shadow-sm">
+                                <DateRangePicker
+                                  ranges={selectedDates}
+                                  onChange={handleSelectDateRange}
+                                  showDateDisplay={false}
+                                  rangeColors={['#000000']}
+                                />
+                              </div>
+                            )}
+                            <div className="text-sm">
+                              Selected: {selectedDateRange?.startDate} —{' '}
+                              {selectedDateRange?.endDate}
+                            </div>
+                          </div>
                         )}
                       </div>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <span className="text-sm text-gray-500">of each month</span>
-              </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsEditOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveChanges}>Save Changes</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleMarkAsImportant}
+                className={`group rounded-full p-2 transition-colors duration-200 ${
+                  isImportant ? 'bg-amber-50' : 'hover:bg-amber-50'
+                }`}
+              >
+                <Star
+                  className={`h-5 w-5 transition-colors duration-200 ${
+                    isImportant
+                      ? 'fill-amber-500 text-amber-500'
+                      : 'text-gray-400 group-hover:text-amber-400'
+                  }`}
+                />
+              </Button>
+
+              {!isAuthor &&
+                (isCompletedByMe ? (
+                  <Button disabled size="sm">
+                    <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
+                    Completed
+                  </Button>
+                ) : (
+                  <Button onClick={handleComplete} size="sm">
+                    Complete
+                  </Button>
+                ))}
+
+              {isAuthor && (
+                <div className="flex gap-2">
+                  {hasAnyCompletion && (
+                    <Button size="sm" onClick={handleReassign}>
+                      <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                      Reassign
+                    </Button>
+                  )}
+
+                  {!isCompletedByMe && (
+                    <Button onClick={handleFinishTask} size="sm">
+                      Finish
+                    </Button>
+                  )}
+
+                  {isCompletedByMe && (
+                    <Button disabled size="sm">
+                      <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
+                      Closed
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
-        )}
 
-        {/* Custom Date Picker */}
-        {frequency === TaskFrequency.CUSTOM && (
-          <>
-            {showPicker ? (
-              // Show the date picker when showPicker is true
-              <div ref={pickerRef} className="relative z-10 ">
-                <DateRangePicker
-                  ranges={selectedDates}
-                  onChange={handleSelect}
-                  showDateDisplay={true}
-                  rangeColors={['#3D91FF']}
-                  className="w-[500px] border border-gray-200 shadow-lg "
-                />
-                <div className="mt-2 flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowPicker(false)}
-                    className="mr-2"
-                  >
-                    Cancel
-                  </Button>
-                  <Button size="sm" onClick={applyCustomDates}>
-                    Apply
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              selectedDateRange && (
-                <div
-                  className="mb-2 flex cursor-pointer items-center gap-2 text-sm text-gray-600"
-                  onClick={() => setShowPicker(true)}
-                >
-                  <CalendarIcon className="h-4 w-4 text-gray-500" />
-                  <span>
-                    Selected Range: {selectedDateRange.startDate} to{' '}
-                    {selectedDateRange.endDate}
-                  </span>
-                </div>
-              )
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Description */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-gray-700">Description</h2>
-          <Info className="h-4 w-4 text-gray-400" />
+          {/* Read Only Title */}
+          <h1 className="text-sm font-medium leading-tight text-black">
+            {localTask.taskName}
+          </h1>
         </div>
-        {editingDesc ? (
-          <Textarea
-            ref={descTextareaRef}
-            value={tempDesc}
-            onChange={(e) => setTempDesc(e.target.value)}
-            onBlur={async () => {
-              if (tempDesc !== localTask.description) {
-                setLocalTask({ ...localTask, description: tempDesc });
-                try {
-                  await onUpdate({ description: tempDesc });
-                } catch (error) {
-                  console.error('Failed to update description:', error);
-                }
-              }
-              setEditingDesc(false);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                descTextareaRef.current?.blur();
-              }
-            }}
-            className="text-sm text-gray-600"
-            rows={4}
-          />
-        ) : (
-          <p
-            className="cursor-pointer whitespace-pre-wrap rounded p-1 text-sm text-gray-600 hover:bg-gray-100"
-            onClick={() => setEditingDesc(true)}
-          >
-            {localTask.description || 'No description provided.'}
-          </p>
-        )}
       </div>
 
-      {/* History Section */}
-      {localTask?.history && localTask.history.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800">History</h2>
-          <div className="space-y-2">
-            {/* Create a new array before sorting */}
-            {[...localTask.history]
-              .sort(
-                (a, b) =>
-                  new Date(b.date).getTime() - new Date(a.date).getTime()
-              )
-              .map((entry, index) => (
-                <div key={index} className="flex items-center gap-4">
-                  {/* Badge with Status */}
-                  <div
-                    className={`flex items-center gap-3 rounded-lg border border-gray-200 bg-green-50 px-4 py-2 text-sm  font-medium ${
-                      entry.completed
-                        ? 'bg-green-100 text-green-600'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {/* Status Indicator */}
-                    <span
-                      className={`h-2.5 w-2.5 rounded-full ${
-                        entry.completed ? 'bg-green-600' : 'bg-gray-300'
-                      }`}
-                    />
-                    <span className="text-gray-700">
-                      {moment(entry.date).format('MMM DD, YYYY h:mm A')}
-                    </span>
-                    <span
-                      className={`font-semibold ${
-                        entry.completed ? 'text-green-600' : 'text-gray-500'
-                      }`}
-                    >
-                      {entry.completed ? 'Completed' : 'Incomplete'}
-                    </span>
-                  </div>
-                </div>
-              ))}
+      {/* Properties Grid - Read Only */}
+      <div className="mb-8 grid grid-cols-1 gap-px sm:grid-cols-4">
+        {/* Due Date */}
+        <div className="bg-white p-4">
+          <div className="mb-1 text-xs font-bold uppercase tracking-wider ">
+            Due Date
+          </div>
+          <div className="text-xs font-medium text-black">
+            {localTask.dueDate ? formatDate(localTask.dueDate) : 'No due date'}
           </div>
         </div>
-      )}
+
+        {/* Frequency */}
+        <div className="bg-white p-4">
+          <div className="mb-1 text-xs font-bold uppercase tracking-wider ">
+            Frequency
+          </div>
+          <div className="text-xs font-medium capitalize text-black">
+            {localTask.frequency || 'Once'}
+          </div>
+        </div>
+
+        {/* Assigned To */}
+        <div className="bg-white p-4">
+          <div className="mb-1 text-xs font-bold uppercase tracking-wider ">
+            Assigned To
+          </div>
+          <div className="flex items-center gap-2">
+            <span className=" text-xs font-medium text-black">
+              {getUserDisplayName(localTask?.assigned)}
+            </span>
+          </div>
+        </div>
+
+        {/* Author */}
+        <div className="bg-white p-4">
+          <div className="mb-1 text-xs font-bold uppercase tracking-wider ">
+            Created By
+          </div>
+          <div className="flex items-center gap-2">
+            <span className=" text-xs font-medium text-black">
+              {getUserDisplayName(localTask?.author)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        {/* Description */}
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <Info className="h-4 w-4 text-black" />
+            <h3 className="text-sm font-bold text-black">Description</h3>
+          </div>
+
+          <div className="rounded-lg border border-black/10 bg-white p-4">
+            <div className="min-h-auto whitespace-pre-wrap text-sm leading-relaxed text-black">
+              {localTask.description || (
+                <span className="italic text-neutral-400">
+                  No description provided.
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Activity */}
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-black" />
+            <h3 className="text-sm font-bold text-black">Activity</h3>
+          </div>
+
+          <div className="rounded-lg border border-black/10 bg-white p-4">
+            {localTask?.history && localTask.history.length > 0 ? (
+              <div className="space-y-4">
+                {[...localTask.history]
+                  .sort(
+                    (a, b) =>
+                      new Date(b.date).getTime() - new Date(a.date).getTime()
+                  )
+                  .map((entry, index) => (
+                    <div key={index} className="flex gap-3">
+                      <div className="pt-1">
+                        <div
+                          className={`h-2 w-2 rounded-full ${
+                            entry.completed ? 'bg-black' : 'bg-neutral-300'
+                          }`}
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-medium text-black">
+                          {entry.completed
+                            ? 'Task Completed'
+                            : 'Status Updated'}
+                        </span>
+                        <span className="text-xs">
+                          {moment(entry.date).format('MMM DD, YYYY')}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <p className="text-xs italic text-neutral-400">
+                No activity recorded yet.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

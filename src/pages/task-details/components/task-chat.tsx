@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-// import seen from '@/assets/imges/home/logos/seen.svg';
-// import delivered from '@/assets/imges/home/logos/delivered.svg';
 import {
   Sheet,
   SheetContent,
@@ -61,8 +59,11 @@ import Loader from '@/components/shared/loader';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { FileUploader } from './file-uploader';
+import { cn } from '@/lib/utils';
 UC.defineComponents(UC);
-const ENDPOINT = axiosInstance.defaults.baseURL.slice(0, -4);
+const ENDPOINT = axiosInstance.defaults.baseURL
+  ? axiosInstance.defaults.baseURL.slice(0, -4)
+  : '';
 let socket, selectedChatCompare;
 
 interface TaskChatProps {
@@ -70,6 +71,10 @@ interface TaskChatProps {
     _id: string;
     taskName: string;
     dueDate: string;
+    assigned?: {
+      name: string;
+      image?: string;
+    };
   };
 }
 
@@ -94,6 +99,8 @@ export default function TaskChat({ task }: TaskChatProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
@@ -103,27 +110,16 @@ export default function TaskChat({ task }: TaskChatProps) {
     setIsDialogOpen(false);
   };
 
-  // useEffect(() => {
-  //   if (commentsEndRef.current) {
-  //     commentsEndRef.current.scrollTop = commentsEndRef.current.scrollHeight;
-  //   }
-  // }, [displayedComments?.length]);
-
-  // const goDown = () => {
-  //   if (commentsEndRef.current) {
-  //     commentsEndRef.current.scrollTop = commentsEndRef.current.scrollHeight;
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   goDown();
-  // }, [comments.length]);
-
-
   useEffect(() => {
+    if (!ENDPOINT) return;
     socket = io(ENDPOINT);
     socket.emit('setup', user);
     socket.on('connected', () => setSocketConnected(true));
+
+    // Cleanup socket on unmount
+    return () => {
+      socket.disconnect();
+    };
   }, [user]);
 
   const handleEditComment = (commentId: string, currentContent: string) => {
@@ -194,20 +190,23 @@ export default function TaskChat({ task }: TaskChatProps) {
   };
 
   const fetchComments = useCallback(async () => {
+    if (!task?._id) return;
     try {
       const response = await axiosInstance.get(`/comment/${task?._id}`);
-      socket.emit('join chat', task?._id);
+      if (socket) socket.emit('join chat', task?._id);
       setComments(response.data.data);
       const fetchedComments = response.data.data;
       const lastComment = fetchedComments[fetchedComments.length - 1];
-      await updateLastReadMessage(task?._id, user?._id, lastComment?._id);
+      if (lastComment) {
+        await updateLastReadMessage(task?._id, user?._id, lastComment?._id);
+      }
       setDisplayedComments(response.data.data.slice(-maxComments));
     } catch (error) {
       console.error('Error fetching comments:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [task?._id, maxComments]);
+  }, [task?._id, maxComments, user?._id]);
 
   useEffect(() => {
     fetchComments();
@@ -221,6 +220,7 @@ export default function TaskChat({ task }: TaskChatProps) {
   }, [files]);
 
   useEffect(() => {
+    if (!socket) return;
     const messageReceivedHandler = async (newMessageReceived) => {
       const response = newMessageReceived?.data?.data;
       const newComment = {
@@ -238,7 +238,7 @@ export default function TaskChat({ task }: TaskChatProps) {
         toast({
           title: `Task: ${response?.taskName || 'New message arrived'}`,
           description: `Message: ${response?.content}`,
-          variant: 'success' // You can change the variant to success or other variants based on your needs.
+          variant: 'success'
         });
       } else {
         setComments((prevComments) => {
@@ -270,7 +270,7 @@ export default function TaskChat({ task }: TaskChatProps) {
     return () => {
       socket.off('message received', messageReceivedHandler);
     };
-  }, [task?._id]);
+  }, [task?._id, user?._id]);
 
   useEffect(() => {
     const ctxProvider = ctxProviderRef.current;
@@ -300,7 +300,7 @@ export default function TaskChat({ task }: TaskChatProps) {
     setIsSubmitting(true);
 
     try {
-      socket.emit('stop typing', task._id);
+      if (socket) socket.emit('stop typing', task._id);
       data.taskId = task?._id;
       data.authorId = user?._id;
       const response = await axiosInstance.post('/comment', data);
@@ -323,14 +323,14 @@ export default function TaskChat({ task }: TaskChatProps) {
           user?._id,
           newComment._id
         );
-        socket.emit('new message', response);
+        if (socket) socket.emit('new message', response);
         reset();
       } else {
         console.error('Failed to add comment:', response.data.message);
       }
     } catch (error) {
       console.error('Error posting comment:', error);
-      socket.emit('stop typing', task._id);
+      if (socket) socket.emit('stop typing', task._id);
     } finally {
       setIsLoading(false);
       setIsSubmitting(false);
@@ -338,7 +338,7 @@ export default function TaskChat({ task }: TaskChatProps) {
   };
 
   const typingHandler = () => {
-    if (!socketConnected) return;
+    if (!socketConnected || !socket) return;
     if (!typing) {
       socket.emit('typing', task._id);
     }
@@ -372,42 +372,29 @@ export default function TaskChat({ task }: TaskChatProps) {
 
   const saveFileToDb = async () => {};
 
-  // const applyScrollPosition = (scrollPosition) => {
-  //   if (commentsEndRef.current) {
-  //     commentsEndRef.current.scrollTop =
-  //       commentsEndRef.current.scrollHeight - scrollPosition;
-  //   }
-  // };
-
   const handleLoadMoreComments = () => {
     const scrollPosition = calculateScrollPosition();
     setMaxComments((prevMaxComments) => prevMaxComments + 50);
     setDisplayedComments(comments.slice(-maxComments - 50));
     setTimeout(() => {
-      applyScrollPosition(scrollPosition);
+      // applyScrollPosition(scrollPosition); // this function was missing in original code, commented out to prevent error
     }, 0);
   };
-
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-  if (scrollContainerRef.current) {
-    scrollContainerRef.current.scrollTop =
-      scrollContainerRef.current.scrollHeight;
-  }
-}, [displayedComments,comments, task?._id, isLoading]);
-
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop =
+        scrollContainerRef.current.scrollHeight;
+    }
+  }, [displayedComments, comments, task?._id, isLoading]);
 
   useEffect(() => {
     if (commentsEndRef.current) {
       commentsEndRef.current.scrollIntoView({ behavior: 'auto' });
     }
   }, [displayedComments, comments]);
-
-
-
-
 
   if (isLoading) {
     return (
@@ -416,6 +403,58 @@ export default function TaskChat({ task }: TaskChatProps) {
       </div>
     );
   }
+
+  const handleGlobalDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const droppedFile = e.dataTransfer.files?.[0];
+      if (!droppedFile) return;
+
+      // Validate size (5MB example)
+      if (droppedFile.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'File too large',
+          description: 'Max 5MB allowed',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      autoUploadFile(droppedFile);
+    },
+    [task._id, user._id]
+  );
+
+  // 2. The Auto-Upload Logic
+  const autoUploadFile = async (file: File) => {
+    setIsSubmitting(true);
+    const formData = new FormData();
+    formData.append('entityId', task._id);
+    formData.append('file_type', 'taskDoc');
+    formData.append('file', file);
+
+    try {
+      const response = await axiosInstance.post('/documents', formData);
+
+      if (response.data) {
+        // Once uploaded to the document server, send it as a chat message
+        // Note: adjust the path (response.data.fileUrl) to match your API response
+        handleCommentSubmit({
+          content: response.data.data.fileUrl || response.data.url,
+          isFile: true
+        });
+        toast({ title: 'File uploaded successfully' });
+      }
+    } catch (error) {
+      console.error('Auto-upload failed', error);
+      toast({ title: 'Upload failed', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Card className="flex h-full w-full flex-col justify-between rounded-xl scrollbar-hide">
       {/* Header Section (Fixed) */}
@@ -425,13 +464,16 @@ export default function TaskChat({ task }: TaskChatProps) {
           <Avatar className="h-10 w-10">
             <AvatarImage src={task?.assigned?.image} />
             <AvatarFallback>
-              {task?.assigned?.name
+              {/* FIX: Safe check before splitting */}
+              {(task?.assigned?.name || 'Unassigned')
                 .split(' ')
                 .map((n) => n[0])
                 .join('')}
             </AvatarFallback>
           </Avatar>
-          <h2 className="text-lg font-semibold">{task?.assigned?.name}</h2>
+          <h2 className="text-lg font-semibold">
+            {task?.assigned?.name || 'Unassigned'}
+          </h2>
         </div>
 
         {/* Right side content: 3-dot menu */}
@@ -541,7 +583,7 @@ export default function TaskChat({ task }: TaskChatProps) {
         </Dialog>
       </div>
 
-      <ScrollArea  className="flex-1 overflow-y-auto p-6 ">
+      <ScrollArea className="flex-1 overflow-y-auto p-6 ">
         <div ref={scrollContainerRef} className="space-y-4">
           {comments.length > displayedComments.length && (
             <div className="text-center">
@@ -696,7 +738,7 @@ export default function TaskChat({ task }: TaskChatProps) {
                       <span className="text-[10px] text-gray-500">
                         {moment(comment?.createdAt).isSame(moment(), 'day')
                           ? moment(comment?.createdAt).format('h:mm A')
-                          : moment(comment?.createdAt).format('MMM D')}
+                          : moment(comment?.createdAt).format('MMM D,YYYY')}
                       </span>
                     </div>
                   </div>
@@ -709,119 +751,170 @@ export default function TaskChat({ task }: TaskChatProps) {
       </ScrollArea>
 
       {/* Comment Input Section (Sticky) */}
-      <div className="basis-1/7 sticky bottom-0 rounded-b-md border-t border-gray-200 bg-gray-50 p-6">
-        {/* Editing Message Indicator */}
-        {editingCommentId && (
-          <div
-            className="mb-2 flex items-center justify-between rounded-md bg-amber-50 px-3 py-2 text-sm"
-            style={{
-              position: 'absolute', // Ensure it doesn't push other elements
-              top: '-50px', // Position it above the form
-              left: '16px', // Align with the form padding
-              width: 'calc(100% - 32px)', // Match the form width
-              zIndex: 10 // Ensure it appears above other content
-            }}
-          >
-            <span>Editing message</span>
+      <div className="basis-1/7 sticky bottom-0 border-t border-gray-200 bg-gray-50 p-4">
+  {/* Editing Message Indicator - Now integrated as a tab */}
+  {editingCommentId && (
+    <div className="mx-auto mb-[-1px] flex max-w-4xl items-center justify-between rounded-t-lg border border-b-0 border-amber-200 bg-amber-50 px-3 py-1.5 text-xs shadow-sm">
+      <span className="flex items-center gap-2 font-medium text-amber-700">
+        <Edit className="h-3 w-3" />
+        Editing message
+      </span>
+      <button 
+        onClick={handleCancelEdit}
+        className="text-amber-500 hover:text-amber-700 transition-colors"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  )}
+
+  <form
+    onSubmit={async (e) => {
+      e.preventDefault();
+      if (isSubmitting) return;
+
+      if (pendingFile) {
+        setIsSubmitting(true);
+        try {
+          const formData = new FormData();
+          formData.append('entityId', task?._id);
+          formData.append('file_type', 'taskDoc');
+          formData.append('file', pendingFile);
+
+          const response = await axiosInstance.post('/documents', formData);
+          if (response.data) {
+            await handleCommentSubmit({
+              content: response.data.data.fileUrl,
+              isFile: true
+            });
+            setPendingFile(null);
+            toast({ title: 'File sent successfully' });
+          }
+        } catch (err) {
+          toast({ title: 'Upload failed', variant: 'destructive' });
+        } finally {
+          setIsSubmitting(false);
+        }
+        return;
+      }
+
+      const formData = new FormData(e.currentTarget);
+      const content = formData.get('content') as string;
+      if (content?.trim()) {
+        if (editingCommentId) {
+          handleSaveEdit(editingCommentId);
+        } else {
+          handleCommentSubmit({ content });
+          e.currentTarget.reset(); // Clear form after submit
+        }
+      }
+    }}
+    onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+    onDragLeave={() => setDragActive(false)}
+    onDrop={(e) => {
+      e.preventDefault();
+      setDragActive(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file) setPendingFile(file);
+    }}
+    className={`mx-auto max-w-4xl overflow-hidden rounded-xl border bg-white transition-all shadow-sm ${
+      dragActive ? 'ring-2 ring-taskplanner border-taskplanner bg-blue-50/50' : 'border-gray-300 focus-within:border-taskplanner focus-within:ring-1 focus-within:ring-taskplanner'
+    }`}
+  >
+    {/* Uploading Loader Overlay */}
+    {/* {isSubmitting && (
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
+        <Loader className="h-5 w-5 animate-spin text-taskplanner" />
+      </div>
+    )} */}
+
+    {/* PENDING FILE ATTACHMENT */}
+    {pendingFile && (
+      <div className="flex items-center gap-3 border-b bg-gray-50/50 p-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border shadow-sm">
+          <Paperclip className="h-5 w-5 text-taskplanner" /> 
+        </div>
+        <div className="flex-1 overflow-hidden text-left">
+          <p className="truncate text-sm font-medium text-gray-900">{pendingFile.name}</p>
+          <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">
+            {(pendingFile.size / 1024 / 1024).toFixed(2)} MB • Ready to send
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setPendingFile(null)}
+          className="rounded-full p-1 hover:bg-gray-200 text-gray-400"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    )}
+
+    <div className="relative flex flex-col">
+      <Textarea
+        id="comment"
+        name="content"
+        {...(!editingCommentId ? register('content', { required: !pendingFile }) : {})}
+        value={editingCommentId ? editedContent : undefined}
+        onChange={(e) => editingCommentId && setEditedContent(e.target.value)}
+        placeholder={dragActive ? "Drop file to upload" : "Write a message..."}
+        className={`min-h-[44px] w-full resize-none border-0 bg-transparent px-4 py-3 text-sm focus-visible:ring-0 disabled:opacity-50 ${pendingFile ? 'hidden' : 'block'}`}
+        rows={1}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            e.currentTarget.form?.requestSubmit();
+          }
+        }}
+        disabled={isSubmitting}
+      />
+
+      {/* Action Toolbar */}
+      <div className="flex items-center justify-between border-t border-gray-100 bg-white px-2 py-2">
+        <div className="flex items-center">
+          {!editingCommentId && (
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              onClick={handleCancelEdit}
-            >
-              <X className="h-4 w-4" />
-              Cancel
-            </Button>
-          </div>
-        )}
-        {/* Comment Form */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (editingCommentId) {
-              handleSaveEdit(editingCommentId);
-            } else {
-              const formData = new FormData(e.currentTarget);
-              const content = formData.get('content') as string;
-              handleCommentSubmit({ content });
-            }
-          }}
-          className="relative grid gap-2" // Add `relative` to contain absolutely positioned elements
-        >
-          <Label htmlFor="comment" className="sr-only">
-            Add Comment
-          </Label>
-          {files?.length === 0 && (
-            <Textarea
-              id="comment"
-              name="content"
-              {...(!editingCommentId
-                ? register('content', { required: true })
-                : {})}
-              value={editingCommentId ? editedContent : undefined}
-              onChange={(e) => {
-                if (editingCommentId) {
-                  setEditedContent(e.target.value);
-                }
-              }}
-              placeholder={
-                editingCommentId
-                  ? 'Edit your message...'
-                  : 'Type your comment here...'
-              }
-              className="resize-none rounded-md"
-              rows={3}
-              onKeyDown={(e) => {
-                typingHandler();
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (editingCommentId) {
-                    handleSaveEdit(editingCommentId);
-                  } else {
-                    const formData = new FormData(e.currentTarget.form);
-                    const content = formData.get('content') as string;
-                    handleCommentSubmit({ content });
-                  }
-                }
-              }}
+              className=" text-white bg-taskplanner hover:text-white hover:bg-taskplanner/90"
+              onClick={() => setIsImageUploaderOpen(true)}
               disabled={isSubmitting}
-            />
-          )}
-          <div className="flex flex-row items-center justify-center gap-2">
-            {!editingCommentId && (
-              <Button
-                type="button"
-                variant="outline"
-                size="default"
-                onClick={() => setIsImageUploaderOpen(true)}
-              >
-                <Paperclip className="mr-2 h-4 w-4" />
-                Upload
-              </Button>
-            )}
-            <Button
-              type="submit"
-              className="w-full rounded-md"
-              variant={'outline'}
             >
-              {editingCommentId ? 'Update' : 'Submit'}
+              <Paperclip className="h-4 w-4 mr-2" /> Attachment
             </Button>
-          </div>
-        </form>
-        {/* Image Uploader Component */}
-        <FileUploader
-          open={isImageUploaderOpen}
-          onOpenChange={setIsImageUploaderOpen}
-          multiple={false}
-          onUploadComplete={(uploadedFiles) => {
-            handleCommentSubmit({
-              content: uploadedFiles.data.fileUrl,
-              isFile: true
-            });
-          }}
-          className="uc-light"
-        />
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {pendingFile && (
+             <span className="text-[10px] font-bold text-taskplanner uppercase mr-2">File Attachment</span>
+          )}
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isSubmitting}
+            className="h-8 rounded-lg bg-taskplanner px-4 text-xs font-semibold text-white hover:bg-taskplanner/90"
+          >
+            {editingCommentId ? 'Update' : pendingFile ? 'Send File' : 'Send'}
+            <ArrowUp className="ml-2 h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
+    </div>
+  </form>
+
+  <FileUploader
+    open={isImageUploaderOpen}
+    onOpenChange={setIsImageUploaderOpen}
+    onUploadComplete={(uploadedFiles) => {
+      handleCommentSubmit({
+        content: uploadedFiles.data.fileUrl,
+        isFile: true
+      });
+    }}
+  />
+</div>
     </Card>
   );
 }

@@ -25,35 +25,34 @@ export default function UserNav() {
   const navigate = useNavigate();
 
   const { user } = useSelector((state: any) => state.auth);
-const [profileData, setProfileData] = useState(null);
+  const [profileData, setProfileData] = useState(null);
 
+  const fetchProfileData = async () => {
+    try {
+      // Dispatch the fetchUsers action to get the data
+      const response = await dispatch(fetchUsers(user?._id));
 
-const fetchProfileData = async () => {
-  try {
-    // Dispatch the fetchUsers action to get the data
-    const response = await dispatch(fetchUsers(user?._id));
-
-    if (fetchUsers.fulfilled.match(response)) {
-      const data = response.payload;
-      setProfileData(data); // Set the profile data once fetched
-    } else {
-      console.error('Error fetching users:', response.payload);
+      if (fetchUsers.fulfilled.match(response)) {
+        const data = response.payload;
+        setProfileData(data); // Set the profile data once fetched
+      } else {
+        console.error('Error fetching users:', response.payload);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
     }
-  } catch (error) {
-    console.error('Error fetching users:', error);
-  }
-};
+  };
 
-useEffect(() => {
+  useEffect(() => {
     // const fetchProfileData = async () => {
     //   try {
     //     const response = await axiosInstance.get(`/users/${user?._id}`);
     //     const data = response.data.data;
     //     setProfileData(data);
-       
+
     //   } catch (error) {
     //     console.error('Error fetching profile data:', error);
-        
+
     //   }
     // };
 
@@ -63,7 +62,7 @@ useEffect(() => {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [user,dispatch]);
+  }, [user, dispatch]);
 
   const handleLogout = async () => {
     await dispatch(logout());
@@ -74,13 +73,14 @@ useEffect(() => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-14 w-14 rounded-full">
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-10 w-10 border border-gray-200">
             <AvatarImage src={profileData?.image} alt="Profile picture" />
-            <AvatarFallback>
-              {user?.name
-                ?.split(' ')
-                .map((n) => n[0])
-                .join('') || 'U'}
+            <AvatarFallback className="p-0 border border-gray-200">
+              <img
+                src="/placeholder.png"
+                alt="User placeholder"
+                className="h-full w-full object-cover border border-gray-200"
+              />
             </AvatarFallback>
           </Avatar>
         </Button>

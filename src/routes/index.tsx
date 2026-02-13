@@ -58,12 +58,21 @@ import TermsAndConditions from '@/pages/terms';
 import PrivacyPolicyPage from '@/pages/privacyPolicy';
 import SecurityPolicyPage from '@/pages/securiyPolicy';
 import AdminDashboardPage from '@/pages/admin/AdminDashboard';
-import ManagerPage from '@/pages/admin/manager';
 import AdminUserPage from '@/pages/admin/user';
 import SubscriptionPlanPage from '@/pages/admin/SubscriptionPlan';
 import { CompanyDetailsPage } from '@/pages/admin/company/companyDetails';
 import CompanyDashboardPage from '@/pages/company/CompanyDashboard';
 import CompanyLayout from '@/components/layout/company-layout';
+import CompanyUserTaskPage from '@/pages/company/task';
+import CompanyUserTableList from '@/pages/company/users/components/UserTableList';
+import CompanyUserProfileDetail from '@/pages/company/users/profile/user-profile-detail';
+import StaffDashboardPage from '@/pages/staff/CompanyDashboard';
+import StaffTaskPage from '@/pages/staff/task';
+import CompanyImportantPage from '@/pages/company/important';
+import CompanyGroupPage from '@/pages/company/group';
+import CompanyGroupChat from '@/pages/company/group/chat';
+import CompanyTaskPlanner from '@/pages/company/planner';
+import CompanyNotesPage from '@/pages/company/notes';
 
 const DashboardLayout = lazy(
   () => import('@/components/layout/dashboard-layout')
@@ -130,14 +139,7 @@ export default function AppRouter() {
           path: 'notifications',
           element: <NotificationsPage />
         },
-        {
-          path: 'manager',
-          element: (
-            <ProtectedRoute allowedRoles={['admin']}>
-              <ManagerPage />
-            </ProtectedRoute>
-          )
-        },
+        
         {
           path: 'users',
           element: (
@@ -180,19 +182,19 @@ export default function AppRouter() {
         },
         {
           path: 'group',
-          element: <GroupPage />
+          element: <CompanyGroupPage />
         },
         {
-          path: 'group/:id',
-          element: <GroupChat />
+          path: 'group/:gid',
+          element: <CompanyGroupChat />
         },
         {
           path: 'users',
-          element: <UserPage />
+          element: <CompanyUserTableList />
         },
         {
-          path: 'users/:id',
-          element: <UserProfileDetail />
+          path: 'users/:uid',
+          element: <CompanyUserProfileDetail />
         },
         {
           path: 'assignedtask',
@@ -208,7 +210,7 @@ export default function AppRouter() {
         },
         {
           path: 'important',
-          element: <ImportantPage />
+          element: <CompanyImportantPage />
         },
         {
           path: 'completedtask',
@@ -239,7 +241,7 @@ export default function AppRouter() {
           )
         },
         {
-          path: 'company/:id',
+          path: 'company/:cid',
           element: (
             <ProtectedRoute allowedRoles={['admin', 'director', 'company']}>
               <CompanyProfileDetail />
@@ -272,6 +274,146 @@ export default function AppRouter() {
         },
         {
           path: 'notes',
+          element: <CompanyNotesPage />
+        },
+        {
+          path: 'planner',
+          element: <CompanyTaskPlanner />
+        },
+        {
+          path: 'profile',
+          element: <ProfilePage />
+        },
+        {
+          path: 'task/:uid',
+          element: <CompanyUserTaskPage />
+        },
+        {
+          path: 'task-details/:tid',
+          element: <TaskDetailsPage />
+        },
+        {
+          path: 'notifications',
+          element: <NotificationsPage />
+        }
+      ]
+    }
+  ];
+
+
+   const userDashboardRoutes = [
+    {
+      path: '/company/:id/user/:uid',
+      element: (
+        <CompanyLayout>
+          <ProtectedRoute
+            allowedRoles={['admin', 'director', 'company', 'creator', 'user']}
+          >
+            <Suspense>
+              <Outlet />
+            </Suspense>
+          </ProtectedRoute>
+        </CompanyLayout>
+      ),
+      children: [
+        {
+          element: <StaffDashboardPage />,
+          index: true
+        },
+        {
+          path: 'group',
+          element: <GroupPage />
+        },
+        {
+          path: 'group/:gid',
+          element: <GroupChat />
+        },
+        {
+          path: 'users',
+          element: <UserPage />
+        },
+        {
+          path: 'users/:sid',
+          element: <UserProfileDetail />
+        },
+        {
+          path: 'assignedtask',
+          element: <AssignedTasksPage />
+        },
+        {
+          path: 'duetask',
+          element: <DueTaskPage />
+        },
+        {
+          path: 'upcomingtask',
+          element: <UpcomingTaskPage />
+        },
+        {
+          path: 'important',
+          element: <ImportantPage />
+        },
+        {
+          path: 'completedtask',
+          element: <CompletedTaskPage />
+        },
+        {
+          path: 'director',
+          element: (
+            <ProtectedRoute allowedRoles={['admin', 'director']}>
+              <DirectorPage />
+            </ProtectedRoute>
+          )
+        },
+        {
+          path: 'director/:sid',
+          element: (
+            <ProtectedRoute allowedRoles={['admin', 'director']}>
+              <DirectorProfileDetail />
+            </ProtectedRoute>
+          )
+        },
+        {
+          path: 'company',
+          element: (
+            <ProtectedRoute allowedRoles={['admin', 'director', 'company']}>
+              <CompanyPage />
+            </ProtectedRoute>
+          )
+        },
+        {
+          path: 'company/:cid',
+          element: (
+            <ProtectedRoute allowedRoles={['admin', 'director', 'company']}>
+              <CompanyProfileDetail />
+            </ProtectedRoute>
+          )
+        },
+        {
+          path: 'creator',
+          element: (
+            <ProtectedRoute
+              allowedRoles={['admin', 'director', 'company', 'creator']}
+            >
+              <CreatorPage />
+            </ProtectedRoute>
+          )
+        },
+        {
+          path: 'creator/:sid',
+          element: (
+            <ProtectedRoute
+              allowedRoles={['admin', 'director', 'company', 'creator']}
+            >
+              <CreatorProfileDetail />
+            </ProtectedRoute>
+          )
+        },
+        {
+          path: 'today',
+          element: <TodayPage />
+        },
+        {
+          path: 'notes',
           element: <NotesPage />
         },
         {
@@ -283,11 +425,11 @@ export default function AppRouter() {
           element: <ProfilePage />
         },
         {
-          path: 'task/:id',
-          element: <TaskPage />
+          path: 'task/:sid',
+          element: <StaffTaskPage />
         },
         {
-          path: 'task-details/:id',
+          path: 'task-details/:tid',
           element: <TaskDetailsPage />
         },
         {
@@ -486,7 +628,8 @@ export default function AppRouter() {
     ...CompanyDashboardRoutes,
     ...publicRoutes,
     ...layoutRoutes,
-    ...AdmindashboardRoutes
+    ...AdmindashboardRoutes,
+    ...userDashboardRoutes
   ]);
 
   return routes;

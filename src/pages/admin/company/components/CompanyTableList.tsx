@@ -20,6 +20,7 @@ import CreateCompany from './CreateCompany';
 import UpdateCompany from './UpdateCompany';
 import { BlinkingDots } from '@/components/shared/blinking-dots';
 import { Link, useNavigate } from 'react-router-dom';
+import { DynamicPagination } from '@/components/shared/DynamicPagination';
 
 export default function CompanyTableList() {
   const { user } = useSelector((state: any) => state.auth);
@@ -30,8 +31,10 @@ export default function CompanyTableList() {
   const [inputValue, setInputValue] = useState(''); // Stores text as you type
   const [searchTerm, setSearchTerm] = useState(''); // Stores value only when 'Search' is clicked
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [entriesPerPage] = useState(100);
+    const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [entriesPerPage, setEntriesPerPage] = useState(100);
+
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Edit State
@@ -51,6 +54,7 @@ export default function CompanyTableList() {
         `/users?role=company&page=${page}&limit=${entriesPerPage}&searchTerm=${term}`
       );
       setUsers(res.data.data.result);
+      setTotalPages(res.data.data.meta.totalPage);
     } catch (err) {
       console.error(err);
     } finally {
@@ -286,6 +290,17 @@ export default function CompanyTableList() {
             )}
           </TableBody>
         </Table>
+         {users.length > 40 && (
+                  <div className="pt-4">
+                    <DynamicPagination
+                      pageSize={entriesPerPage}
+                      setPageSize={setEntriesPerPage}
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
       </div>
 
       <UpdateCompany

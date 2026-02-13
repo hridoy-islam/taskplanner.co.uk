@@ -29,7 +29,7 @@ export function AppNav({ items }: MainNavProps) {
                 // Layout & Spacing
                 "group flex h-full items-center gap-1 px-3 text-xs font-semibold transition-all",
                 
-                "border-b-[3px] border-transparent text-gray-600",
+                "border-b-[3px] border-transparent text-taskplanner",
                 "hover:border-taskplanner hover:text-taskplanner hover:bg-gray-50",
                 
                 // isActive && "text-gray-900 font-semibold",

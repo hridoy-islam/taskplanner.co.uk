@@ -3,11 +3,11 @@ import TaskDetails from './components/task-details';
 import TaskChat from './components/task-chat';
 import { useParams } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/redux/store';
-import { updateTask } from '@/redux/features/allTaskSlice';
 import { Card } from '@/components/ui/card';
+import axiosInstance from '@/lib/axios'; // Ensure you have axios installed
+import { BlinkingDots } from '@/components/shared/blinking-dots';
 
+// Keep interfaces if they aren't imported from a types file
 interface User {
   id: string;
   name: string;
@@ -31,96 +31,94 @@ interface Task {
 }
 
 export default function TaskDetailsPage() {
-  const { id } = useParams();
+  const { tid: id } = useParams();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { tasks } = useSelector((state: RootState) => state.alltasks);
-  const dispatch = useDispatch();
 
-  useEffect(() => {
-    if (!id || !tasks || tasks.length === 0) return;
-
-    setLoading(true);
-    const foundTask = tasks.find((t) => t._id === id);
-
-    if (foundTask) {
-      setTask(foundTask);
-      setError(null);
-    } else {
-      setError('Task not found');
-    }
-    setLoading(false);
-  }, [id, tasks]);
-
-  const onUpdate = async (updatedData: Partial<Task>) => {
+  // 1. Fetch the specific task directly from API on mount
+  const fetchTask = async () => {
     if (!id) return;
+    
+    setLoading(true);
+    try {
+      const res = await axiosInstance.get(`/task/${id}`);
+      setTask(res.data.data || res.data); 
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: 'Failed to load task',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+
+    fetchTask();
+  }, [id]);
+
+  // 2. Refactored Update Logic
+const onUpdate = async (updatedData: Partial<Task>) => {
+    if (!id || !task) return;
+
+    const previousTask = task;
+
+    setTask((prev) => {
+      if (!prev) return null;
+      return { ...prev, ...updatedData };
+    });
 
     try {
-      // Optimistic local update
-      setTask((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          ...updatedData,
-          author: {
-            ...(typeof prev.author === 'object'
-              ? prev.author
-              : { id: prev.author, name: 'Unknown' }),
-            ...(typeof updatedData.author === 'object'
-              ? updatedData.author
-              : {})
-          },
-          assigned: {
-            ...(typeof prev.assigned === 'object'
-              ? prev.assigned
-              : { id: prev.assigned, name: 'Unassigned' }),
-            ...(typeof updatedData.assigned === 'object'
-              ? updatedData.assigned
-              : {})
-          }
-        };
-      });
+      const res = await axiosInstance.patch(`/task/${id}`, updatedData);
 
-      // Dispatch to Redux
-      dispatch(
-        updateTask({
-          taskId: id.toString(),
-          taskData: updatedData
-        })
-      );
+     
+      setTask(res.data.data); 
+    fetchTask();
 
       toast({
-        title: 'Task updated successfully!'
+        title: 'Task updated successfully!',
       });
 
-      return updatedData;
     } catch (err) {
+      console.error(err);
+      
+      setTask(previousTask);
+
       toast({
         title: 'Failed to update task',
-        variant: 'destructive'
+        description: 'Changes have been reverted.',
+        variant: 'destructive',
       });
-      console.error(err);
-      throw err;
     }
   };
 
+  if (loading) {
+    return  <div className="flex h-[50vh] w-full items-center justify-center">
+            <BlinkingDots size="large" color="bg-taskplanner" />
+          </div>
+  }
+
+  if (!task) {
+    return <div className="p-4">Task not found</div>;
+  }
+
   return (
-    <div className="flex h-screen flex-col gap-4 overflow-hidden p-4 lg:h-[calc(100vh-100px)] lg:flex-row">
-    {/* Task Details */}
-    <Card className="flex-1 overflow-hidden rounded-xl border border-gray-200">
-      <div className="h-full overflow-y-auto">
-        <TaskDetails task={task} onUpdate={onUpdate} />
-      </div>
-    </Card>
-  
-    {/* Task Chat */}
-    <div className="flex-1 overflow-hidden rounded-xl border border-gray-200">
-      <div className="h-full overflow-y-auto">
-        <TaskChat task={task} />
+    <div className="flex h-screen flex-col gap-4 overflow-hidden p-4 lg:h-[calc(100vh-58px)] lg:flex-row">
+      {/* Task Details */}
+      <Card className="flex-1 overflow-hidden rounded-xl border border-gray-200">
+        <div className="h-full overflow-y-auto">
+          {/* Pass the new onUpdate function */}
+          <TaskDetails task={task} onUpdate={onUpdate} />
+        </div>
+      </Card>
+
+      {/* Task Chat */}
+      <div className="flex-1 overflow-hidden rounded-xl border border-gray-200">
+        <div className="h-full overflow-y-auto">
+          <TaskChat task={task} />
+        </div>
       </div>
     </div>
-  </div>
-
   );
 }

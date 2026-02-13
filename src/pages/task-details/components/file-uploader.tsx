@@ -6,7 +6,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { FileIcon, ImageIcon, X } from 'lucide-react';
+import { FileIcon, ImageIcon, X, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import axiosInstance from '@/lib/axios';
 
@@ -17,14 +17,15 @@ export function FileUploader({
   entityId
 }) {
   const [dragActive, setDragActive] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedPreview, setSelectedPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [imageError, setImageError] = useState(false);
-  const MAX_SIZE = 5 * 1024 * 1024; // 2MB
+  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
   const [fileType, setFileType] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -41,9 +42,9 @@ export function FileUploader({
     e.stopPropagation();
     setDragActive(false);
 
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      handleFile(file);
+    // Get files from the drop event
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -58,27 +59,36 @@ export function FileUploader({
       return;
     }
 
-    setFileType(file.type); // <== Track file type here
-    setImageError(false); // reset image error on new selection
+    setFileType(file.type);
+    setFileName(file.name);
+    setImageError(false);
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setSelectedImage(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    // For images, we show a preview. For other files, we just show the icon.
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSelectedPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Non-image files don't get a dataURL preview, but we mark them as "selected"
+      setSelectedPreview('file-selected'); 
+    }
   };
 
   const uploadImage = async () => {
-    if (!selectedImage) return;
+    if (!selectedPreview) return;
 
     setUploading(true);
     setUploadError(null);
 
     try {
+      // Logic: If dropped, the file might not be in inputRef. 
+      // It's safer to store the File object in state, but using inputRef is fine if handled carefully.
       const file = inputRef.current?.files?.[0];
+      
       if (!file) {
-        setUploading(false);
-        return;
+        throw new Error('No file selected');
       }
 
       const formData = new FormData();
@@ -88,45 +98,44 @@ export function FileUploader({
 
       const response = await axiosInstance.post('/documents', formData, {
         onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
+          const total = progressEvent.total || file.size;
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / total);
           setUploadProgress(percentCompleted);
         }
       });
 
-      if (response.status === 200) {
+      if (response.status === 200 || response.status === 201) {
         onUploadComplete(response.data);
-      } else {
-        throw new Error('Upload failed');
+        handleClose();
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
-      setUploadError(
-        'An error occurred while uploading the image. Please try again.'
-      );
-    } finally {
+      console.error('Error uploading file:', error);
+      setUploadError('An error occurred while uploading. Please try again.');
       setUploading(false);
-      setUploadProgress(0);
-      setSelectedImage(null);
-      onOpenChange(false);
     }
   };
 
+  const handleClose = () => {
+    setSelectedPreview(null);
+    setFileName(null);
+    setUploadProgress(0);
+    setUploading(false);
+    if (inputRef.current) inputRef.current.value = '';
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="z-[10008] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div
-            role="region"
-            aria-labelledby="fileUploadInstructions"
             className={cn(
-              'relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors',
-              dragActive ? 'border-primary' : 'border-muted-foreground/25',
-              selectedImage ? 'pb-0' : 'min-h-[200px]'
+              'relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-all',
+              dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25',
+              selectedPreview ? 'pb-6' : 'min-h-[200px]'
             )}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -136,89 +145,73 @@ export function FileUploader({
             <input
               ref={inputRef}
               type="file"
-              // accept="image/*"
               onChange={handleChange}
               className="absolute inset-0 cursor-pointer opacity-0"
+              disabled={uploading}
             />
-            {selectedImage ? (
-              <div className="relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg">
-                {fileType?.startsWith('image/') && !imageError ? (
-                  <img
-                    src={selectedImage!}
-                    alt="Preview"
-                    className="object-cover"
-                    onError={() => setImageError(true)}
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center border border-dashed rounded-lg border-gray-400">
-                    <FileIcon className="h-32 w-32 text-muted-foreground" />
-                  </div>
-                )}
-
-                <Button
-                  size="icon"
-                  variant="destructive"
-                  className="absolute right-2 top-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedImage(null);
-                    if (inputRef.current) inputRef.current.value = '';
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+            
+            {selectedPreview ? (
+              <div className="flex flex-col items-center w-full">
+                <div className="relative flex items-center justify-center h-32 w-32 overflow-hidden rounded-lg bg-muted">
+                  {fileType?.startsWith('image/') && !imageError ? (
+                    <img
+                      src={selectedPreview === 'file-selected' ? '' : selectedPreview}
+                      alt="Preview"
+                      className="object-cover w-full h-full"
+                      onError={() => setImageError(true)}
+                    />
+                  ) : (
+                    <FileIcon className="h-16 w-16 text-muted-foreground" />
+                  )}
+                  
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute right-1 top-1 h-6 w-6"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPreview(null);
+                      if (inputRef.current) inputRef.current.value = '';
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground truncate max-w-[200px]">
+                  {fileName}
+                </p>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2 text-center">
-                <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                <div className="text-sm font-medium">
-                 Click to select
+              <div className="flex flex-col items-center gap-2 text-center pointer-events-none">
+                <UploadCloud className="h-10 w-10 text-muted-foreground" />
+                <div className="text-sm font-medium text-primary">
+                  Click or drag and drop
                 </div>
                 <div className="text-xs text-muted-foreground">
-                 Maximum size 5MB
+                  Images, PDF, or Docs (Max 5MB)
                 </div>
               </div>
             )}
           </div>
 
-          {uploadError && <p className="text-red-600">{uploadError}</p>}
+          {uploadError && <p className="text-sm text-destructive text-center">{uploadError}</p>}
 
-          {selectedImage && !uploading && (
+          {selectedPreview && !uploading && (
             <Button className="w-full" onClick={uploadImage}>
-              Upload 
+              Upload File
             </Button>
           )}
 
           {uploading && (
-            <div className="relative mx-auto h-12 w-12">
-              <svg
-                className="h-12 w-12 -rotate-90 transform"
-                viewBox="0 0 36 36"
-              >
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="16"
-                  fill="none"
-                  className="stroke-muted-foreground/20"
-                  strokeWidth="2"
-                />
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="16"
-                  fill="none"
-                  className="stroke-primary"
-                  strokeWidth="2"
-                  strokeDasharray={100}
-                  strokeDashoffset={100 - uploadProgress}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-medium">{uploadProgress}%</span>
-              </div>
-            </div>
+             <div className="space-y-2">
+                <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                    <div 
+                        className="h-full bg-primary transition-all duration-300" 
+                        style={{ width: `${uploadProgress}%` }}
+                    />
+                </div>
+                <p className="text-center text-xs font-medium">{uploadProgress}% Uploading...</p>
+             </div>
           )}
         </div>
       </DialogContent>
