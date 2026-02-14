@@ -592,19 +592,35 @@ export default function TaskChat({ task }: TaskChatProps) {
           )}
           {displayedComments?.map((comment: any) => {
             const isFile = comment.isFile;
-            let parsedContent = comment.content;
+            
+            // 1. Determine if it's an image or document, and extract the URL/Name
+            let isImage = false;
+            let fileUrl = '';
+            let fileName = 'Attached File';
+
             if (isFile) {
               try {
                 if (
                   comment.content.trim().startsWith('{') ||
                   comment.content.trim().startsWith('[')
                 ) {
-                  parsedContent = JSON.parse(comment.content);
+                  const parsedContent = JSON.parse(comment.content);
+                  fileUrl = parsedContent.url || parsedContent.fileUrl || '';
+                  fileName = parsedContent.originalFilename || 'Attached File';
+                  isImage = parsedContent.mimeType?.startsWith('image/');
+                } else {
+                  fileUrl = comment.content;
+                  fileName = 'Attached File';
+                  isImage = !!fileUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) || fileUrl.startsWith('data:image/');
                 }
               } catch (error) {
                 console.error('Failed to parse file content:', error);
+                fileUrl = comment.content;
+                fileName = 'Attached File';
+                isImage = !!fileUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) || fileUrl.startsWith('data:image/');
               }
             }
+
             return (
               <div
                 key={comment._id}
@@ -615,6 +631,7 @@ export default function TaskChat({ task }: TaskChatProps) {
                 }`}
               >
                 <div className="relative flex flex-col items-end justify-end">
+                  {/* Edit Button overlay */}
                   {comment.authorId?._id === user?._id && !comment.isFile && (
                     <div className="absolute -left-8 top-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                       <button
@@ -628,6 +645,8 @@ export default function TaskChat({ task }: TaskChatProps) {
                       </button>
                     </div>
                   )}
+
+                  {/* Message Bubble */}
                   <div
                     className={`relative flex min-w-[120px] max-w-[320px] flex-col rounded-2xl p-3 transition-all duration-200 group-hover:shadow-md ${
                       comment.authorId._id === user?._id
@@ -645,56 +664,53 @@ export default function TaskChat({ task }: TaskChatProps) {
                         {comment?.authorId?.name}
                       </span>
                     </div>
+
                     <div className="max-w-full">
-                      {comment.isFile ? (
-                        <div
-                          className={`flex items-center space-x-2 rounded-lg p-2 ${
-                            comment.authorId._id === user?._id
-                              ? 'bg-blue-500/15'
-                              : 'bg-green-300/80'
-                          }`}
-                        >
-                          {(() => {
-                            let parsedContent;
-                            try {
-                              parsedContent = JSON.parse(comment.content);
-                            } catch (error) {
-                              parsedContent = comment.content;
-                            }
-                            return (
-                              <div className="flex items-start space-x-1">
-                                <img
-                                  src={parsedContent}
-                                  alt={'File'}
-                                  className="max-h-32 max-w-full rounded shadow-sm"
-                                />
-                                <span className="overflow-hidden text-ellipsis">
-                                  {typeof parsedContent === 'object'
-                                    ? parsedContent.originalFilename
-                                    : ''}
-                                </span>
-                                <a
-                                  href={
-                                    typeof parsedContent === 'object'
-                                      ? parsedContent.url
-                                      : parsedContent
-                                  }
-                                  download={
-                                    typeof parsedContent === 'object'
-                                      ? parsedContent.originalFilename
-                                      : 'file'
-                                  }
-                                  className="text-gray-900 hover:underline"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <ArrowUpRightFromSquare className="h-5 w-5 text-gray-500 hover:text-gray-200" />
-                                </a>
-                              </div>
-                            );
-                          })()}
-                        </div>
+                      {isFile ? (
+                        isImage ? (
+                          // IMAGE RENDERING
+                          <div className="relative inline-block mt-1 overflow-hidden rounded-lg group/img">
+                            <img
+                              src={fileUrl}
+                              alt={fileName}
+                              className="max-h-48 max-w-full rounded-lg object-contain"
+                            />
+                            <a
+                              href={fileUrl}
+                              download={fileName}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-black/60 hover:scale-105"
+                              title="Download Image"
+                            >
+                              <DownloadIcon className="h-4 w-4 drop-shadow-md" />
+                            </a>
+                          </div>
+                        ) : (
+                          // FILE/DOCUMENT RENDERING
+                          <div className="mt-1 flex items-center space-x-3 rounded-xl bg-black/20 p-3 shadow-sm border border-white/10">
+                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/20">
+                              <Paperclip className="h-5 w-5 text-white" />
+                            </div>
+                            <div className="flex min-w-0 flex-col overflow-hidden">
+                              <span className="truncate text-sm font-semibold text-white" title={fileName}>
+                                {fileName}
+                              </span>
+                              <a
+                                href={fileUrl}
+                                download={fileName}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-1 flex items-center text-xs font-medium text-blue-100 transition-colors hover:text-white hover:underline"
+                              >
+                                <DownloadIcon className="mr-1 h-3 w-3" />
+                                Download File
+                              </a>
+                            </div>
+                          </div>
+                        )
                       ) : (
+                        // TEXT RENDERING
                         <Linkify
                           componentDecorator={(
                             decoratedHref,
@@ -717,6 +733,8 @@ export default function TaskChat({ task }: TaskChatProps) {
                       )}
                     </div>
                   </div>
+
+                  {/* Delivery / Read Status / Timestamps */}
                   <div
                     className={`mt-1 flex w-full flex-row items-center gap-1 ${
                       comment.authorId._id !== user?._id
@@ -738,7 +756,7 @@ export default function TaskChat({ task }: TaskChatProps) {
                       <span className="text-[10px] text-gray-500">
                         {moment(comment?.createdAt).isSame(moment(), 'day')
                           ? moment(comment?.createdAt).format('h:mm A')
-                          : moment(comment?.createdAt).format('MMM D,YYYY')}
+                          : moment(comment?.createdAt).format('MMM D, YYYY')}
                       </span>
                     </div>
                   </div>

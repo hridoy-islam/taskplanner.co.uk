@@ -6,6 +6,8 @@ import { toast } from '@/components/ui/use-toast';
 import { Card } from '@/components/ui/card';
 import axiosInstance from '@/lib/axios'; // Ensure you have axios installed
 import { BlinkingDots } from '@/components/shared/blinking-dots';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
 
 // Keep interfaces if they aren't imported from a types file
 interface User {
@@ -34,6 +36,7 @@ export default function TaskDetailsPage() {
   const { tid: id } = useParams();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
+    const { user } = useSelector((state: RootState) => state.auth);
 
   // 1. Fetch the specific task directly from API on mount
   const fetchTask = async () => {
@@ -57,6 +60,30 @@ export default function TaskDetailsPage() {
 
     fetchTask();
   }, [id]);
+
+
+  useEffect(() => {
+    const markAsSeen = async () => {
+      // Check if task exists, user is loaded, and user is the assignee
+      const assigneeId = typeof task?.assigned === 'string' 
+        ? task.assigned 
+        : (task?.assigned as any)?._id;
+
+      if (task && user?._id === assigneeId && task.seen === false) {
+        try {
+          await axiosInstance.patch(`/task/${task._id}`, { seen: true });
+          
+          // Update local state so UI reflects "seen" immediately without a full refresh
+          setTask((prev) => prev ? { ...prev, seen: true } : null);
+        } catch (err) {
+          console.error("Failed to mark task as seen", err);
+        }
+      }
+    };
+
+    markAsSeen();
+  }, [task?._id, user?._id, task?.seen]);
+  
 
   // 2. Refactored Update Logic
 const onUpdate = async (updatedData: Partial<Task>) => {

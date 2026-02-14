@@ -4,43 +4,24 @@ import {
   CalendarIcon,
   Info,
   Star,
-  ArrowRight,
-  UserRoundCheck,
-  CircleUser,
-  CalendarDays,
   RotateCcw,
   CheckCheck,
   Clock,
-  ChevronDown,
   ArrowLeft,
-  Pencil // Added for Edit button
+  Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import moment from 'moment';
 import { useSelector } from 'react-redux';
-import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
-  SelectSeparator,
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { DateRangePicker } from 'react-date-range';
-import 'react-date-range/dist/styles.css';
-import 'react-date-range/dist/theme/default.css';
-import { getNextScheduledDate } from '@/utils/taskUtils';
 import { BlinkingDots } from '@/components/shared/blinking-dots';
 import axiosInstance from '@/lib/axios';
 import { useNavigate } from 'react-router-dom';
@@ -57,6 +38,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import ReactSelect from 'react-select'; 
+
 interface User {
   id?: string;
   name?: string;
@@ -68,10 +51,8 @@ interface User {
 enum TaskFrequency {
   ONCE = 'once',
   DAILY = 'daily',
-  WEEKDAYS = 'weekdays',
   WEEKLY = 'weekly',
-  MONTHLY = 'monthly',
-  CUSTOM = 'custom'
+  MONTHLY = 'monthly'
 }
 
 interface IHistory {
@@ -102,7 +83,6 @@ interface TaskDetailsProps {
     scheduledDays?: number[];
     scheduledDate?: number;
     completedBy?: CompletedBy[];
-    customSchedule?: Date[];
     history?: IHistory[];
   } | null;
   onUpdate: (updatedData: any) => Promise<any>;
@@ -111,35 +91,35 @@ interface TaskDetailsProps {
 export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   const [localTask, setLocalTask] = useState<TaskDetailsProps['task']>(null);
   const [isImportant, setIsImportant] = useState(false);
+  const [members, setMembers] = useState<User[]>([]); 
 
   // Dialog State
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  // Form States (now used for the Dialog)
+  // Form States
   const [tempTaskName, setTempTaskName] = useState('');
   const [tempDesc, setTempDesc] = useState('');
   const [tempDueDate, setTempDueDate] = useState('');
-  const [frequency, setFrequency] = useState<TaskFrequency | string>('none');
-  const [selectedDays, setSelectedDays] = useState<boolean[]>(
-    Array(7).fill(false)
-  );
-  const [selectedDates, setSelectedDates] = useState([
-    { startDate: new Date(), endDate: new Date(), key: 'selection' }
-  ]);
-  const [showPicker, setShowPicker] = useState(false);
-  const pickerRef = useRef<HTMLDivElement>(null);
-  const [showWeekdaysPicker, setShowWeekdaysPicker] = useState(false);
-  const [tempSelectedDays, setTempSelectedDays] = useState<boolean[]>(
-    Array(7).fill(false)
-  );
-  const [selectedDateRange, setSelectedDateRange] = useState<{
-    startDate: string;
-    endDate: string;
-  } | null>(null);
-  const [monthlyDay, setMonthlyDay] = useState<number | null>();
+  const [tempAssigned, setTempAssigned] = useState<string>(''); 
+  const [frequency, setFrequency] = useState<TaskFrequency | string>('once');
+  const [monthlyDay, setMonthlyDay] = useState<number | null>(1);
 
   const user = useSelector((state: any) => state.auth.user);
   const navigate = useNavigate();
+
+  // Fetch Members
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!user?._id) return;
+      try {
+        const response = await axiosInstance.get(`/users/company/${user._id}`);
+        setMembers(response.data.data || []);
+      } catch (error) {
+        console.error('Error fetching members:', error);
+      }
+    };
+    fetchMembers();
+  }, [user?._id]);
 
   // Initialize task data
   useEffect(() => {
@@ -157,33 +137,11 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     setFrequency(taskData.frequency ?? 'once');
     setMonthlyDay(taskData?.scheduledDate || 1);
 
-    if (taskData.scheduledDays && taskData.scheduledDays.length > 0) {
-      const newSelectedDays = Array(7).fill(false);
-      taskData.scheduledDays.forEach((day: number) => {
-        newSelectedDays[day] = true;
-      });
-      setSelectedDays(newSelectedDays);
-      setTempSelectedDays(newSelectedDays); // Sync temp days too
-    } else {
-      setSelectedDays(Array(7).fill(false));
-      setTempSelectedDays(Array(7).fill(false));
-    }
-
-    if (taskData.customSchedule && taskData.customSchedule.length > 0) {
-      const sortedSchedule = [...taskData.customSchedule].sort(
-        (a: any, b: any) => new Date(a).getTime() - new Date(b).getTime()
-      );
-      const firstDate = new Date(sortedSchedule[0]);
-      const lastDate = new Date(sortedSchedule[sortedSchedule.length - 1]);
-
-      setSelectedDates([
-        { startDate: firstDate, endDate: lastDate, key: 'selection' }
-      ]);
-      setSelectedDateRange({
-        startDate: moment(firstDate).format('MMM DD, YYYY'),
-        endDate: moment(lastDate).format('MMM DD, YYYY')
-      });
-    }
+    const assignedId =
+      typeof taskData.assigned === 'object'
+        ? taskData.assigned?._id
+        : taskData.assigned;
+    setTempAssigned(assignedId || '');
   };
 
   useEffect(() => {
@@ -192,7 +150,6 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     }
   }, [localTask, user?._id]);
 
-  // Handle opening the dialog - refresh state from current localTask
   const handleEditClick = () => {
     syncFormState(localTask);
     setIsEditOpen(true);
@@ -226,24 +183,35 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
 
   const handleComplete = async () => {
     if (!localTask || !user?._id) return;
-    const newCompletedByEntry = { userId: user._id };
-    const updatedCompletedBy = [
-      ...(localTask.completedBy || []),
-      newCompletedByEntry
-    ];
+
+    const authorId = typeof localTask.author === 'string' ? localTask.author : localTask.author?._id;
+    const assignedId = typeof localTask.assigned === 'string' ? localTask.assigned : localTask.assigned?._id;
+
+    let updatedCompletedBy = [];
+
+    if (authorId === assignedId && user._id === authorId) {
+      updatedCompletedBy = [{ userId: user._id }, { userId: user._id }];
+    } else {
+      updatedCompletedBy = [
+        ...(localTask.completedBy || []),
+        { userId: user._id }
+      ];
+    }
+
     const updatedHistory = [
       ...(localTask.history || []),
       { date: new Date(), completed: true }
     ];
+
     try {
       const updatePayload = {
         completedBy: updatedCompletedBy,
-        history: updatedHistory
+        // history: updatedHistory
       };
       setLocalTask({
         ...localTask,
         completedBy: updatedCompletedBy as any,
-        history: updatedHistory
+        // history: updatedHistory
       });
       await onUpdate(updatePayload);
     } catch (error) {
@@ -253,12 +221,23 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
 
   const handleFinishTask = async () => {
     if (!localTask || !user?._id) return;
-    const newCompletedByEntry = { userId: user._id };
-    const filteredCompletedBy = (localTask.completedBy || []).filter((c) => {
-      const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
-      return cId !== user._id;
-    });
-    const updatedCompletedBy = [...filteredCompletedBy, newCompletedByEntry];
+
+    const authorId = typeof localTask.author === 'string' ? localTask.author : localTask.author?._id;
+    const assignedId = typeof localTask.assigned === 'string' ? localTask.assigned : localTask.assigned?._id;
+
+    let updatedCompletedBy = [];
+
+    if (authorId === assignedId && user._id === authorId) {
+      updatedCompletedBy = [{ userId: user._id }, { userId: user._id }];
+    } else {
+      const newCompletedByEntry = { userId: user._id };
+      const filteredCompletedBy = (localTask.completedBy || []).filter((c) => {
+        const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
+        return cId !== user._id;
+      });
+      updatedCompletedBy = [...filteredCompletedBy, newCompletedByEntry];
+    }
+
     try {
       const updatePayload = {
         status: 'completed',
@@ -322,35 +301,25 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
       hasChanges = true;
     }
 
-    // Frequency Logic
+    const currentAssignedId =
+      typeof localTask.assigned === 'object'
+        ? localTask.assigned?._id
+        : localTask.assigned;
+
+    if (tempAssigned !== currentAssignedId) {
+      updates.assigned = tempAssigned;
+      hasChanges = true;
+    }
+
     if (frequency !== localTask.frequency) {
       updates.frequency = frequency;
       hasChanges = true;
     }
 
-    // Handle Frequency Specific Data
-    if (frequency === 'once') {
-      if (localTask.frequency !== 'once') {
+    if (frequency === 'once' || frequency === 'daily' || frequency === 'weekly') {
+      if (localTask.frequency !== frequency) {
         updates.scheduledDays = null;
         updates.scheduledDate = null;
-        updates.customSchedule = null;
-        hasChanges = true;
-      }
-    } else if (frequency === 'weekdays') {
-      const selectedDayIndices = selectedDays
-        .map((selected, index) => (selected ? index : null))
-        .filter((index) => index !== null);
-
-      // Simple array comparison
-      const currentDays = localTask.scheduledDays || [];
-      const isDifferent =
-        JSON.stringify(selectedDayIndices.sort()) !==
-        JSON.stringify(currentDays.sort());
-
-      if (isDifferent || frequency !== localTask.frequency) {
-        updates.scheduledDays = selectedDayIndices;
-        updates.scheduledDate = null;
-        updates.customSchedule = null;
         hasChanges = true;
       }
     } else if (frequency === TaskFrequency.MONTHLY) {
@@ -360,33 +329,13 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
       ) {
         updates.scheduledDate = monthlyDay;
         updates.scheduledDays = null;
-        updates.customSchedule = null;
         hasChanges = true;
       }
-    } else if (frequency === TaskFrequency.CUSTOM) {
-      // We assume applyCustomDates updates the state 'selectedDates' or 'selectedDateRange'
-      // But for the logic to hold, we need to regenerate the date array if changed
-      // In this refactor, we regenerate dates here for safety
-      const { startDate, endDate } = selectedDates[0];
-      const dates: Date[] = [];
-      const currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
-        dates.push(new Date(currentDate));
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-
-      // This is a heavy check, so we trust if the frequency changed or user picked new dates
-      // For simplicity, if type is custom, we send the custom schedule from the picker state
-      updates.customSchedule = dates;
-      updates.scheduledDays = null;
-      updates.scheduledDate = null;
-      hasChanges = true;
     }
 
     if (hasChanges) {
       try {
         await onUpdate(updates);
-        // Optimistic update of local task (merged)
         setLocalTask((prev) => (prev ? { ...prev, ...updates } : null));
         setIsEditOpen(false);
       } catch (error) {
@@ -397,43 +346,8 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     }
   };
 
-  // Form Field Handlers
   const handleFrequencyChange = (value: string) => {
     setFrequency(value);
-    if (value === 'weekdays') {
-      setTempSelectedDays([...selectedDays]);
-      setShowWeekdaysPicker(true);
-    }
-    if (value === 'custom') {
-      setShowPicker(true);
-    } else {
-      setShowPicker(false);
-    }
-  };
-
-  const handleCheckboxChange = (index: number) => {
-    const newTempDays = [...tempSelectedDays];
-    newTempDays[index] = !newTempDays[index];
-    setTempSelectedDays(newTempDays);
-  };
-
-  const handleWeekdaysApply = () => {
-    setSelectedDays([...tempSelectedDays]);
-    setShowWeekdaysPicker(false);
-  };
-
-  const handleWeekdaysCancel = () => {
-    setShowWeekdaysPicker(false);
-    setTempSelectedDays([...selectedDays]);
-  };
-
-  const handleSelectDateRange = (ranges: any) => {
-    const { startDate, endDate } = ranges.selection;
-    setSelectedDates([ranges.selection]);
-    setSelectedDateRange({
-      startDate: moment(startDate).format('MMM DD, YYYY'),
-      endDate: moment(endDate).format('MMM DD, YYYY')
-    });
   };
 
   const handleMarkAsImportant = async () => {
@@ -461,7 +375,13 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   };
 
   const getUserDisplayName = (user: User | string | null | undefined) => {
-    if (!user || typeof user === 'string') return 'Unknown';
+    if (!user || typeof user === 'string') {
+      if (typeof user === 'string') {
+        const member = members.find((m) => m._id === user);
+        return member ? member.name : 'Unknown';
+      }
+      return 'Unknown';
+    }
     return user.name || 'Unnamed';
   };
 
@@ -477,26 +397,22 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     );
   }
 
+  const memberOptions = members.map((member) => ({
+    value: member._id,
+    label: member.name
+  }));
+
   return (
     <div className=" rounded-lg bg-white p-2">
-      {/* Top Header Row */}
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex-1 space-y-2">
-          {/* Breadcrumb / Meta */}
           <div className="flex items-center justify-between gap-2 text-xs font-medium">
             <div className="flex flex-row items-center gap-2">
-              <Button
-                size={'sm'}
-                onClick={() => navigate(-1)}
-              >
-                <ArrowLeft className="h-4 w-5 mr-1" /> Back 
+              <Button size={'sm'} onClick={() => navigate(-1)}>
+                <ArrowLeft className="mr-1 h-4 w-5" /> Back
               </Button>
-              {/* <span className="font-bold uppercase tracking-wider">
-                Task Details
-              </span> */}
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {/* Edit Button */}
               <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" onClick={handleEditClick} className="gap-2">
@@ -513,7 +429,6 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    {/* Task Name */}
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="taskName">Task Name</Label>
                       <Input
@@ -523,25 +438,46 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                       />
                     </div>
 
-                    {/* Description */}
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="assignedUser">Assigned User</Label>
+                      <ReactSelect
+                        id="assignedUser"
+                        options={memberOptions}
+                        value={
+                          memberOptions.find(
+                            (opt) => opt.value === tempAssigned
+                          ) || null
+                        }
+                        onChange={(selectedOption: any) =>
+                          setTempAssigned(selectedOption?.value || '')
+                        }
+                        placeholder="Select user..."
+                        className="text-sm"
+                        isClearable
+                      />
+                    </div>
+
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="description">Description</Label>
                       <Textarea
                         id="description"
                         value={tempDesc}
                         onChange={(e) => setTempDesc(e.target.value)}
-                        className="min-h-[30vh]"
+                        className="min-h-[20vh]"
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 space-y-4">
-                      {/* Due Date */}
-                      <div className="mt-4 space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 items-start">
+                      <div className="space-y-2">
                         <Label htmlFor="dueDate">Due Date</Label>
                         <div className="relative">
                           <DatePicker
-                            selected={tempDueDate}
-                            onChange={(date: Date) => setTempDueDate(date)}
+                            selected={
+                              tempDueDate ? new Date(tempDueDate) : null
+                            }
+                            onChange={(date: Date) =>
+                              setTempDueDate(date.toISOString())
+                            }
                             dateFormat="dd-MM-yyyy"
                             placeholderText="Select due date"
                             className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 pl-10 text-base"
@@ -552,7 +488,6 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                         </div>
                       </div>
 
-                      {/* Frequency */}
                       <div className="space-y-2">
                         <Label>Frequency</Label>
                         <Select
@@ -572,133 +507,40 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                             <SelectItem value={TaskFrequency.WEEKLY}>
                               Weekly
                             </SelectItem>
-                            <SelectItem value={TaskFrequency.WEEKDAYS}>
-                              Weekdays
-                            </SelectItem>
                             <SelectItem value={TaskFrequency.MONTHLY}>
                               Monthly
-                            </SelectItem>
-                            <SelectItem value={TaskFrequency.CUSTOM}>
-                              Custom Range
                             </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                    </div>
 
-                    {/* Dynamic Frequency Settings */}
-                    {(frequency === TaskFrequency.WEEKDAYS ||
-                      frequency === TaskFrequency.MONTHLY ||
-                      frequency === TaskFrequency.CUSTOM) && (
-                      <div className="rounded-md border border-gray-100 bg-gray-50 p-4">
-                        {frequency === TaskFrequency.WEEKDAYS && (
-                          <div className="space-y-3">
-                            <span className="text-xs font-semibold">
-                              Active Days
-                            </span>
-
-                            <div className="flex flex-wrap gap-2">
-                              {[
-                                'Sun',
-                                'Mon',
-                                'Tue',
-                                'Wed',
-                                'Thu',
-                                'Fri',
-                                'Sat'
-                              ].map((day, index) => {
-                                const isSelected = selectedDays[index];
-
-                                return (
-                                  <label
-                                    key={day}
-                                    className={`cursor-pointer rounded border px-3 py-1.5 text-xs font-medium transition-colors ${
-                                      isSelected
-                                        ? 'border-black bg-black text-white'
-                                        : 'border-gray-200 bg-white text-black hover:border-gray-300'
-                                    }`}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      onChange={() =>
-                                        setSelectedDays((prev) =>
-                                          prev.map((d, i) =>
-                                            i === index ? !d : d
-                                          )
-                                        )
-                                      }
-                                      className="hidden"
-                                    />
-                                    {day}
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {frequency === TaskFrequency.MONTHLY && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">
-                              Repeat monthly on day:
-                            </span>
-                            <Select
-                              value={monthlyDay?.toString() || ''}
-                              onValueChange={(value) =>
-                                setMonthlyDay(parseInt(value))
-                              }
-                            >
-                              <SelectTrigger className="h-8 w-20 bg-white">
-                                <SelectValue placeholder="1" />
-                              </SelectTrigger>
-                              <SelectContent className="max-h-60">
-                                {Array.from(
-                                  { length: 31 },
-                                  (_, i) => i + 1
-                                ).map((day) => (
-                                  <SelectItem key={day} value={day.toString()}>
-                                    {day}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-
-                        {frequency === TaskFrequency.CUSTOM && (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">
-                                Date Range
-                              </span>
+                      {/* NEW: Clean 1-31 Grid Selector for Monthly Frequency */}
+                      {frequency === TaskFrequency.MONTHLY && (
+                        <div className="space-y-3 col-span-1 md:col-span-2 mt-4 rounded-xl border border-gray-100 bg-slate-50 p-4">
+                          <Label className="text-sm font-semibold text-gray-700">Select Day of the Month</Label>
+                          <div className="grid grid-cols-7 gap-2 sm:grid-cols-8 md:grid-cols-10">
+                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                               <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowPicker(!showPicker)}
-                                className="h-7 text-xs"
+                                key={day}
+                                type="button"
+                                variant={monthlyDay === day ? "default" : "outline"}
+                                className={`h-10 w-full p-0 font-medium transition-colors ${
+                                  monthlyDay === day 
+                                    ? "bg-taskplanner text-white border-transparent shadow-sm" 
+                                    : "bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200"
+                                }`}
+                                onClick={() => setMonthlyDay(day)}
                               >
-                                {showPicker ? 'Hide Calendar' : 'Change Range'}
+                                {day}
                               </Button>
-                            </div>
-                            {showPicker && (
-                              <div className="rounded-md border bg-white p-2 shadow-sm">
-                                <DateRangePicker
-                                  ranges={selectedDates}
-                                  onChange={handleSelectDateRange}
-                                  showDateDisplay={false}
-                                  rangeColors={['#000000']}
-                                />
-                              </div>
-                            )}
-                            <div className="text-sm">
-                              Selected: {selectedDateRange?.startDate} —{' '}
-                              {selectedDateRange?.endDate}
-                            </div>
+                            ))}
                           </div>
-                        )}
-                      </div>
-                    )}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            This task will repeat on the {monthlyDay}{monthlyDay === 1 ? 'st' : monthlyDay === 2 ? 'nd' : monthlyDay === 3 ? 'rd' : 'th'} of every month.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button
@@ -767,54 +609,58 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
             </div>
           </div>
 
-          {/* Read Only Title */}
           <h1 className="text-sm font-medium leading-tight text-black">
             {localTask.taskName}
           </h1>
         </div>
       </div>
 
-      {/* Properties Grid - Read Only */}
-      <div className="mb-8 grid grid-cols-1 gap-px sm:grid-cols-4">
-        {/* Due Date */}
-        <div className="bg-white p-4">
-          <div className="mb-1 text-xs font-bold uppercase tracking-wider ">
+      <div
+        className={`mb-8 grid grid-cols-1 gap-4 ${
+          localTask.frequency !== 'once' ? 'sm:grid-cols-4' : 'sm:grid-cols-3'
+        }`}
+      >
+        <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
             Due Date
           </div>
-          <div className="text-xs font-medium text-black">
+          <div className="text-sm font-semibold text-gray-900">
             {localTask.dueDate ? formatDate(localTask.dueDate) : 'No due date'}
           </div>
         </div>
 
-        {/* Frequency */}
-        <div className="bg-white p-4">
-          <div className="mb-1 text-xs font-bold uppercase tracking-wider ">
-            Frequency
+        {localTask.frequency !== 'once' && (
+          <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+            <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+              Frequency
+            </div>
+            <div className="text-sm font-semibold capitalize text-gray-900">
+              {/* DISPLAY THE DAY OF THE MONTH HERE */}
+              {localTask.frequency}{' '}
+              {localTask.frequency === 'monthly' && localTask.scheduledDate
+                ? `(Day ${localTask.scheduledDate})`
+                : ''}
+            </div>
           </div>
-          <div className="text-xs font-medium capitalize text-black">
-            {localTask.frequency || 'Once'}
-          </div>
-        </div>
+        )}
 
-        {/* Assigned To */}
-        <div className="bg-white p-4">
-          <div className="mb-1 text-xs font-bold uppercase tracking-wider ">
+        <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
             Assigned To
           </div>
           <div className="flex items-center gap-2">
-            <span className=" text-xs font-medium text-black">
+            <span className="text-sm font-semibold text-gray-900">
               {getUserDisplayName(localTask?.assigned)}
             </span>
           </div>
         </div>
 
-        {/* Author */}
-        <div className="bg-white p-4">
-          <div className="mb-1 text-xs font-bold uppercase tracking-wider ">
+        <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
             Created By
           </div>
           <div className="flex items-center gap-2">
-            <span className=" text-xs font-medium text-black">
+            <span className="text-sm font-semibold text-gray-900">
               {getUserDisplayName(localTask?.author)}
             </span>
           </div>
@@ -822,7 +668,6 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        {/* Description */}
         <div>
           <div className="mb-3 flex items-center gap-2">
             <Info className="h-4 w-4 text-black" />
@@ -840,50 +685,51 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           </div>
         </div>
 
-        {/* Activity */}
-        <div>
-          <div className="mb-3 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-black" />
-            <h3 className="text-sm font-bold text-black">Activity</h3>
-          </div>
+        {localTask.frequency !== 'once' && (
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <Clock className="h-4 w-4 text-black" />
+              <h3 className="text-sm font-bold text-black">Activity</h3>
+            </div>
 
-          <div className="rounded-lg border border-black/10 bg-white p-4">
-            {localTask?.history && localTask.history.length > 0 ? (
-              <div className="space-y-4">
-                {[...localTask.history]
-                  .sort(
-                    (a, b) =>
-                      new Date(b.date).getTime() - new Date(a.date).getTime()
-                  )
-                  .map((entry, index) => (
-                    <div key={index} className="flex gap-3">
-                      <div className="pt-1">
-                        <div
-                          className={`h-2 w-2 rounded-full ${
-                            entry.completed ? 'bg-black' : 'bg-neutral-300'
-                          }`}
-                        />
+            <div className="rounded-lg border border-black/10 bg-white p-4">
+              {localTask?.history && localTask.history.length > 0 ? (
+                <div className="space-y-4">
+                  {[...localTask.history]
+                    .sort(
+                      (a, b) =>
+                        new Date(b.date).getTime() - new Date(a.date).getTime()
+                    )
+                    .map((entry, index) => (
+                      <div key={index} className="flex gap-3">
+                        <div className="pt-1">
+                          <div
+                            className={`h-2 w-2 rounded-full ${
+                              entry.completed ? 'bg-black' : 'bg-neutral-300'
+                            }`}
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-black">
+                            {entry.completed
+                              ? 'Task Completed'
+                              : 'Status Updated'}
+                          </span>
+                          <span className="text-xs">
+                            {moment(entry.date).format('MMM DD, YYYY')}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-medium text-black">
-                          {entry.completed
-                            ? 'Task Completed'
-                            : 'Status Updated'}
-                        </span>
-                        <span className="text-xs">
-                          {moment(entry.date).format('MMM DD, YYYY')}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            ) : (
-              <p className="text-xs italic text-neutral-400">
-                No activity recorded yet.
-              </p>
-            )}
+                    ))}
+                </div>
+              ) : (
+                <p className="text-xs italic text-neutral-400">
+                  No activity recorded yet.
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

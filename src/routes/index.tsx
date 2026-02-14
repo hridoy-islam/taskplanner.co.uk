@@ -2,8 +2,8 @@ import ProtectedRoute from '@/components/shared/ProtectedRoute';
 import AssignedTaskPage from '@/pages/assignedtask';
 import ForgotPassword from '@/pages/auth/forget-password';
 import SignUpPage from '@/pages/auth/sign-up';
-import CompanyPage from '@/pages/admin/company';
-import CompanyProfileDetail from '@/pages/admin/company/profile/company-profile-detail';
+import CompanyPage from '@/pages/adminModule/company';
+import CompanyProfileDetail from '@/pages/adminModule/company/profile/company-profile-detail';
 import CompletedTaskPage from '@/pages/completedtask';
 import CreatorPage from '@/pages/creator';
 import CreatorProfileDetail from '@/pages/creator/profile/creator-profile-detail';
@@ -57,22 +57,34 @@ import Careers from '@/pages/career';
 import TermsAndConditions from '@/pages/terms';
 import PrivacyPolicyPage from '@/pages/privacyPolicy';
 import SecurityPolicyPage from '@/pages/securiyPolicy';
-import AdminDashboardPage from '@/pages/admin/AdminDashboard';
-import AdminUserPage from '@/pages/admin/user';
-import SubscriptionPlanPage from '@/pages/admin/SubscriptionPlan';
-import { CompanyDetailsPage } from '@/pages/admin/company/companyDetails';
-import CompanyDashboardPage from '@/pages/company/CompanyDashboard';
+import AdminDashboardPage from '@/pages/adminModule/AdminDashboard';
+import AdminUserPage from '@/pages/adminModule/user';
+import SubscriptionPlanPage from '@/pages/adminModule/SubscriptionPlan';
+import { CompanyDetailsPage } from '@/pages/adminModule/company/companyDetails';
+import CompanyDashboardPage from '@/pages/companyModule/CompanyDashboard';
 import CompanyLayout from '@/components/layout/company-layout';
-import CompanyUserTaskPage from '@/pages/company/task';
-import CompanyUserTableList from '@/pages/company/users/components/UserTableList';
-import CompanyUserProfileDetail from '@/pages/company/users/profile/user-profile-detail';
-import StaffDashboardPage from '@/pages/staff/CompanyDashboard';
-import StaffTaskPage from '@/pages/staff/task';
-import CompanyImportantPage from '@/pages/company/important';
-import CompanyGroupPage from '@/pages/company/group';
-import CompanyGroupChat from '@/pages/company/group/chat';
-import CompanyTaskPlanner from '@/pages/company/planner';
-import CompanyNotesPage from '@/pages/company/notes';
+import CompanyUserTaskPage from '@/pages/companyModule/task';
+import CompanyUserTableList from '@/pages/companyModule/users/components/UserTableList';
+import CompanyUserProfileDetail from '@/pages/companyModule/users/profile/user-profile-detail';
+
+import CompanyImportantPage from '@/pages/companyModule/important';
+import CompanyGroupPage from '@/pages/companyModule/group';
+import CompanyGroupChat from '@/pages/companyModule/group/chat';
+import CompanyTaskPlanner from '@/pages/companyModule/planner';
+import CompanyNotesPage from '@/pages/companyModule/notes';
+import CompanyNotificationsPage from '@/pages/companyModule/notification';
+import StaffLayout from '@/components/layout/staff-layout';
+import StaffDashboardPage from '@/pages/staffModule/StaffDashboard';
+import StaffTaskPage from '@/pages/staffModule/task';
+import StaffGroupPage from '@/pages/staffModule/group';
+import StaffGroupChat from '@/pages/staffModule/group/chat';
+import StaffImportantPage from '@/pages/staffModule/important';
+import StaffTaskPlanner from '@/pages/staffModule/planner';
+import StaffNotesPage from '@/pages/staffModule/notes';
+import StaffNotificationsPage from '@/pages/staffModule/notification';
+import ManageUserPage from '@/pages/staffModule/users';
+import ManageUserTableList from '@/pages/staffModule/users/components/UserTableList';
+import CompanyTaskPage from '@/pages/companyModule/task';
 
 const DashboardLayout = lazy(
   () => import('@/components/layout/dashboard-layout')
@@ -147,6 +159,10 @@ export default function AppRouter() {
               <AdminUserPage />
             </ProtectedRoute>
           )
+        },
+        {
+          path: 'profile',
+          element: <ProfilePage />
         },
         {
           path: 'subscription-plans',
@@ -286,7 +302,7 @@ export default function AppRouter() {
         },
         {
           path: 'task/:uid',
-          element: <CompanyUserTaskPage />
+          element: <CompanyTaskPage />
         },
         {
           path: 'task-details/:tid',
@@ -294,7 +310,7 @@ export default function AppRouter() {
         },
         {
           path: 'notifications',
-          element: <NotificationsPage />
+          element: <CompanyNotificationsPage />
         }
       ]
     }
@@ -305,7 +321,7 @@ export default function AppRouter() {
     {
       path: '/company/:id/user/:uid',
       element: (
-        <CompanyLayout>
+        <StaffLayout>
           <ProtectedRoute
             allowedRoles={['admin', 'director', 'company', 'creator', 'user']}
           >
@@ -313,7 +329,7 @@ export default function AppRouter() {
               <Outlet />
             </Suspense>
           </ProtectedRoute>
-        </CompanyLayout>
+        </StaffLayout>
       ),
       children: [
         {
@@ -322,19 +338,19 @@ export default function AppRouter() {
         },
         {
           path: 'group',
-          element: <GroupPage />
+          element: <StaffGroupPage />
         },
         {
           path: 'group/:gid',
-          element: <GroupChat />
+          element: <StaffGroupChat />
         },
         {
           path: 'users',
-          element: <UserPage />
+          element: <ManageUserPage />
         },
         {
           path: 'users/:sid',
-          element: <UserProfileDetail />
+          element: <ManageUserTableList />
         },
         {
           path: 'assignedtask',
@@ -350,7 +366,7 @@ export default function AppRouter() {
         },
         {
           path: 'important',
-          element: <ImportantPage />
+          element: <StaffImportantPage />
         },
         {
           path: 'completedtask',
@@ -414,11 +430,11 @@ export default function AppRouter() {
         },
         {
           path: 'notes',
-          element: <NotesPage />
+          element: <StaffNotesPage />
         },
         {
           path: 'planner',
-          element: <PlannerPage />
+          element: <StaffTaskPlanner />
         },
         {
           path: 'profile',
@@ -434,7 +450,7 @@ export default function AppRouter() {
         },
         {
           path: 'notifications',
-          element: <NotificationsPage />
+          element: <StaffNotificationsPage />
         }
       ]
     }

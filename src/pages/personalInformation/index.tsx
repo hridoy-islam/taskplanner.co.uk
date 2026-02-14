@@ -46,7 +46,6 @@ export default function PersonalInformationPage() {
   const [companyQuestion, setCompanyQuestion] = useState(0);
   const [additionalQuestion, setAdditionalQuestion] = useState(0);
   const dispatch = useDispatch<AppDispatch>();
-
   const [formData, setFormData] = useState<ProfileFormData>({
     profile: {
       jobTitle: '',
@@ -176,8 +175,17 @@ const handleUpdateSection = (section: 'profile' | 'company' | 'additional') => {
 
       if (personalInformation.fulfilled.match(resultAction)) {
         toast({ title: 'Profile completed successfully!' });
-        clearSavedState(); // Clear localStorage after successful submission
-        navigate('/dashboard');
+        clearSavedState(); 
+        if (!user) {
+          navigate('/');
+        } else if (user.role === 'admin') {
+          navigate('/dashboard/admin');
+        } else if (user.role === 'company') {
+          navigate(`/company/${user._id}`);
+        } else {
+          // Employee/User role
+          navigate(`/company/${user.company}/user/${user._id}`);
+        }
       } else {
         throw new Error(
           resultAction.error?.message || 'Failed to update profile'

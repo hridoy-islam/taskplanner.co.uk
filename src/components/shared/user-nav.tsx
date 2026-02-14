@@ -72,33 +72,33 @@ export default function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-14 w-14 rounded-full">
-          <Avatar className="h-10 w-10 border border-gray-200">
+        <Button variant="ghost" className="relative h-11 w-11 rounded-full">
+          <Avatar className="h-10 w-10 ">
             <AvatarImage src={profileData?.image} alt="Profile picture" />
             <AvatarFallback className="p-0 border border-gray-200">
               <img
                 src="/placeholder.png"
                 alt="User placeholder"
-                className="h-full w-full object-cover border border-gray-200"
+                className="h-full w-full object-cover "
               />
             </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user?.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">
+            <p className="text-xs leading-none ">
               {user?.email}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem className='hover:bg-taskplanner hover:text-white'>
             <Link to="profile">Profile</Link>
-            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+            {/* <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut> */}
           </DropdownMenuItem>
           {/* <DropdownMenuItem>
             Billing
@@ -111,9 +111,9 @@ export default function UserNav() {
           <DropdownMenuItem>New Team</DropdownMenuItem> */}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
+        <DropdownMenuItem onClick={handleLogout}  className='hover:bg-taskplanner hover:text-white cursor-pointer'>
           Log out
-          <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
+          {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

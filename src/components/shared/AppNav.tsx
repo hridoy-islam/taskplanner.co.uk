@@ -3,11 +3,31 @@ import { NavItem } from '@/types';
 import { Link } from 'react-router-dom';
 import { usePathname } from '@/routes/hooks';
 import { ChevronDown } from 'lucide-react';
-
+import { 
+  LayoutDashboard, 
+  Building2, 
+  Users, 
+  CreditCard, 
+  UserCircle, 
+  Users2, 
+  StickyNote, 
+  Star, 
+  Calendar 
+} from 'lucide-react';
 interface MainNavProps {
   items: NavItem[];
 }
-
+const IconMap: Record<string, any> = {
+  dashboard: LayoutDashboard,
+  company: Building2,
+  users: Users,
+  'subscription-plans': CreditCard,
+  user: UserCircle,
+  group: Users2,
+  notes: StickyNote,
+  important: Star,
+  planner: Calendar,
+};
 export function AppNav({ items }: MainNavProps) {
   const path = usePathname();
 
@@ -19,7 +39,7 @@ export function AppNav({ items }: MainNavProps) {
     <div className="flex h-full items-center gap-1">
       {items.map((item, index) => {
         const isActive = path === item.href;
-        
+        const Icon = item.icon ? IconMap[item.icon] : null;
         return (
           item.href && (
             <Link
@@ -38,6 +58,7 @@ export function AppNav({ items }: MainNavProps) {
                 item.disabled && "cursor-not-allowed opacity-80"
               )}
             >
+              {Icon && <Icon className="h-4 w-4" />}
               <span>{item.title}</span>
               
             </Link>

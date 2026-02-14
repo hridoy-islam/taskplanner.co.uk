@@ -46,11 +46,9 @@ export default function UserList({
     setOptimisticTasks: () => {}
   });
 
-  // 2. PROCESSED USERS: Deduplicate + Validate + Filter + STABLE Sort
   const processedUsers = useMemo(() => {
     if (!Array.isArray(filteredUsers)) return [];
 
-    // A. Deduplicate by _id (prevents duplicate entries)
     const uniqueMap = new Map<string, User>();
     filteredUsers.forEach((u) => {
       if (u && u._id && u.name) {
@@ -112,6 +110,24 @@ export default function UserList({
     return counts;
   }, [tasks, processedUsers, user]);
 
+  const getDisplayRole = (role?: string) => {
+    if (!role) return 'Member';
+
+    switch (role.toLowerCase()) {
+      case 'user':
+        return 'Staff';
+      case 'creator':
+        return 'Manager';
+      case 'admin':
+      case 'director':
+        return 'Admin';
+      case 'company':
+        return 'Company';
+      default:
+        return role;
+    }
+  };
+
   return (
     <div className="flex h-full flex-col border-r border-gray-200 bg-white">
       {/* Header & Search */}
@@ -130,7 +146,7 @@ export default function UserList({
 
       {/* User List */}
       <ScrollArea className="flex-1">
-        <div className="space-y-1 p-3">
+        <div className="space-y-1 p-1">
           {isLoading ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
               <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
@@ -191,15 +207,15 @@ export default function UserList({
                         >
                           {u.name}
                         </span>
-                        <span className="truncate text-xs  capitalize">
-                          {u.role || 'Member'}
+                        <span className="truncate text-xs capitalize">
+                          {u._id === user ? 'Me' : getDisplayRole(u.role)}
                         </span>
                       </div>
                     </div>
 
                     {/* Unread Badge - Only show if count > 0 and user is valid */}
                     {unread > 0 && (
-                      <Badge className="ml-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-600 px-1.5 font-semibold text-white hover:bg-blue-700">
+                      <Badge className="ml-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-taskplanner px-1.5 font-semibold text-white hover:bg-taskplanner/90">
                         {unread > 99 ? '99+' : unread}
                       </Badge>
                     )}
