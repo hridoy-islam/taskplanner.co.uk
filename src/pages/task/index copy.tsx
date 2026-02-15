@@ -367,7 +367,6 @@ export default function TaskPage() {
   return (
     <div className="flex h-full flex-col justify-between p-4 md:p-6">
       <div>
-        <PageHead title="Task Page" />
         <Breadcrumbs
           items={[
             { title: 'Dashboard', link: '/dashboard' },

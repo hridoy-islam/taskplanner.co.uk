@@ -169,7 +169,6 @@ export default function CompanyImportantPage() {
 
   return (
     <div className="p-4 space-y-3">
-      <PageHead title="Important Tasks" />
       <h1 className='font-semibold text-2xl'>Important Task</h1>
       
       <div className=" ">

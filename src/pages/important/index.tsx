@@ -199,7 +199,6 @@ export default function ImportantPage() {
 
   return (
     <div className="p-4 ">
-          <PageHead title="Task Page" />
           <div className="px-4">
             <Breadcrumbs
               items={[

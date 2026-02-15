@@ -12,7 +12,6 @@ export default function DirectorPage() {
   };
   return (
     <div className="space-y-4 p-4 md:p-8">
-      <PageHead title="Profile Page" />
       <Breadcrumbs
         items={[
           { title: 'Dashboard', link: '/dashboard' },

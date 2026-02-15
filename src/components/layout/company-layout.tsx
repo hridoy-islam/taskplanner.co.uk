@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import MobileSidebar from '../shared/mobile-sidebar';
 import AutoLogout from '../shared/auto-logout';
 import Header from '../shared/AppHeader';
 import UserList from '../shared/user-list';
@@ -7,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/redux/store';
 import { fetchCompanyUsers } from '@/redux/features/userSlice';
 import { useParams } from 'react-router-dom';
+import MobileSidebar from '../shared/mobile-nav';
 
 
 export default function CompanyLayout({
@@ -55,25 +55,20 @@ export default function CompanyLayout({
     <div className="flex h-screen flex-col overflow-hidden ">
       <AutoLogout inactivityLimit={30 * 60 * 1000} />
 
-      {/* Mobile Sidebar (Overlay) */}
-      <MobileSidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
-
       {/* Header stays at the top */}
       <Header onMenuClick={() => setSidebarOpen(true)} />
-
+      <MobileSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        filteredUsers={filteredUsers}
+        userId={id}
+      />
       {/* 2. Main Layout Area: Flex Row to put Sidebar next to Content */}
       <div className="flex flex-1 overflow-hidden">
-        
         <aside className="hidden w-64 overflow-y-auto border-r border-taskplanner/60 bg-white sm:block">
-         
-
           <UserList user={id} filteredUsers={filteredUsers} />
         </aside>
 
-        
         <main className="flex-1 overflow-y-auto bg-white">{children}</main>
       </div>
     </div>

@@ -18,7 +18,6 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHead title="Dashboard | App" />
       <div className="max-h-screen flex-1 space-y-2 overflow-y-auto px-4 pt-2 md:px-8 md:py-4">
         <div className="flex items-center justify-between space-y-1">
           <h2 className="xl:text-xl text-lg font-bold tracking-tight md:text-3xl">

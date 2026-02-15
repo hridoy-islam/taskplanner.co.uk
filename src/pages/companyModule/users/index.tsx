@@ -12,7 +12,6 @@ export default function CompanyUserPage() {
   };
   return (
     <div className="space-y-4  ">
-      <PageHead title="Profile Page" />
       
       <CreateUser onUserCreated={handleUserCreated} />
       <UserTableList  />

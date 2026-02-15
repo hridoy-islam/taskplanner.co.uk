@@ -30,7 +30,6 @@ export default function StudentPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <PageHead title="Student Management | App" />
       <Breadcrumbs
         items={[
           { title: 'Dashboard', link: '/' },
