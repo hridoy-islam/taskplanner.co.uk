@@ -48,6 +48,7 @@ const CompanyDashboardPage = () => {
   // --- State Management ---
   const [statsLoading, setStatsLoading] = useState(true);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [activeTab, setActiveTab] = useState<string>('today');
 
   // Separate state for each tab to handle pagination independently
   const [todayState, setTodayState] =
@@ -60,7 +61,7 @@ const CompanyDashboardPage = () => {
     useState<TaskCategoryState>(INITIAL_STATE);
   const [finishState, setFinishState] =
     useState<TaskCategoryState>(INITIAL_STATE);
-    
+
   const PAGE_LIMIT = 10; // Number of items to load per click
 
   // --- 2. Generic Task Fetcher ---
@@ -186,6 +187,29 @@ const CompanyDashboardPage = () => {
     setFinishState(applyUpdate);
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+
+    // Map the tab values to your fetchTaskList types and fetch fresh page 1 data
+    switch (value) {
+      case 'today':
+        fetchTaskList('today', 1, false);
+        break;
+      case 'overdue':
+        fetchTaskList('overdue', 1, false);
+        break;
+      case 'upcoming':
+        fetchTaskList('upcoming', 1, false);
+        break;
+      case 'assigntoother':
+        fetchTaskList('assigned', 1, false);
+        break;
+      case 'needtofinish':
+        fetchTaskList('finish', 1, false);
+        break;
+    }
+  };
+
   const handleMarkAsImportant = async (taskId: string) => {
     // Find task in any list to get current state
     const allTasks = [
@@ -195,7 +219,7 @@ const CompanyDashboardPage = () => {
       ...assignedState.data,
       ...finishState.data
     ];
-    
+
     const task = allTasks.find((t) => t._id === taskId);
     if (!task) return;
 
@@ -224,46 +248,83 @@ const CompanyDashboardPage = () => {
     }
   };
 
-  const handleToggleTaskCompletion = async (taskId: string) => {
-    const allTasks = [
-      ...todayState.data,
-      ...overdueState.data,
-      ...upcomingState.data,
-      ...assignedState.data,
-      ...finishState.data
-    ];
-    
-    const task = allTasks.find((t) => t._id === taskId);
-    if (!task) return;
+ const handleToggleTaskCompletion = async (taskId: string) => {
+   // 1. Find the task in any of the current tabs
+   const allTasks = [
+     ...todayState.data,
+     ...overdueState.data,
+     ...upcomingState.data,
+     ...assignedState.data,
+     ...finishState.data
+   ];
 
-    const newStatus = task.status === 'pending' ? 'completed' : 'pending';
+   const task = allTasks.find((t) => t._id === taskId);
+   if (!task) return;
 
-    updateTaskInAllLists(taskId, (t) => ({ ...t, status: newStatus }));
+   // 2. Extract author and assigned IDs safely
+   const authorId =
+     typeof task.author === 'string' ? task.author : task.author?._id;
+   const assignedId =
+     typeof task.assigned === 'string' ? task.assigned : task.assigned?._id;
+
+   let updatedCompletedBy = [];
+
+   // 3. Update completedBy logic
+   if (authorId === assignedId && user?._id === authorId) {
+     updatedCompletedBy = [{ userId: user?._id }, { userId: user?._id }];
+   } else {
+     const newCompletedByEntry = { userId: user?._id };
+     const filteredCompletedBy = (task.completedBy || []).filter((c: any) => {
+       const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
+       return cId !== user?._id;
+     });
+     updatedCompletedBy = [...filteredCompletedBy, newCompletedByEntry];
+   }
+
+   // 4. Optimistically REMOVE the task from all pending lists
+   const filterOutTask = (state: TaskCategoryState) => ({
+     ...state,
+     data: state.data.filter((t) => t._id !== taskId)
+   });
+
+   setTodayState(filterOutTask);
+   setOverdueState(filterOutTask);
+   setUpcomingState(filterOutTask);
+   setAssignedState(filterOutTask);
+   setFinishState(filterOutTask);
+
+   // 5. Send API Request
+   try {
+     await axiosInstance.patch(`/task/${taskId}`, {
+       status: 'completed',
+       completedBy: updatedCompletedBy
+     });
+     toast({ title: 'Task finished successfully!' });
+   } catch (error) {
+     console.error('Failed to complete task', error);
+     toast({ variant: 'destructive', title: 'Failed to update status' });
+
+     // Optional Rollback: If it fails, refresh the current active tab to restore the task
+     fetchTaskList(activeTab as any, 1, false);
+   }
+ };
+  const handleReassignTask = async (taskId: string) => {
+    // Optimistically remove completions or reset status
+    updateTaskInAllLists(taskId, (t) => ({
+      ...t,
+      status: 'pending',
+      completedBy: []
+    }));
 
     try {
-      await axiosInstance.patch(`/task/${taskId}`, { status: newStatus });
+      // Sends ID only via the URL as requested
+      await axiosInstance.patch(`/task/reassign/${taskId}`);
+      toast({ title: 'Task reassigned successfully' });
     } catch (error) {
-      // Revert
-      updateTaskInAllLists(taskId, (t) => ({ ...t, status: task.status }));
-      toast({ variant: 'destructive', title: 'Failed to update status' });
+      console.error('Failed to reassign', error);
+      toast({ variant: 'destructive', title: 'Failed to reassign task' });
     }
   };
-
-  const handleReassignTask = async (taskId: string) => {
-       // Optimistically remove completions or reset status
-       updateTaskInAllLists(taskId, (t) => ({ ...t, status: 'pending', completedBy: [] }));
-       
-       try {
-         // Sends ID only via the URL as requested
-         await axiosInstance.patch(`/task/reassign/${taskId}`);
-         toast({ title: 'Task reassigned successfully' });
-       } catch (error) {
-         console.error("Failed to reassign", error);
-         toast({ variant: 'destructive', title: 'Failed to reassign task' });
-       }
-    };
-  
-
 
   // --- Helper for Load More Button UI ---
   const LoadMoreButton = ({
@@ -295,10 +356,14 @@ const CompanyDashboardPage = () => {
   return (
     <div className="flex flex-col gap-6 p-5">
       {/* --- Stats Section --- */}
-      
 
       {/* --- Tasks Section with Tabs --- */}
-      <Tabs defaultValue="today" className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="w-full"
+      >
+        {' '}
         <TabsList className="mb-4 border border-gray-200 bg-white p-1">
           <TabsTrigger
             value="today"
@@ -327,7 +392,7 @@ const CompanyDashboardPage = () => {
               {upcomingState.data.length}
             </span>
           </TabsTrigger>
-           <TabsTrigger
+          <TabsTrigger
             value="assigntoother"
             className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
           >
@@ -336,7 +401,7 @@ const CompanyDashboardPage = () => {
               {assignedState.data.length}
             </span>
           </TabsTrigger>
-           <TabsTrigger
+          <TabsTrigger
             value="needtofinish"
             className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
           >
@@ -346,7 +411,6 @@ const CompanyDashboardPage = () => {
             </span>
           </TabsTrigger>
         </TabsList>
-
         {/* Tab 1: Today */}
         <TabsContent value="today">
           <Card className="rounded-none border-none p-0 shadow-none">
@@ -387,7 +451,6 @@ const CompanyDashboardPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
         {/* Tab 2: Overdue */}
         <TabsContent value="overdue">
           <Card className=" rounded-none border-none p-0 shadow-none">
@@ -400,7 +463,7 @@ const CompanyDashboardPage = () => {
             <CardContent className="p-0">
               {overdueState.loading ? (
                 <div className="flex h-32 items-center justify-center">
-                  <BlinkingDots size='large' color='bg-taskplanner'/>
+                  <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
               ) : overdueState.data.length === 0 ? (
                 <EmptyState
@@ -425,7 +488,6 @@ const CompanyDashboardPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
         {/* Tab 3: Upcoming */}
         <TabsContent value="upcoming">
           <Card className="rounded-none border-none p-0 shadow-none">
@@ -438,7 +500,7 @@ const CompanyDashboardPage = () => {
             <CardContent className="p-0">
               {upcomingState.loading ? (
                 <div className="flex h-32 items-center justify-center">
-                  <BlinkingDots size='large' color='bg-taskplanner'/>
+                  <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
               ) : upcomingState.data.length === 0 ? (
                 <EmptyState
@@ -463,7 +525,6 @@ const CompanyDashboardPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
         {/* Tab 4: Assigned To Others */}
         <TabsContent value="assigntoother">
           <Card className="rounded-none border-none shadow-none">
@@ -475,19 +536,32 @@ const CompanyDashboardPage = () => {
             </CardHeader>
             <CardContent className="p-0">
               {assignedState.loading ? (
-                <div className="flex h-32 items-center justify-center"><BlinkingDots size="large" color="bg-taskplanner" /></div>
+                <div className="flex h-32 items-center justify-center">
+                  <BlinkingDots size="large" color="bg-taskplanner" />
+                </div>
               ) : assignedState.data.length === 0 ? (
-                <EmptyState icon={<UserPlus className="h-6 w-6 text-slate-400" />} title="No tasks assigned" desc="You haven't assigned tasks to others yet." />
+                <EmptyState
+                  icon={<UserPlus className="h-6 w-6 text-slate-400" />}
+                  title="No tasks assigned"
+                  desc="You haven't assigned tasks to others yet."
+                />
               ) : (
                 <>
-                  <AssignTaskList tasks={assignedState.data} onMarkAsImportant={handleMarkAsImportant} onToggleTaskCompletion={handleToggleTaskCompletion} />
-                  <LoadMoreButton onClick={handleLoadMoreAssigned} loading={assignedState.loadingMore} hasMore={assignedState.hasMore} />
+                  <AssignTaskList
+                    tasks={assignedState.data}
+                    onMarkAsImportant={handleMarkAsImportant}
+                    onToggleTaskCompletion={handleToggleTaskCompletion}
+                  />
+                  <LoadMoreButton
+                    onClick={handleLoadMoreAssigned}
+                    loading={assignedState.loadingMore}
+                    hasMore={assignedState.hasMore}
+                  />
                 </>
               )}
             </CardContent>
           </Card>
         </TabsContent>
-
         {/* Tab 5: Need To Finish */}
         <TabsContent value="needtofinish">
           <Card className="rounded-none border-none shadow-none">
@@ -499,13 +573,28 @@ const CompanyDashboardPage = () => {
             </CardHeader>
             <CardContent className="p-0">
               {finishState.loading ? (
-                <div className="flex h-32 items-center justify-center"><BlinkingDots size="large" color="bg-taskplanner" /></div>
+                <div className="flex h-32 items-center justify-center">
+                  <BlinkingDots size="large" color="bg-taskplanner" />
+                </div>
               ) : finishState.data.length === 0 ? (
-                <EmptyState icon={<CheckCircle2 className="h-6 w-6 text-slate-400" />} title="Nothing to review" desc="No tasks are currently waiting for your final completion." />
+                <EmptyState
+                  icon={<CheckCircle2 className="h-6 w-6 text-slate-400" />}
+                  title="Nothing to review"
+                  desc="No tasks are currently waiting for your final completion."
+                />
               ) : (
                 <>
-                  <NeedToFinishList tasks={finishState.data} onMarkAsImportant={handleMarkAsImportant} onToggleTaskCompletion={handleToggleTaskCompletion} reAssign={handleReassignTask} />
-                  <LoadMoreButton onClick={handleLoadMoreFinish} loading={finishState.loadingMore} hasMore={finishState.hasMore} />
+                  <NeedToFinishList
+                    tasks={finishState.data}
+                    onMarkAsImportant={handleMarkAsImportant}
+                    onToggleTaskCompletion={handleToggleTaskCompletion}
+                    reAssign={handleReassignTask}
+                  />
+                  <LoadMoreButton
+                    onClick={handleLoadMoreFinish}
+                    loading={finishState.loadingMore}
+                    hasMore={finishState.hasMore}
+                  />
                 </>
               )}
             </CardContent>

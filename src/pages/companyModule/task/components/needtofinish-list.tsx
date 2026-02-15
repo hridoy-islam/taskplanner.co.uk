@@ -162,7 +162,10 @@ const getUserName = (userObj: any) => {
               const isOverdue =
                 moment(task.dueDate).isBefore(moment()) && !isCompleted;
             const isUnseen = user?._id === assigneeId && task.seen === false;
+const authorId =
+  typeof task.author === 'string' ? task.author : task.author?._id;
 
+const isAuthor = user?._id === authorId;
               return (
                 <TableRow
                   key={task._id}
@@ -172,14 +175,16 @@ const getUserName = (userObj: any) => {
                       ? 'bg-blue-50 hover:bg-blue-100/80'
                       : isImportant
                         ? 'bg-orange-50 hover:bg-orange-100'
-                        : 'hover:bg-slate-50/50',
+                        : 'hover:bg-slate-50/50'
                   )}
-                
                 >
-                  {/* Task */} 
-                  <TableCell className="py-4 border border-gray-200"   onClick={() =>
-                          navigate(`/company/${id}/task-details/${task?._id}`)
-                        }>
+                  {/* Task */}
+                  <TableCell
+                    className="border border-gray-200 py-4"
+                    onClick={() =>
+                      navigate(`/company/${id}/task-details/${task?._id}`)
+                    }
+                  >
                     <div className="flex items-center gap-4">
                       <div className="flex flex-col gap-0.5">
                         <span
@@ -193,14 +198,13 @@ const getUserName = (userObj: any) => {
                       </div>
                     </div>
                   </TableCell>
-<TableCell className="border border-gray-200">
-                   <div className="flex items-center justify-center gap-2">
-                    
-                    <span className="text-sm font-medium text-slate-700">
-                      {getUserName(task.assigned)}
-                    </span>
-                  </div>
-                </TableCell>
+                  <TableCell className="border border-gray-200">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-sm font-medium text-slate-700">
+                        {getUserName(task.assigned)}
+                      </span>
+                    </div>
+                  </TableCell>
                   {/* Priority */}
                   <TableCell className="border border-gray-200 text-center">
                     {task.priority && (
@@ -236,7 +240,7 @@ const getUserName = (userObj: any) => {
                   </TableCell>
 
                   {/* Action */}
-                  <TableCell className="pr-6 text-right border border-gray-200">
+                  <TableCell className="border border-gray-200 pr-6 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         size="sm"
@@ -289,12 +293,9 @@ const getUserName = (userObj: any) => {
                         <Eye className="h-4 w-4" />
                       </Button>
 
-                      {isCompletedByAssignee && (
+                      {isCompletedByAssignee && isAuthor && (
                         <>
-                          <Button
-                            size="sm"
-                            onClick={() => reassign(task)}
-                          >
+                          <Button size="sm" onClick={() => reassign(task)}>
                             Reassign
                           </Button>
 

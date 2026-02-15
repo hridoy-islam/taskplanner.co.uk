@@ -458,88 +458,103 @@ export default function StaffTaskPage() {
     }
   };
 
-  const handleToggleTaskCompletion = async (taskId: string) => {
-    const task = [
-      ...assignedToTasks,
-      ...assignedByTasks,
-      ...needToFinishTasks,
-      ...workLoadTasks
-    ].find((t) => t._id === taskId);
-    
-    if (!task) return;
+const handleToggleTaskCompletion = async (taskId: string) => {
+  const task = [
+    ...assignedToTasks,
+    ...assignedByTasks,
+    ...needToFinishTasks,
+    ...workLoadTasks
+  ].find((t) => t._id === taskId);
 
-    const authorId = typeof task.author === 'string' ? task.author : task.author?._id;
-    const assignedId = typeof task.assigned === 'string' ? task.assigned : task.assigned?._id;
+  if (!task) return;
 
-    let updatedCompletedBy = [];
+  const authorId =
+    typeof task.author === 'string' ? task.author : task.author?._id;
+  const assignedId =
+    typeof task.assigned === 'string' ? task.assigned : task.assigned?._id;
 
-    if (authorId === assignedId && user._id === authorId) {
-      updatedCompletedBy = [{ userId: user._id }, { userId: user._id }];
-    } else {
-      const newCompletedByEntry = { userId: user._id };
-      const filteredCompletedBy = (task.completedBy || []).filter((c: any) => {
-        const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
-        return cId !== user._id;
-      });
-      updatedCompletedBy = [...filteredCompletedBy, newCompletedByEntry];
-    }
+  let updatedCompletedBy = [];
 
-    updateTaskInLists(taskId, (t) => ({
-      ...t,
-      status: 'completed',
-      completedBy: updatedCompletedBy,
-      updatedAt: new Date().toISOString()
-    }));
-
-    try {
-      await axiosInstance.patch(`/task/${taskId}`, { 
-        status: 'completed',
-        completedBy: updatedCompletedBy
-      });
-      toast({ title: 'Task finished successfully!' });
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Failed to update status' });
-    }
-  };
-
-  const handleReassignTask = async (taskId: string) => {
-    const task = [
-      ...assignedToTasks,
-      ...assignedByTasks,
-      ...needToFinishTasks,
-      ...workLoadTasks
-    ].find((t) => t._id === taskId);
-    
-    if (!task) return;
-
+  if (authorId === assignedId && user?._id === authorId) {
+    updatedCompletedBy = [{ userId: user?._id }, { userId: user?._id }];
+  } else {
+    const newCompletedByEntry = { userId: user?._id };
     const filteredCompletedBy = (task.completedBy || []).filter((c: any) => {
       const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
-      return cId !== user._id;
+      return cId !== user?._id;
     });
+    updatedCompletedBy = [...filteredCompletedBy, newCompletedByEntry];
+  }
 
-    updateTaskInLists(taskId, (t: any) => {
-      const updatedHistory = [...(t.history || [])];
-      if (updatedHistory.length > 0) {
-        updatedHistory.pop(); 
-      }
-
-      return {
-        ...t,
-        status: 'pending',
-        completedBy: filteredCompletedBy,
-        history: updatedHistory,
-        updatedAt: new Date().toISOString()
-      };
-    });
-
-    try {
-      await axiosInstance.patch(`/task/reassign/${taskId}`);
-      toast({ title: 'Task reassigned successfully' });
-    } catch (error) {
-      console.error('Failed to reassign', error);
-      toast({ variant: 'destructive', title: 'Failed to reassign task' });
-    }
+  const updatedTask: Task = {
+    ...task,
+    status: 'completed',
+    completedBy: updatedCompletedBy,
+    updatedAt: new Date().toISOString()
   };
+
+  // 1. Remove from all pending lists
+  setAssignedToTasks((prev) => prev.filter((t) => t._id !== taskId));
+  setAssignedByTasks((prev) => prev.filter((t) => t._id !== taskId));
+  setNeedToFinishTasks((prev) => prev.filter((t) => t._id !== taskId));
+  setWorkLoadTasks((prev) => prev.filter((t) => t._id !== taskId));
+
+  // 2. Add to completed list
+  setCompletedTasks((prev) => [updatedTask, ...prev]);
+
+  try {
+    await axiosInstance.patch(`/task/${taskId}`, {
+      status: 'completed',
+      completedBy: updatedCompletedBy
+    });
+    toast({ title: 'Task finished successfully!' });
+  } catch (error) {
+    toast({ variant: 'destructive', title: 'Failed to update status' });
+  }
+};
+
+ const handleReassignTask = async (taskId: string) => {
+   const task = [
+     ...assignedToTasks,
+     ...assignedByTasks,
+     ...needToFinishTasks,
+     ...workLoadTasks
+   ].find((t) => t._id === taskId);
+
+   if (!task) return;
+
+   const assigneeId =
+     typeof task.assigned === 'string' ? task.assigned : task.assigned?._id;
+
+   // FIX: Filter out the ASSIGNEE from the completedBy array, not the author
+   const filteredCompletedBy = (task.completedBy || []).filter((c: any) => {
+     const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
+     return cId !== assigneeId;
+   });
+
+   updateTaskInLists(taskId, (t: any) => {
+     const updatedHistory = [...(t.history || [])];
+     if (updatedHistory.length > 0) {
+       updatedHistory.pop();
+     }
+
+     return {
+       ...t,
+       status: 'pending',
+       completedBy: filteredCompletedBy, // Assignee is gone, buttons will hide
+       history: updatedHistory,
+       updatedAt: new Date().toISOString()
+     };
+   });
+
+   try {
+     await axiosInstance.patch(`/task/reassign/${taskId}`);
+     toast({ title: 'Task reassigned successfully' });
+   } catch (error) {
+     console.error('Failed to reassign', error);
+     toast({ variant: 'destructive', title: 'Failed to reassign task' });
+   }
+ };
 
   if (
     loading &&

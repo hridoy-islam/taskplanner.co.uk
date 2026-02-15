@@ -85,6 +85,7 @@ import StaffNotificationsPage from '@/pages/staffModule/notification';
 import ManageUserPage from '@/pages/staffModule/users';
 import ManageUserTableList from '@/pages/staffModule/users/components/UserTableList';
 import CompanyTaskPage from '@/pages/companyModule/task';
+import ManageUserProfileDetail from '@/pages/staffModule/users/profile/user-profile-detail';
 
 const DashboardLayout = lazy(
   () => import('@/components/layout/dashboard-layout')
@@ -318,143 +319,143 @@ export default function AppRouter() {
 
 
    const userDashboardRoutes = [
-    {
-      path: '/company/:id/user/:uid',
-      element: (
-        <StaffLayout>
-          <ProtectedRoute
-            allowedRoles={['admin', 'director', 'company', 'creator', 'user']}
-          >
-            <Suspense>
-              <Outlet />
-            </Suspense>
-          </ProtectedRoute>
-        </StaffLayout>
-      ),
-      children: [
-        {
-          element: <StaffDashboardPage />,
-          index: true
-        },
-        {
-          path: 'group',
-          element: <StaffGroupPage />
-        },
-        {
-          path: 'group/:gid',
-          element: <StaffGroupChat />
-        },
-        {
-          path: 'users',
-          element: <ManageUserPage />
-        },
-        {
-          path: 'users/:sid',
-          element: <ManageUserTableList />
-        },
-        {
-          path: 'assignedtask',
-          element: <AssignedTasksPage />
-        },
-        {
-          path: 'duetask',
-          element: <DueTaskPage />
-        },
-        {
-          path: 'upcomingtask',
-          element: <UpcomingTaskPage />
-        },
-        {
-          path: 'important',
-          element: <StaffImportantPage />
-        },
-        {
-          path: 'completedtask',
-          element: <CompletedTaskPage />
-        },
-        {
-          path: 'director',
-          element: (
-            <ProtectedRoute allowedRoles={['admin', 'director']}>
-              <DirectorPage />
-            </ProtectedRoute>
-          )
-        },
-        {
-          path: 'director/:sid',
-          element: (
-            <ProtectedRoute allowedRoles={['admin', 'director']}>
-              <DirectorProfileDetail />
-            </ProtectedRoute>
-          )
-        },
-        {
-          path: 'company',
-          element: (
-            <ProtectedRoute allowedRoles={['admin', 'director', 'company']}>
-              <CompanyPage />
-            </ProtectedRoute>
-          )
-        },
-        {
-          path: 'company/:cid',
-          element: (
-            <ProtectedRoute allowedRoles={['admin', 'director', 'company']}>
-              <CompanyProfileDetail />
-            </ProtectedRoute>
-          )
-        },
-        {
-          path: 'creator',
-          element: (
-            <ProtectedRoute
-              allowedRoles={['admin', 'director', 'company', 'creator']}
-            >
-              <CreatorPage />
-            </ProtectedRoute>
-          )
-        },
-        {
-          path: 'creator/:sid',
-          element: (
-            <ProtectedRoute
-              allowedRoles={['admin', 'director', 'company', 'creator']}
-            >
-              <CreatorProfileDetail />
-            </ProtectedRoute>
-          )
-        },
-        {
-          path: 'today',
-          element: <TodayPage />
-        },
-        {
-          path: 'notes',
-          element: <StaffNotesPage />
-        },
-        {
-          path: 'planner',
-          element: <StaffTaskPlanner />
-        },
-        {
-          path: 'profile',
-          element: <ProfilePage />
-        },
-        {
-          path: 'task/:sid',
-          element: <StaffTaskPage />
-        },
-        {
-          path: 'task-details/:tid',
-          element: <TaskDetailsPage />
-        },
-        {
-          path: 'notifications',
-          element: <StaffNotificationsPage />
-        }
-      ]
-    }
-  ];
+     {
+       path: '/company/:id/user/:uid',
+       element: (
+         <StaffLayout>
+           <ProtectedRoute
+             allowedRoles={['admin', 'director', 'company', 'creator', 'user']}
+           >
+             <Suspense>
+               <Outlet />
+             </Suspense>
+           </ProtectedRoute>
+         </StaffLayout>
+       ),
+       children: [
+         {
+           element: <StaffDashboardPage />,
+           index: true
+         },
+         {
+           path: 'group',
+           element: <StaffGroupPage />
+         },
+         {
+           path: 'group/:gid',
+           element: <StaffGroupChat />
+         },
+         {
+           path: 'users',
+           element: <ManageUserPage />
+         },
+         {
+           path: 'users/:sid',
+           element: <ManageUserProfileDetail />
+         },
+         {
+           path: 'assignedtask',
+           element: <AssignedTasksPage />
+         },
+         {
+           path: 'duetask',
+           element: <DueTaskPage />
+         },
+         {
+           path: 'upcomingtask',
+           element: <UpcomingTaskPage />
+         },
+         {
+           path: 'important',
+           element: <StaffImportantPage />
+         },
+         {
+           path: 'completedtask',
+           element: <CompletedTaskPage />
+         },
+         {
+           path: 'director',
+           element: (
+             <ProtectedRoute allowedRoles={['admin', 'director']}>
+               <DirectorPage />
+             </ProtectedRoute>
+           )
+         },
+         {
+           path: 'director/:sid',
+           element: (
+             <ProtectedRoute allowedRoles={['admin', 'director']}>
+               <DirectorProfileDetail />
+             </ProtectedRoute>
+           )
+         },
+         {
+           path: 'company',
+           element: (
+             <ProtectedRoute allowedRoles={['admin', 'director', 'company']}>
+               <CompanyPage />
+             </ProtectedRoute>
+           )
+         },
+         {
+           path: 'company/:cid',
+           element: (
+             <ProtectedRoute allowedRoles={['admin', 'director', 'company']}>
+               <CompanyProfileDetail />
+             </ProtectedRoute>
+           )
+         },
+         {
+           path: 'creator',
+           element: (
+             <ProtectedRoute
+               allowedRoles={['admin', 'director', 'company', 'creator']}
+             >
+               <CreatorPage />
+             </ProtectedRoute>
+           )
+         },
+         {
+           path: 'creator/:sid',
+           element: (
+             <ProtectedRoute
+               allowedRoles={['admin', 'director', 'company', 'creator']}
+             >
+               <CreatorProfileDetail />
+             </ProtectedRoute>
+           )
+         },
+         {
+           path: 'today',
+           element: <TodayPage />
+         },
+         {
+           path: 'notes',
+           element: <StaffNotesPage />
+         },
+         {
+           path: 'planner',
+           element: <StaffTaskPlanner />
+         },
+         {
+           path: 'profile',
+           element: <ProfilePage />
+         },
+         {
+           path: 'task/:sid',
+           element: <StaffTaskPage />
+         },
+         {
+           path: 'task-details/:tid',
+           element: <TaskDetailsPage />
+         },
+         {
+           path: 'notifications',
+           element: <StaffNotificationsPage />
+         }
+       ]
+     }
+   ];
 
   const layoutRoutes = [
     {

@@ -282,6 +282,11 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = null;
         state.error = 'Please Check Your Login Credentials';
+        state.error =
+          action.payload?.message ||
+          action.payload?.error ||
+          action.error?.message ||
+          'Please Check Your Login Credentials';
         state.token = null;
         state.refreshToken = null;
       })

@@ -249,7 +249,9 @@ const CompleteTaskList = ({
                         size="sm"
                         className="relative "
                         onClick={() =>
-                          navigate(`/company/${id}/task-details/${task?._id}`)
+                          navigate(
+                            `/company/${id}/user/${uid}/task-details/${task?._id}`
+                          )
                         }
                       >
                         <MessageSquareText className="h-5 w-5 " />
@@ -271,15 +273,14 @@ const CompleteTaskList = ({
 
                       <Button
                         size="sm"
-                       onClick={() =>
-                      navigate(
-                        `/company/${id}/user/${uid}/task-details/${task?._id}`
-                      )
-                    }
+                        onClick={() =>
+                          navigate(
+                            `/company/${id}/user/${uid}/task-details/${task?._id}`
+                          )
+                        }
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-
                     </div>
                   </TableCell>
                 </TableRow>

@@ -105,7 +105,7 @@ export default function UserTableList() {
       // Fetch Companies (For Admin/Director)
       if (user.role === 'admin' || user.role === 'director') {
         const resCompanies = await axiosInstance.get(
-          `/users?role=company&limit=10000000&isDeleted=false`
+          `/users?role=company&limit=all&isDeleted=false`
         );
         setCompanies(
           resCompanies.data.data.result.map((c: any) => ({

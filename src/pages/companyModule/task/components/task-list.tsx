@@ -163,7 +163,12 @@ const TaskList = ({
               const isUnseen = user?._id === assigneeId && task.seen === false;
               const isOverdue =
                 moment(task.dueDate).isBefore(moment()) && !isCompleted;
+              const authorId =
+                typeof task.author === 'string'
+                  ? task.author
+                  : task.author?._id;
 
+              const isAuthor = user?._id === authorId;
               return (
                 <TableRow
                   key={task._id}
@@ -173,14 +178,16 @@ const TaskList = ({
                       ? 'bg-blue-50 hover:bg-blue-100/80'
                       : isImportant
                         ? 'bg-orange-50 hover:bg-orange-100'
-                        : 'hover:bg-slate-50/50',
+                        : 'hover:bg-slate-50/50'
                   )}
-                  
                 >
                   {/* Task */}
-                  <TableCell className="border border-gray-200 py-4" onClick={() =>
-                          navigate(`/company/${id}/task-details/${task?._id}`)
-                        }>
+                  <TableCell
+                    className="border border-gray-200 py-4"
+                    onClick={() =>
+                      navigate(`/company/${id}/task-details/${task?._id}`)
+                    }
+                  >
                     <div className="flex items-center gap-4">
                       <div className="flex flex-col gap-0.5">
                         <span
@@ -283,7 +290,7 @@ const TaskList = ({
                         <Eye className="h-4 w-4" />
                       </Button>
 
-                      {isCompletedByAssignee && (
+                      {isCompletedByAssignee && isAuthor && (
                         <>
                           <Button size="sm" onClick={() => reassign(task)}>
                             Reassign
