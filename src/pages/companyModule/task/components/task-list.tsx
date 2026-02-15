@@ -245,15 +245,16 @@ const TaskList = ({
                           'rounded-md shadow-none transition-all',
                           isImportant
                             ? 'border border-orange-300 bg-orange-200 text-orange-600 hover:bg-orange-300'
-                            : 'border border-slate-200 bg-white text-black hover:bg-slate-50'
+                            : 'border-4 border-black bg-white text-black hover:bg-slate-50'
                         )}
                         onClick={() => onMarkAsImportant(task._id)}
                       >
                         <Star
                           className={cn(
-                            'h-4 w-4',
+                            'h-5 w-5',
                             isImportant && 'fill-current'
                           )}
+                          strokeWidth={3}
                         />
                       </Button>
 
