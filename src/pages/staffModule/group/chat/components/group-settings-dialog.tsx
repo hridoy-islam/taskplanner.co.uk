@@ -45,7 +45,7 @@ export function GroupSettingsDialog({ isSettingsOpen, setIsSettingsOpen, groupDe
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" type="submit">
+            <Button  type="submit">
               Update
             </Button>
           </DialogFooter>

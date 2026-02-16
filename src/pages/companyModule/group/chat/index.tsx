@@ -60,6 +60,7 @@ export default function CompanyGroupChat() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isSideGroupVisible, setIsSideGroupVisible] = useState(false);
   const { toast } = useToast();
+const [replyingTo, setReplyingTo] = useState<any | null>(null);
 
   const goDown = () => {
     if (commentsEndRef.current) {
@@ -292,6 +293,7 @@ export default function CompanyGroupChat() {
         content: response?.content,
         isFile: response?.isFile,
         taskId: response?.taskId,
+        replyTo: response?.replyTo,
         createdAt: response?.createdAt,
         _id: response?._id || Math.random().toString(36).substring(7)
       };
@@ -322,8 +324,6 @@ const handleCommentSubmit = async (data) => {
       return;
     }
 
-    // 1. DYNAMICALLY RECALCULATE MENTIONS
-    // This runs for both new messages and edits. It only keeps users who are STILL mentioned in the text.
     const mentionedIds: string[] = [];
     groupDetails?.members?.forEach((member: any) => {
       if (member._id !== user?._id && data.content.includes(`@${member.name}`)) {
@@ -333,21 +333,16 @@ const handleCommentSubmit = async (data) => {
     data.mentionBy = mentionedIds;
 
     try {
-      const typer = {
-        room: id,
-        user: user?._id
-      };
+      const typer = { room: id, user: user?._id };
       socket.emit('stop typing', typer);
 
       if (editingMessage) {
-        // --- EDIT MESSAGE LOGIC ---
         const response = await axiosInstance.patch(`/groupMessage/${editingMessage.id}`, {
           content: data.content,
-          mentionBy: mentionedIds // Sends the newly calculated mentions (overwrites old ones)
+          mentionBy: mentionedIds 
         });
 
         if (response.data.success) {
-          // Get the full member objects for the UI
           const updatedMentionObjects = groupDetails?.members?.filter((m: any) => 
             mentionedIds.includes(m._id)
           );
@@ -363,9 +358,13 @@ const handleCommentSubmit = async (data) => {
           toast({ title: 'Message updated successfully' });
         }
       } else {
-        // --- NEW MESSAGE LOGIC ---
         data.taskId = groupId;
         data.authorId = user?._id;
+        
+        // NEW: Attach replyTo ID if replying
+        if (replyingTo) {
+          data.replyTo = replyingTo._id;
+        }
         
         const response = await axiosInstance.post(`/groupMessage`, data);
 
@@ -379,6 +378,7 @@ const handleCommentSubmit = async (data) => {
             isFile: data?.isFile,
             taskId: id,
             mentionBy: mentionedIds,
+            replyTo: replyingTo, // Add to local state immediately
             createdAt: response?.data?.data?.createdAt,
             _id: response?.data?.data?._id || Math.random().toString(36).substring(7)
           };
@@ -387,9 +387,9 @@ const handleCommentSubmit = async (data) => {
         }
       }
       
-      // Force the input to empty out completely
       setValue("content", "");
       reset({ content: "" });
+      setReplyingTo(null); // Clear reply state after sending
       
     } catch (error) {
       console.error('Error posting comment:', error);
@@ -485,20 +485,21 @@ const handleAddMember = async () => {
     }
   };
 
-  const handleFileSubmit = async () => {
+const handleFileSubmit = async () => {
     if (files.length === 0) return;
-
     for (const file of files) {
       const stringyFiedContent = JSON.stringify(file?.fileInfo);
       const data = {
         content: stringyFiedContent,
         taskId: groupId,
         authorId: user?._id,
-        isFile: true
+        isFile: true,
+        replyTo: replyingTo?._id 
       };
       await handleCommentSubmit(data);
     }
     setFiles([]);
+    setReplyingTo(null);
   };
 
   const typingHandler = () => {
@@ -616,6 +617,7 @@ const handleAddMember = async () => {
           groupDetails={groupDetails}
           limit={limit}
           setEditingMessage={setEditingMessage}
+          setReplyingTo={setReplyingTo}
         />
 
         <MessageInput
@@ -641,6 +643,8 @@ const handleAddMember = async () => {
           handleRemoveDraggedFile={handleRemoveDraggedFile}
           toast={toast}
           user={user}
+          replyingTo={replyingTo} 
+          cancelReply={() => setReplyingTo(null)}
         />
       </div>
 

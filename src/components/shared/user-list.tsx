@@ -214,11 +214,12 @@ export default function UserList({
                     </div>
 
                     {/* Unread Badge - Only show if count > 0 and user is valid */}
-                    {unread > 0 && (
-                      <Badge className="ml-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-taskplanner px-1.5 font-semibold text-white hover:bg-taskplanner/90">
-                        {unread > 99 ? '99+' : unread}
-                      </Badge>
-                    )}
+                   {!isMe && unread > 0 && (
+  <Badge className="ml-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-taskplanner px-1.5 font-semibold text-white hover:bg-taskplanner/90">
+    {unread > 99 ? '99+' : unread}
+  </Badge>
+)}
+
                   </div>
                 </Link>
               );

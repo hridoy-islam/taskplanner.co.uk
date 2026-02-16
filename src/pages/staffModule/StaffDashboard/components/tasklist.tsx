@@ -131,23 +131,29 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
               >
                 {/* Task Name */}
                 <TableCell
-                  className="border border-gray-200 py-4"
+                  className="border border-gray-200 py-4 cursor-pointer"
                   onClick={() =>
                     navigate(
                       `/company/${id}/user/${uid}/task-details/${task?._id}`
                     )
                   }
                 >
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={cn(
-                        'text-sm font-medium transition-colors',
-                        isCompleted && 'text-slate-400 line-through'
-                      )}
-                    >
-                      {task.taskName}
-                    </span>
-                  </div>
+                 <div className="flex items-center justify-between gap-4">
+                      {/* Left Side - Task Name */}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm transition-colors">
+                          {task.taskName}
+                        </span>
+                      </div>
+
+                      {/* Right Side - Frequency Badge */}
+                      {task.frequency &&
+                        task.frequency.toLowerCase() !== 'once' && (
+                          <Badge variant="default" className="capitalize">
+                            {task.frequency}
+                          </Badge>
+                        )}
+                    </div>
                 </TableCell>
 
                 {/* Assigned To */}

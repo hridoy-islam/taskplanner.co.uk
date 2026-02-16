@@ -18,9 +18,13 @@ import { toast } from '@/components/ui/use-toast';
 import axiosInstance from '@/lib/axios';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-const AssignTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
+const AssignTaskList = ({
+  tasks,
+  onMarkAsImportant,
+  onToggleTaskCompletion
+}) => {
   const { user } = useSelector((state: any) => state.auth);
-  const { id,uid } = useParams();
+  const { id, uid } = useParams();
   const navigate = useNavigate();
 
   // --- Reassign Modal State (Placeholder for future use) ---
@@ -66,11 +70,7 @@ const AssignTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) =>
   if (sortedTasks.length === 0) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <img
-          src="/notask.png"
-          alt="No tasks"
-          className="max-w-xs opacity-90"
-        />
+        <img src="/notask.png" alt="No tasks" className="max-w-xs opacity-90" />
       </div>
     );
   }
@@ -103,7 +103,7 @@ const AssignTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) =>
               Priority
             </TableHead>
 
-            <TableHead className="pr-6 border border-gray-200 text-right text-xs font-bold uppercase tracking-wider text-white">
+            <TableHead className="border border-gray-200 pr-6 text-right text-xs font-bold uppercase tracking-wider text-white">
               Action
             </TableHead>
           </TableRow>
@@ -113,40 +113,51 @@ const AssignTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) =>
           {sortedTasks.map((task) => {
             const isImportant = task.importantBy?.includes(user?._id);
             const isCompleted = task.status === 'completed';
-            const isOverdue = moment(task.dueDate).isBefore(moment()) && !isCompleted;
- const assigneeId =
-            typeof task.assigned === 'string'
-            ? task.assigned
-            : task.assigned?._id;
+            const isOverdue =
+              moment(task.dueDate).isBefore(moment()) && !isCompleted;
+            const assigneeId =
+              typeof task.assigned === 'string'
+                ? task.assigned
+                : task.assigned?._id;
             const isUnseen = user?._id === assigneeId && task.seen === false;
 
             return (
               <TableRow
                 key={task._id}
                 className={cn(
-                    'group border-b border-gray-100 transition-colors',
-                    isUnseen
-                      ? 'bg-blue-50 hover:bg-blue-100/80'
-                      : isImportant
-                        ? 'bg-orange-50 hover:bg-orange-100'
-                        : 'hover:bg-slate-50/50',
-                  )}
-                  
+                  'group border-b border-gray-100 transition-colors',
+                  isUnseen
+                    ? 'bg-blue-50 hover:bg-blue-100/80'
+                    : isImportant
+                      ? 'bg-orange-50 hover:bg-orange-100'
+                      : 'hover:bg-slate-50/50'
+                )}
               >
                 {/* Task Name */}
-                <TableCell className="py-4 border border-gray-200"  onClick={() =>
-                          navigate(`/company/${id}/user/${uid}/task-details/${task?._id}`)
-                        }>
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={cn(
-                        'text-sm font-medium transition-colors',
-                        isCompleted && 'text-slate-400 line-through'
-                      )}
-                    >
-                      {task.taskName}
-                    </span>
-                  </div>
+                <TableCell
+                  className="border border-gray-200 py-4 cursor-pointer"
+                  onClick={() =>
+                    navigate(
+                      `/company/${id}/user/${uid}/task-details/${task?._id}`
+                    )
+                  }
+                >
+                 <div className="flex items-center justify-between gap-4">
+                      {/* Left Side - Task Name */}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm transition-colors">
+                          {task.taskName}
+                        </span>
+                      </div>
+
+                      {/* Right Side - Frequency Badge */}
+                      {task.frequency &&
+                        task.frequency.toLowerCase() !== 'once' && (
+                          <Badge variant="default" className="capitalize">
+                            {task.frequency}
+                          </Badge>
+                        )}
+                    </div>
                 </TableCell>
 
                 {/* Assigned To */}
@@ -162,7 +173,6 @@ const AssignTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) =>
                 {/* Created By */}
                 <TableCell className="border border-gray-200">
                   <div className="flex items-center justify-center gap-2">
-                   
                     <span className="text-sm font-medium text-slate-700">
                       {getUserName(task.assigned)}
                     </span>
@@ -181,7 +191,7 @@ const AssignTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) =>
                   <span
                     className={cn(
                       'text-sm font-medium',
-                      isOverdue ? 'text-red-500 font-bold' : 'text-slate-600'
+                      isOverdue ? 'font-bold text-red-500' : 'text-slate-600'
                     )}
                   >
                     {moment(task.dueDate).format('MMM D, YYYY')}
@@ -194,7 +204,8 @@ const AssignTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) =>
                     <Badge
                       variant="outline"
                       className={`mx-auto font-semibold capitalize ${
-                        priorityColors[task.priority] || 'bg-slate-50 text-black'
+                        priorityColors[task.priority] ||
+                        'bg-slate-50 text-black'
                       }`}
                     >
                       {task.priority}
@@ -203,62 +214,59 @@ const AssignTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) =>
                 </TableCell>
 
                 {/* Action */}
-                <TableCell className="pr-6 text-right border border-gray-200">
+                <TableCell className="border border-gray-200 pr-6 text-right">
                   <div className="flex items-center justify-end gap-2">
-                  <Button
-                        size="sm"
-                        className={cn(
-                          'rounded-md shadow-none transition-all',
-                          isImportant
-                            ? 'border border-orange-300 bg-orange-200 text-orange-600 hover:bg-orange-300'
-                            : 'border border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
-                        )}
-                        onClick={() => onMarkAsImportant(task._id)}
-                      >
-                        <Star
-                          className={cn(
-                            'h-4 w-4',
-                            isImportant && 'fill-current'
-                          )}
-                        />
-                      </Button>
+                    <Button
+                      size="sm"
+                      className={cn(
+                        'rounded-md shadow-none transition-all',
+                        isImportant
+                          ? 'border border-orange-300 bg-orange-200 text-orange-600 hover:bg-orange-300'
+                          : 'border border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
+                      )}
+                      onClick={() => onMarkAsImportant(task._id)}
+                    >
+                      <Star
+                        className={cn('h-4 w-4', isImportant && 'fill-current')}
+                      />
+                    </Button>
 
-                     <Button
-                        size="sm"
-                        className="relative "
-                       onClick={() =>
-                      navigate(
-                        `/company/${id}/user/${uid}/task-details/${task?._id}`
-                      )
-                    }
-                      >
-                        <MessageSquareText className="h-5 w-5 " />
-
-                        {task?.unreadMessageCount > 0 && (
-                          <>
-                            {/* The background Ping animation */}
-                            <span className="absolute right-1 top-1 flex h-3 w-3">
-                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                              <span className="relative inline-flex h-3 w-3 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
-                                {task.unreadMessageCount > 9
-                                  ? '9+'
-                                  : task.unreadMessageCount}
-                              </span>
-                            </span>
-                          </>
-                        )}
-                      </Button>
-
-                      <Button
-                        size="sm"
+                    <Button
+                      size="sm"
+                      className="relative "
                       onClick={() =>
-                      navigate(
-                        `/company/${id}/user/${uid}/task-details/${task?._id}`
-                      )
-                    }
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                        navigate(
+                          `/company/${id}/user/${uid}/task-details/${task?._id}`
+                        )
+                      }
+                    >
+                      <MessageSquareText className="h-5 w-5 " />
+
+                      {task?.unreadMessageCount > 0 && (
+                        <>
+                          {/* The background Ping animation */}
+                          <span className="absolute right-1 top-1 flex h-3 w-3">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex h-3 w-3 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                              {task.unreadMessageCount > 9
+                                ? '9+'
+                                : task.unreadMessageCount}
+                            </span>
+                          </span>
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        navigate(
+                          `/company/${id}/user/${uid}/task-details/${task?._id}`
+                        )
+                      }
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>

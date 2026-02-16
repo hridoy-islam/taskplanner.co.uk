@@ -169,20 +169,24 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reAssign })
                   )}
                 >
                   {/* Task */}
-                  <TableCell className="py-4 border border-gray-200"   onClick={() =>
+                  <TableCell className="py-4 border border-gray-200 cursor-pointer"   onClick={() =>
                           navigate(`/company/${id}/user/${uid}/task-details/${task?._id}`)
                         }>
-                    <div className="flex items-center gap-4">
+                   <div className="flex items-center justify-between gap-4">
+                      {/* Left Side - Task Name */}
                       <div className="flex flex-col gap-0.5">
-                        <span
-                          className={cn(
-                            'text-sm transition-colors',
-                            isCompleted && 'text-slate-400 line-through'
-                          )}
-                        >
+                        <span className="text-sm transition-colors">
                           {task.taskName}
                         </span>
                       </div>
+
+                      {/* Right Side - Frequency Badge */}
+                      {task.frequency &&
+                        task.frequency.toLowerCase() !== 'once' && (
+                          <Badge variant="default" className="capitalize">
+                            {task.frequency}
+                          </Badge>
+                        )}
                     </div>
                   </TableCell>
 
@@ -274,7 +278,7 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reAssign })
                         <Eye className="h-4 w-4" />
                       </Button>
 
-                      {isCompletedByAssignee && (
+                      {/* {isCompletedByAssignee && (
                         <>
                           <Button
                             size="sm"
@@ -290,7 +294,7 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reAssign })
                             Finish
                           </Button>
                         </>
-                      )}
+                      )} */}
                     </div>
                   </TableCell>
                 </TableRow>

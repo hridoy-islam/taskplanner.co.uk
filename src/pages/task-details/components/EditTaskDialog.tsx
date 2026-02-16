@@ -1,15 +1,13 @@
 "use client"
 
 import type React from "react"
-
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
 import moment from "moment"
-import { useEffect, useState } from "react"
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
 
 interface EditTaskDialogProps {
   open: boolean
@@ -49,7 +47,8 @@ export function EditTaskDialog({ open, onOpenChange, task, onSave }: EditTaskDia
     setEditedTask((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleDateChange = (date: Date | undefined) => {
+  // Updated to accept Date | null to match react-datepicker's onChange signature
+  const handleDateChange = (date: Date | null) => {
     if (date) {
       setEditedTask((prev) => ({
         ...prev,
@@ -97,25 +96,15 @@ export function EditTaskDialog({ open, onOpenChange, task, onSave }: EditTaskDia
             />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 flex flex-col">
             <label className="text-sm font-medium">Due Date</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="default" className="w-full justify-start text-left border font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {editedTask.dueDate ? moment(editedTask.dueDate).format("MMM DD, YYYY") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={editedTask.dueDate ? new Date(editedTask.dueDate) : undefined}
-                  onSelect={handleDateChange}
-                  initialFocus
-              
-                />
-              </PopoverContent>
-            </Popover>
+            <DatePicker
+              selected={editedTask.dueDate ? new Date(editedTask.dueDate) : null}
+              onChange={handleDateChange}
+              minDate={new Date()}
+              dateFormat="dd-MM-yyyy"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

@@ -12,14 +12,26 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, CheckCircle2, RotateCcw, Eye, MessageCircle, MessageSquareText } from 'lucide-react';
+import {
+  Star,
+  CheckCircle2,
+  RotateCcw,
+  Eye,
+  MessageCircle,
+  MessageSquareText
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import axiosInstance from '@/lib/axios';
 
-const NeedToFinishList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reAssign }) => {
+const NeedToFinishList = ({
+  tasks,
+  onMarkAsImportant,
+  onToggleTaskCompletion,
+  reAssign
+}) => {
   const { user } = useSelector((state: any) => state.auth);
-  const { id,uid } = useParams();
+  const { id, uid } = useParams();
   const navigate = useNavigate();
 
   // --- Reassign Modal State ---
@@ -37,9 +49,9 @@ const NeedToFinishList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reA
     setSelectedTask(null);
   };
 
-  const reassign=(task)=>{
-    reAssign(task._id)
-  }
+  const reassign = (task) => {
+    reAssign(task._id);
+  };
 
   const onUpdateConfirm = async (data) => {
     if (!selectedTask) return;
@@ -94,15 +106,11 @@ const NeedToFinishList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reA
   if (sortedTasks.length === 0) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <img
-          src="/notask.png"
-          alt="No tasks"
-          className="max-w-xs opacity-90"
-        />
+        <img src="/notask.png" alt="No tasks" className="max-w-xs opacity-90" />
       </div>
     );
   }
-const getUserName = (userObj: any) => {
+  const getUserName = (userObj: any) => {
     if (!userObj) return 'Unknown';
     if (typeof userObj === 'string') return 'User'; // Fallback if not populated
     return userObj.name || 'User';
@@ -132,7 +140,7 @@ const getUserName = (userObj: any) => {
                 Due Date
               </TableHead>
 
-              <TableHead className="pr-6 border border-gray-200 text-right text-xs font-bold capitalize tracking-wider">
+              <TableHead className="border border-gray-200 pr-6 text-right text-xs font-bold capitalize tracking-wider">
                 Action
               </TableHead>
             </TableRow>
@@ -161,7 +169,7 @@ const getUserName = (userObj: any) => {
 
               const isOverdue =
                 moment(task.dueDate).isBefore(moment()) && !isCompleted;
-            const isUnseen = user?._id === assigneeId && task.seen === false;
+              const isUnseen = user?._id === assigneeId && task.seen === false;
 
               return (
                 <TableRow
@@ -172,35 +180,42 @@ const getUserName = (userObj: any) => {
                       ? 'bg-blue-50 hover:bg-blue-100/80'
                       : isImportant
                         ? 'bg-orange-50 hover:bg-orange-100'
-                        : 'hover:bg-slate-50/50',
+                        : 'hover:bg-slate-50/50'
                   )}
-                
                 >
                   {/* Task */}
-                  <TableCell className="py-4 border border-gray-200"    onClick={() =>
-                          navigate(`/company/${id}/user/${uid}/task-details/${task?._id}`)
-                        }>
-                    <div className="flex items-center gap-4">
+                  <TableCell
+                    className="border border-gray-200 py-4 cursor-pointer"
+                    onClick={() =>
+                      navigate(
+                        `/company/${id}/user/${uid}/task-details/${task?._id}`
+                      )
+                    }
+                  >
+                   <div className="flex items-center justify-between gap-4">
+                      {/* Left Side - Task Name */}
                       <div className="flex flex-col gap-0.5">
-                        <span
-                          className={cn(
-                            'text-sm transition-colors',
-                            isCompleted && 'text-slate-400 line-through'
-                          )}
-                        >
+                        <span className="text-sm transition-colors">
                           {task.taskName}
                         </span>
                       </div>
+
+                      {/* Right Side - Frequency Badge */}
+                      {task.frequency &&
+                        task.frequency.toLowerCase() !== 'once' && (
+                          <Badge variant="default" className="capitalize">
+                            {task.frequency}
+                          </Badge>
+                        )}
                     </div>
                   </TableCell>
-<TableCell className="border border-gray-200">
-                   <div className="flex items-center justify-center gap-2">
-                    
-                    <span className="text-sm font-medium text-slate-700">
-                      {getUserName(task.assigned)}
-                    </span>
-                  </div>
-                </TableCell>
+                  <TableCell className="border border-gray-200">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-sm font-medium text-slate-700">
+                        {getUserName(task.assigned)}
+                      </span>
+                    </div>
+                  </TableCell>
                   {/* Priority */}
                   <TableCell className="border border-gray-200 text-center">
                     {task.priority && (
@@ -236,7 +251,7 @@ const getUserName = (userObj: any) => {
                   </TableCell>
 
                   {/* Action */}
-                  <TableCell className="pr-6 text-right border border-gray-200">
+                  <TableCell className="border border-gray-200 pr-6 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         size="sm"
@@ -283,7 +298,9 @@ const getUserName = (userObj: any) => {
                       <Button
                         size="sm"
                         onClick={() =>
-                          navigate(`/company/${id}/user/${uid}/task-details/${task?._id}`)
+                          navigate(
+                            `/company/${id}/user/${uid}/task-details/${task?._id}`
+                          )
                         }
                       >
                         <Eye className="h-4 w-4" />
@@ -291,10 +308,7 @@ const getUserName = (userObj: any) => {
 
                       {isCompletedByAssignee && (
                         <>
-                          <Button
-                            size="sm"
-                            onClick={() => reassign(task)}
-                          >
+                          <Button size="sm" onClick={() => reassign(task)}>
                             Reassign
                           </Button>
 

@@ -1,11 +1,12 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { 
-  ArrowUp, 
-  Edit, 
-  ArrowUpRightFromSquare, 
-  File as FileIcon, 
-  Download 
+import {
+  ArrowUp,
+  Edit,
+  ArrowUpRightFromSquare,
+  File as FileIcon,
+  Download,
+  Reply
 } from 'lucide-react';
 import Linkify from 'react-linkify';
 import moment from 'moment';
@@ -21,12 +22,42 @@ export function MessageList({
   groupDetails,
   limit,
   setEditingMessage,
+  setReplyingTo
 }) {
   const handleEditClick = (comment) => {
     setEditingMessage({
       id: comment._id,
-      content: comment.content,
+      content: comment.content
     });
+  };
+
+  const handleReplyClick = (comment) => {
+    setReplyingTo(comment);
+  };
+
+  const scrollToMessage = (messageId) => {
+    const element = document.getElementById(`message-${messageId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Optional: Add a temporary highlight effect
+      const messageBubble = element.querySelector('.message-bubble');
+      if (messageBubble) {
+        const originalBg = messageBubble.className;
+        messageBubble.classList.add(
+          'ring-4',
+          'ring-white/50',
+          'brightness-125'
+        );
+        setTimeout(() => {
+          messageBubble.classList.remove(
+            'ring-4',
+            'ring-white/50',
+            'brightness-125'
+          );
+        }, 1500);
+      }
+    }
   };
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -38,7 +69,7 @@ export function MessageList({
   }, [comments]);
 
   // Function to render message content with mention highlighting
-  const renderMessageWithMentions = (content: string, mentionBy: any[]) => {
+ const renderMessageWithMentions = (content: string, mentionBy: any[]) => {
     if (!mentionBy || mentionBy.length === 0) {
       return (
         <Linkify
@@ -59,31 +90,30 @@ export function MessageList({
       );
     }
 
-    // Create a map of mentioned user names for quick lookup
-    const mentionedNames = new Set(
-      mentionBy.map(m => m.name?.toLowerCase()).filter(Boolean)
-    );
+    // 1. Extract valid names and sort by length descending (longest names first)
+    // This prevents "@John" from overriding "@John Doe"
+    const validNames = mentionBy
+      .map(m => m.name)
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length);
 
-    // Split content by @ mentions but keep the structure
+    if (validNames.length === 0) {
+      return <Linkify>{content}</Linkify>;
+    }
+
+    // 2. Escape special regex characters in names just in case
+    const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedNames = validNames.map(escapeRegExp);
+
+    // 3. Create a dynamic, case-insensitive regex matching only the exact names
+    const mentionRegex = new RegExp(`@(${escapedNames.join('|')})`, 'gi');
+
     const parts: any[] = [];
     let currentIndex = 0;
-    
-    // Find all @mentions in the content
-    const mentionRegex = /@(\w+(?:\s+\w+)*)/g;
     let match;
-    
-    const matches: any[] = [];
+
+    // 4. Split the text using our exact-match regex
     while ((match = mentionRegex.exec(content)) !== null) {
-      matches.push({
-        index: match.index,
-        length: match[0].length,
-        fullMatch: match[0],
-        name: match[1]
-      });
-    }
-    
-    // Build parts array
-    matches.forEach((match, i) => {
       // Add text before this mention
       if (match.index > currentIndex) {
         parts.push({
@@ -92,19 +122,16 @@ export function MessageList({
         });
       }
       
-      // Check if this mention is in the mentionBy array
-      const isMentioned = mentionedNames.has(match.name.toLowerCase());
-      
-      // Add the mention
+      // Add the exact mention
       parts.push({
         type: 'mention',
-        content: match.fullMatch,
-        isMentioned
+        content: match[0], // full match including the @
+        isMentioned: true
       });
       
-      currentIndex = match.index + match.length;
-    });
-    
+      currentIndex = mentionRegex.lastIndex;
+    }
+
     // Add remaining text after last mention
     if (currentIndex < content.length) {
       parts.push({
@@ -112,28 +139,8 @@ export function MessageList({
         content: content.slice(currentIndex)
       });
     }
-    
-    // If no mentions found, just return the content with linkify
-    if (parts.length === 0) {
-      return (
-        <Linkify
-          componentDecorator={(decoratedHref, decoratedText, key) => (
-            <a
-              href={decoratedHref}
-              key={key}
-              className="text-blue-300 underline transition-colors hover:text-blue-200"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {decoratedText}
-            </a>
-          )}
-        >
-          {content}
-        </Linkify>
-      );
-    }
-    
+
+    // Render the separated parts
     return (
       <>
         {parts.map((part, index) => {
@@ -189,7 +196,7 @@ export function MessageList({
         {comments.map((comment) => {
           const isFile = comment.isFile;
           let parsedContent = comment.content;
-          
+
           // Variables to determine file type & details
           let isImage = false;
           let fileUrl = '';
@@ -206,7 +213,9 @@ export function MessageList({
               parsedContent = comment.content;
               fileUrl = comment.content;
               fileName = 'Attached File';
-              isImage = !!fileUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) || fileUrl.startsWith('data:image/');
+              isImage =
+                !!fileUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) ||
+                fileUrl.startsWith('data:image/');
             }
           }
 
@@ -214,21 +223,31 @@ export function MessageList({
 
           return (
             <div
+              id={`message-${comment._id}`}
               key={comment._id}
               className={`group mb-4 flex w-full flex-row gap-1 ${isUser ? 'justify-end' : 'justify-start'}`}
             >
               <div className="relative flex flex-col items-end justify-end">
-                {isUser && !isFile && (
-                  <div className="absolute -left-8 top-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div
+                  className={`absolute top-1 z-10 flex gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 ${isUser ? '-left-16' : '-right-8'}`}
+                >
+                  <button
+                    onClick={() => handleReplyClick(comment)}
+                    className="rounded-full bg-gray-100 p-1.5 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-800"
+                    aria-label="Reply to message"
+                  >
+                    <Reply className="h-3.5 w-3.5" />
+                  </button>
+                  {isUser && !isFile && (
                     <button
                       onClick={() => handleEditClick(comment)}
-                      className="rounded-full bg-gray-100 p-1 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-800"
+                      className="rounded-full bg-gray-100 p-1.5 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-800"
                       aria-label="Edit message"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className="h-3.5 w-3.5" />
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <div
                   className={`relative flex min-w-[120px] max-w-[320px] flex-col ${
@@ -239,7 +258,7 @@ export function MessageList({
                   style={{
                     wordWrap: 'break-word',
                     whiteSpace: 'pre-wrap',
-                    overflowWrap: 'break-word',
+                    overflowWrap: 'break-word'
                   }}
                 >
                   <div className="mb-1 flex items-center space-x-2">
@@ -249,11 +268,26 @@ export function MessageList({
                   </div>
 
                   <div className="max-w-full">
+                    {comment.replyTo && (
+                      <div
+                        onClick={() => scrollToMessage(comment.replyTo._id)}
+                        className="mb-2 flex cursor-pointer flex-col rounded border-l-4 border-white/60 bg-black/20 p-2 text-xs transition-colors hover:bg-black/30"
+                      >
+                        <span className="pb-1 font-semibold text-white/90">
+                          {comment.replyTo?.authorId?.name || 'Someone'}
+                        </span>
+                        <p className="line-clamp-1 truncate italic text-white/80">
+                          {comment.replyTo?.isFile
+                            ? '📎 Attachment'
+                            : comment.replyTo?.content}
+                        </p>
+                      </div>
+                    )}
                     <div className="max-w-full">
                       {isFile ? (
                         isImage ? (
                           // If it's an image, render the image tag
-                          <div className="relative inline-block mt-1">
+                          <div className="relative mt-1 inline-block">
                             <img
                               src={fileUrl}
                               alt={'Attachment'}
@@ -277,7 +311,10 @@ export function MessageList({
                               <FileIcon className="h-6 w-6 text-white" />
                             </div>
                             <div className="flex min-w-0 flex-col">
-                              <span className="truncate text-sm font-medium text-white" title={fileName}>
+                              <span
+                                className="truncate text-sm font-medium text-white"
+                                title={fileName}
+                              >
                                 {fileName}
                               </span>
                               <a
@@ -294,7 +331,10 @@ export function MessageList({
                           </div>
                         )
                       ) : (
-                        renderMessageWithMentions(comment.content, comment.mentionBy || [])
+                        renderMessageWithMentions(
+                          comment.content,
+                          comment.mentionBy || []
+                        )
                       )}
                     </div>
                   </div>

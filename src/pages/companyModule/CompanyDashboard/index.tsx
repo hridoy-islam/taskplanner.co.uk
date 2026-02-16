@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Building2,
   Calendar,
@@ -48,8 +48,40 @@ const CompanyDashboardPage = () => {
   // --- State Management ---
   const [statsLoading, setStatsLoading] = useState(true);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [activeTab, setActiveTab] = useState<string>('today');
+const getInitialTab = () => {
+    const saved = sessionStorage.getItem('company_dashboard_tab');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Only restore if we are looking at the exact same dashboard/company
+        if (parsed.id === id && parsed.tab) {
+          return parsed.tab;
+        }
+      } catch (e) {}
+    }
+    return 'today'; // Default tab
+  };
 
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab);
+
+  // 2. Safely handle switching to a different ID and clearing old storage
+  useEffect(() => {
+    const saved = sessionStorage.getItem('company_dashboard_tab');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.id === id && parsed.tab) {
+          return;
+        } else if (parsed.id !== id) {
+        
+          sessionStorage.removeItem('company_dashboard_tab');
+        }
+      } catch (e) {}
+    }
+    
+    // If we reach here, there's no saved tab for this ID, so set the default
+    setActiveTab('today');
+  }, [id]);
   // Separate state for each tab to handle pagination independently
   const [todayState, setTodayState] =
     useState<TaskCategoryState>(INITIAL_STATE);
@@ -62,7 +94,28 @@ const CompanyDashboardPage = () => {
   const [finishState, setFinishState] =
     useState<TaskCategoryState>(INITIAL_STATE);
 
-  const PAGE_LIMIT = 10; // Number of items to load per click
+  const PAGE_LIMIT = 20; // Number of items to load per click
+
+  // --- Filter Tasks Helper (Removes tasks already completed by the current user) ---
+  const filterOutCompletedByMe = useCallback((tasks: any[]) => {
+    if (!user?._id) return tasks;
+    return tasks.filter((task) => {
+      if (!task.completedBy || !Array.isArray(task.completedBy)) return true;
+      const isCompletedByMe = task.completedBy.some((c: any) => {
+        const cId = typeof c === 'string' ? c : c?.userId?._id || c?.userId || c?._id;
+        return cId === user._id;
+      });
+      return !isCompletedByMe;
+    });
+  }, [user?._id]);
+
+  // Derived filtered states for rendering pending task lists correctly
+  const activeTodayTasks = useMemo(() => filterOutCompletedByMe(todayState.data), [todayState.data, filterOutCompletedByMe]);
+  const activeOverdueTasks = useMemo(() => filterOutCompletedByMe(overdueState.data), [overdueState.data, filterOutCompletedByMe]);
+  const activeUpcomingTasks = useMemo(() => filterOutCompletedByMe(upcomingState.data), [upcomingState.data, filterOutCompletedByMe]);
+  const activeAssignedTasks = useMemo(() => filterOutCompletedByMe(assignedState.data), [assignedState.data, filterOutCompletedByMe]);
+  const activeFinishTasks = useMemo(() => filterOutCompletedByMe(finishState.data), [finishState.data, filterOutCompletedByMe]);
+
 
   // --- 2. Generic Task Fetcher ---
   const fetchTaskList = useCallback(
@@ -187,8 +240,13 @@ const CompanyDashboardPage = () => {
     setFinishState(applyUpdate);
   };
 
-  const handleTabChange = (value: string) => {
+ const handleTabChange = (value: string) => {
     setActiveTab(value);
+    
+    // Save the clicked tab and current ID to session storage
+    if (id) {
+      sessionStorage.setItem('company_dashboard_tab', JSON.stringify({ id, tab: value }));
+    }
 
     // Map the tab values to your fetchTaskList types and fetch fresh page 1 data
     switch (value) {
@@ -293,7 +351,6 @@ const CompanyDashboardPage = () => {
    setAssignedState(filterOutTask);
    setFinishState(filterOutTask);
 
-   // 5. Send API Request
    try {
      await axiosInstance.patch(`/task/${taskId}`, {
        status: 'completed',
@@ -371,7 +428,7 @@ const CompanyDashboardPage = () => {
           >
             Today{' '}
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
-              {todayState.data.length}
+              {activeTodayTasks.length}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -380,7 +437,7 @@ const CompanyDashboardPage = () => {
           >
             Overdue{' '}
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
-              {overdueState.data.length}
+              {activeOverdueTasks.length}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -389,7 +446,7 @@ const CompanyDashboardPage = () => {
           >
             Upcoming{' '}
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
-              {upcomingState.data.length}
+              {activeUpcomingTasks.length}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -398,7 +455,7 @@ const CompanyDashboardPage = () => {
           >
             Assign To Others{' '}
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
-              {assignedState.data.length}
+              {activeAssignedTasks.length}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -407,7 +464,7 @@ const CompanyDashboardPage = () => {
           >
             Need To Finish{' '}
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
-              {finishState.data.length}
+              {activeFinishTasks.length}
             </span>
           </TabsTrigger>
         </TabsList>
@@ -428,7 +485,7 @@ const CompanyDashboardPage = () => {
                 <div className="flex h-32 items-center justify-center">
                   <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
-              ) : todayState.data.length === 0 ? (
+              ) : activeTodayTasks.length === 0 ? (
                 <EmptyState
                   icon={<Calendar className="h-6 w-6 text-slate-400" />}
                   title="No tasks for today"
@@ -437,7 +494,7 @@ const CompanyDashboardPage = () => {
               ) : (
                 <>
                   <TaskList
-                    tasks={todayState.data}
+                    tasks={activeTodayTasks}
                     onMarkAsImportant={handleMarkAsImportant}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                   />
@@ -451,7 +508,7 @@ const CompanyDashboardPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        {/* Tab 2: Overdue */}
+
         <TabsContent value="overdue">
           <Card className=" rounded-none border-none p-0 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between p-0 pb-2 ">
@@ -465,7 +522,7 @@ const CompanyDashboardPage = () => {
                 <div className="flex h-32 items-center justify-center">
                   <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
-              ) : overdueState.data.length === 0 ? (
+              ) : activeOverdueTasks.length === 0 ? (
                 <EmptyState
                   icon={<AlertCircle className="h-6 w-6 text-slate-400" />}
                   title="No overdue tasks"
@@ -474,7 +531,7 @@ const CompanyDashboardPage = () => {
               ) : (
                 <>
                   <TaskList
-                    tasks={overdueState.data}
+                    tasks={activeOverdueTasks}
                     onMarkAsImportant={handleMarkAsImportant}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                   />
@@ -502,7 +559,7 @@ const CompanyDashboardPage = () => {
                 <div className="flex h-32 items-center justify-center">
                   <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
-              ) : upcomingState.data.length === 0 ? (
+              ) : activeUpcomingTasks.length === 0 ? (
                 <EmptyState
                   icon={<Clock className="h-6 w-6 text-slate-400" />}
                   title="No upcoming tasks"
@@ -511,7 +568,7 @@ const CompanyDashboardPage = () => {
               ) : (
                 <>
                   <TaskList
-                    tasks={upcomingState.data}
+                    tasks={activeUpcomingTasks}
                     onMarkAsImportant={handleMarkAsImportant}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                   />
@@ -539,7 +596,7 @@ const CompanyDashboardPage = () => {
                 <div className="flex h-32 items-center justify-center">
                   <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
-              ) : assignedState.data.length === 0 ? (
+              ) : activeAssignedTasks.length === 0 ? (
                 <EmptyState
                   icon={<UserPlus className="h-6 w-6 text-slate-400" />}
                   title="No tasks assigned"
@@ -548,7 +605,7 @@ const CompanyDashboardPage = () => {
               ) : (
                 <>
                   <AssignTaskList
-                    tasks={assignedState.data}
+                    tasks={activeAssignedTasks}
                     onMarkAsImportant={handleMarkAsImportant}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                   />
@@ -576,7 +633,7 @@ const CompanyDashboardPage = () => {
                 <div className="flex h-32 items-center justify-center">
                   <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
-              ) : finishState.data.length === 0 ? (
+              ) : activeFinishTasks.length === 0 ? (
                 <EmptyState
                   icon={<CheckCircle2 className="h-6 w-6 text-slate-400" />}
                   title="Nothing to review"
@@ -585,7 +642,7 @@ const CompanyDashboardPage = () => {
               ) : (
                 <>
                   <NeedToFinishList
-                    tasks={finishState.data}
+                    tasks={activeFinishTasks}
                     onMarkAsImportant={handleMarkAsImportant}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                     reAssign={handleReassignTask}
@@ -605,7 +662,6 @@ const CompanyDashboardPage = () => {
   );
 };
 
-// Simple Helper Component for Empty States
 const EmptyState = ({
   icon,
   title,

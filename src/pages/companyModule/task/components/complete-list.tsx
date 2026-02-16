@@ -12,12 +12,23 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, CheckCircle2, RotateCcw, Eye, MessageCircle, MessageSquareText } from 'lucide-react';
+import {
+  Star,
+  CheckCircle2,
+  RotateCcw,
+  Eye,
+  MessageCircle,
+  MessageSquareText
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import axiosInstance from '@/lib/axios';
 
-const CompleteTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
+const CompleteTaskList = ({
+  tasks,
+  onMarkAsImportant,
+  onToggleTaskCompletion
+}) => {
   const { user } = useSelector((state: any) => state.auth);
   const { id } = useParams();
   const navigate = useNavigate();
@@ -90,11 +101,7 @@ const CompleteTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) 
   if (sortedTasks.length === 0) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <img
-          src="/notask.png"
-          alt="No tasks"
-          className="max-w-xs opacity-90"
-        />
+        <img src="/notask.png" alt="No tasks" className="max-w-xs opacity-90" />
       </div>
     );
   }
@@ -121,7 +128,7 @@ const CompleteTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) 
                 Due Date
               </TableHead>
 
-              <TableHead className="pr-6 border border-gray-200 text-right text-xs font-bold capitalize tracking-wider">
+              <TableHead className="border border-gray-200 pr-6 text-right text-xs font-bold capitalize tracking-wider">
                 Action
               </TableHead>
             </TableRow>
@@ -150,36 +157,43 @@ const CompleteTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) 
 
               const isOverdue =
                 moment(task.dueDate).isBefore(moment()) && !isCompleted;
-  
-            const isUnseen = user?._id === assigneeId && task.seen === false;
+
+              const isUnseen = user?._id === assigneeId && task.seen === false;
 
               return (
                 <TableRow
                   key={task._id}
-                 className={cn(
+                  className={cn(
                     'group border-b border-gray-100 transition-colors',
                     isUnseen
                       ? 'bg-blue-50 hover:bg-blue-100/80'
                       : isImportant
                         ? 'bg-orange-50 hover:bg-orange-100'
-                        : 'hover:bg-slate-50/50',
+                        : 'hover:bg-slate-50/50'
                   )}
-                 
                 >
                   {/* Task */}
-                  <TableCell className="py-4 border border-gray-200"  onClick={() =>
-                          navigate(`/company/${id}/task-details/${task?._id}`)
-                        }>
-                    <div className="flex items-center gap-4">
+                  <TableCell
+                    className="cursor-pointer border border-gray-200 py-4"
+                    onClick={() =>
+                      navigate(`/company/${id}/task-details/${task?._id}`)
+                    }
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Left Side - Task Name */}
                       <div className="flex flex-col gap-0.5">
-                        <span
-                          className={cn(
-                            'text-sm transition-colors',
-                          )}
-                        >
+                        <span className="text-sm transition-colors">
                           {task.taskName}
                         </span>
                       </div>
+
+                      {/* Right Side - Frequency Badge */}
+                      {task.frequency &&
+                        task.frequency.toLowerCase() !== 'once' && (
+                          <Badge variant="default" className="capitalize">
+                            {task.frequency}
+                          </Badge>
+                        )}
                     </div>
                   </TableCell>
 
@@ -218,7 +232,7 @@ const CompleteTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) 
                   </TableCell>
 
                   {/* Action */}
-                  <TableCell className="pr-6 text-right border border-gray-200">
+                  <TableCell className="border border-gray-200 pr-6 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         size="sm"
