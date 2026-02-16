@@ -111,31 +111,33 @@ export default function NotesContent({
 
   return (
     <div className="flex flex-1 flex-col bg-white">
-      <header className="flex h-20 items-center justify-between border-b border-taskplanner/60 p-6">
-        <div className="flex flex-col space-y-1">
+      <header className="flex min-h-[5rem] flex-wrap items-center justify-between gap-4 border-b border-taskplanner/60 p-6">
+        {/* Added min-w-0 and flex-1 so this side can take up available space and wrap text properly */}
+        <div className="flex min-w-0 flex-1 flex-col space-y-1">
           <div
-            className="group flex cursor-pointer items-center"
+            className="group flex cursor-pointer items-start" // Changed to items-start so icon stays at the top if text wraps
             onClick={() =>
               selectedTab === 'my-notes' && openUpdateModal(selectedNote)
             }
           >
-            <h1 className="mr-2 text-2xl font-bold text-black">
+            {/* Added break-words so long text will wrap to the next line and push the height down */}
+            <h1 className="mr-2 break-words text-sm font-semibold text-black">
               {selectedNote.title}
             </h1>
             {selectedTab === 'my-notes' && (
-              <Pen className="h-5 w-5 transition-colors group-hover:text-black" />
+              <Pen className="mt-1 h-5 w-5 shrink-0 transition-colors group-hover:text-black" /> // Added shrink-0 and mt-1 for alignment
             )}
           </div>
-          <div className="flex items-center space-x-2 text-sm ">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-normal">
             <span>Last updated {moment(selectedNote.updatedAt).fromNow()}</span>
             {selectedNote.favorite && (
-              <Star className="h-4 w-4 fill-current text-amber-500" />
+              <Star className="h-4 w-4 shrink-0 fill-current text-amber-500" />
             )}
           </div>
         </div>
 
         {selectedTab === 'my-notes' && (
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* The New Save Button */}
             <Button
               onClick={handleManualSave}
@@ -145,7 +147,7 @@ export default function NotesContent({
               {isSaving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="mr-2 h-4 w-4 shrink-0" />
               )}
               {isSaving ? 'Saving...' : 'Save Note'}
             </Button>
@@ -153,7 +155,7 @@ export default function NotesContent({
             <Popover>
               <PopoverTrigger asChild>
                 <Button size="sm">
-                  <Hash className="mr-2 h-4 w-4" />
+                  <Hash className="mr-2 h-4 w-4 shrink-0" />
                   Add tag
                 </Button>
               </PopoverTrigger>
@@ -172,7 +174,7 @@ export default function NotesContent({
                         <div
                           key={tag?._id}
                           onClick={() => addTag(tag)}
-                          className="cursor-pointer rounded-md p-2 text-sm"
+                          className="cursor-pointer rounded-md p-2 text-sm hover:bg-gray-100"
                         >
                           {tag.name}
                         </div>
@@ -188,7 +190,7 @@ export default function NotesContent({
             </Popover>
 
             <Button size="sm" onClick={shareNote} className="">
-              <Share2 className="mr-2 h-4 w-4" /> Share
+              <Share2 className="mr-2 h-4 w-4 shrink-0" /> Share
             </Button>
 
             <Button
@@ -197,13 +199,13 @@ export default function NotesContent({
               className={` border-gray-200 transition-colors ${
                 selectedNote.favorite
                   ? 'border-amber-200 bg-amber-50 text-amber-500 hover:bg-amber-50 hover:text-amber-500/90'
-                  : 'text-white '
+                  : ''
               }`}
               onClick={() => handleNoteAction('favorite')}
               title="Favorite"
             >
               <Star
-                className={`h-4 w-4 ${selectedNote.favorite ? 'fill-current' : ''}`}
+                className={`mr-2 h-4 w-4 shrink-0 ${selectedNote.favorite ? 'fill-current' : ''}`}
               />{' '}
               Favorite
             </Button>
@@ -215,7 +217,7 @@ export default function NotesContent({
               onClick={() => handleNoteAction('delete')}
               title="Delete Note"
             >
-              <Trash className="mr-2 h-4 w-4" /> Delete
+              <Trash className="mr-2 h-4 w-4 shrink-0" /> Delete
             </Button>
           </div>
         )}

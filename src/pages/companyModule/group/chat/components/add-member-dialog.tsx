@@ -40,12 +40,12 @@ export function AddMemberDialog({
 
   return (
     <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
-      <DialogContent className="border-gray-200 bg-white sm:max-w-[425px]">
+      <DialogContent className="border-gray-200 bg-white ">
         <DialogHeader>
-          <DialogTitle className="text-xl text-gray-900">
+          <DialogTitle className="text-xl text-black">
             Add New Members
           </DialogTitle>
-          <DialogDescription className="text-gray-500">
+          <DialogDescription className="text-black">
             Search and select users to add them to your workspace.
           </DialogDescription>
         </DialogHeader>
@@ -75,7 +75,7 @@ export function AddMemberDialog({
                       onClick={() => toggleMemberSelection(member.id)}
                       className={`flex cursor-pointer items-center space-x-3 rounded-lg border p-3 transition-all duration-200 ${
                         isSelected
-                          ? 'border-taskplanner/30 bg-taskplanner/10'
+                          ? 'border-taskplanner/30 bg-taskplanner/30'
                           : 'border-transparent hover:bg-gray-50'
                       }`}
                     >

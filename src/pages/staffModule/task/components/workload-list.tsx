@@ -18,9 +18,13 @@ import { toast } from '@/components/ui/use-toast';
 import axiosInstance from '@/lib/axios';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-const WorkLoadTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
+const WorkLoadTaskList = ({
+  tasks,
+  onMarkAsImportant,
+  onToggleTaskCompletion
+}) => {
   const { user } = useSelector((state: any) => state.auth);
-  const { id,uid } = useParams();
+  const { id, uid } = useParams();
   const navigate = useNavigate();
 
   // --- Reassign Modal State (Placeholder for future use) ---
@@ -66,11 +70,7 @@ const WorkLoadTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) 
   if (sortedTasks.length === 0) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <img
-          src="/notask.png"
-          alt="No tasks"
-          className="max-w-xs opacity-90"
-        />
+        <img src="/notask.png" alt="No tasks" className="max-w-xs opacity-90" />
       </div>
     );
   }
@@ -103,7 +103,7 @@ const WorkLoadTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) 
               Priority
             </TableHead>
 
-            <TableHead className="pr-6 border border-gray-200 text-right text-xs font-bold capitalize tracking-wider text-white">
+            <TableHead className="border border-gray-200 pr-6 text-right text-xs font-bold capitalize tracking-wider text-white">
               Action
             </TableHead>
           </TableRow>
@@ -113,18 +113,17 @@ const WorkLoadTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) 
           {sortedTasks.map((task) => {
             const isImportant = task.importantBy?.includes(user?._id);
             const isCompleted = task.status === 'completed';
-            const isOverdue = moment(task.dueDate).isBefore(moment()) && !isCompleted;
+            const isOverdue =
+              moment(task.dueDate).isBefore(moment()) && !isCompleted;
             const assigneeId =
-            typeof task.assigned === 'string'
-            ? task.assigned
-            : task.assigned?._id;
+              typeof task.assigned === 'string'
+                ? task.assigned
+                : task.assigned?._id;
             const isUnseen = user?._id === assigneeId && task.seen === false;
- const authorId = 
-                typeof task.author === 'string'
-                  ? task.author
-                  : task.author?._id;
+            const authorId =
+              typeof task.author === 'string' ? task.author : task.author?._id;
 
-                  const isAuthor = user?._id === authorId;
+            const isAuthor = user?._id === authorId;
             return (
               <TableRow
                 key={task._id}
@@ -139,23 +138,29 @@ const WorkLoadTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) 
               >
                 {/* Task Name */}
                 <TableCell
-                  className="border border-gray-200 py-4 "
+                  className="border border-gray-200 py-4 cursor-pointer "
                   onClick={() =>
                     navigate(
                       `/company/${id}/user/${uid}/task-details/${task?._id}`
                     )
                   }
                 >
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={cn(
-                        'text-sm font-medium transition-colors',
-                        isCompleted && 'text-slate-400 line-through'
-                      )}
-                    >
-                      {task.taskName}
-                    </span>
-                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                      {/* Left Side - Task Name */}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm transition-colors">
+                          {task.taskName}
+                        </span>
+                      </div>
+
+                      {/* Right Side - Frequency Badge */}
+                      {task.frequency &&
+                        task.frequency.toLowerCase() !== 'once' && (
+                          <Badge variant="default" className="capitalize">
+                            {task.frequency}
+                          </Badge>
+                        )}
+                    </div>
                 </TableCell>
 
                 {/* Assigned To */}
@@ -220,13 +225,12 @@ const WorkLoadTaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) 
                         'rounded-md shadow-none transition-all',
                         isImportant
                           ? 'border border-orange-300 bg-orange-200 text-orange-600 hover:bg-orange-300'
-                          : 'border-4 border-black bg-white text-black hover:bg-slate-50'
+                          : 'border border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
                       )}
                       onClick={() => onMarkAsImportant(task._id)}
                     >
                       <Star
-                        className={cn('h-5 w-5', isImportant && 'fill-current')}
-                        strokeWidth={3}
+                        className={cn('h-4 w-4', isImportant && 'fill-current')}
                       />
                     </Button>
 

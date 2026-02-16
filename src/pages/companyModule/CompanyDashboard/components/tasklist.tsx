@@ -66,11 +66,7 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
   if (sortedTasks.length === 0) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <img
-          src="/notask.png"
-          alt="No tasks"
-          className="max-w-xs opacity-90"
-        />
+        <img src="/notask.png" alt="No tasks" className="max-w-xs opacity-90" />
       </div>
     );
   }
@@ -103,7 +99,7 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
               Priority
             </TableHead>
 
-            <TableHead className="pr-6 border border-gray-200 text-right text-xs font-bold uppercase tracking-wider text-white">
+            <TableHead className="border border-gray-200 pr-6 text-right text-xs font-bold uppercase tracking-wider text-white">
               Action
             </TableHead>
           </TableRow>
@@ -113,11 +109,12 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
           {sortedTasks.map((task) => {
             const isImportant = task.importantBy?.includes(user?._id);
             const isCompleted = task.status === 'completed';
-            const isOverdue = moment(task.dueDate).isBefore(moment()) && !isCompleted;
- const assigneeId =
-            typeof task.assigned === 'string'
-            ? task.assigned
-            : task.assigned?._id;
+            const isOverdue =
+              moment(task.dueDate).isBefore(moment()) && !isCompleted;
+            const assigneeId =
+              typeof task.assigned === 'string'
+                ? task.assigned
+                : task.assigned?._id;
             const isUnseen = user?._id === assigneeId && task.seen === false;
 
             return (
@@ -133,20 +130,28 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
                 )}
               >
                 {/* Task Name */}
-                <TableCell className="border border-gray-200 py-4">
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={cn(
-                        'text-sm font-medium transition-colors',
-                        isCompleted && 'text-slate-400 line-through'
-                      )}
-                      onClick={() =>
-                        navigate(`/company/${id}/task-details/${task?._id}`)
-                      }
-                    >
-                      {task.taskName}
-                    </span>
-                  </div>
+                <TableCell
+                  className="border border-gray-200 py-4 cursor-pointer"
+                  onClick={() =>
+                    navigate(`/company/${id}/task-details/${task?._id}`)
+                  }
+                >
+                 <div className="flex items-center justify-between gap-4">
+                      {/* Left Side - Task Name */}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm transition-colors">
+                          {task.taskName}
+                        </span>
+                      </div>
+
+                      {/* Right Side - Frequency Badge */}
+                      {task.frequency &&
+                        task.frequency.toLowerCase() !== 'once' && (
+                          <Badge variant="default" className="capitalize">
+                            {task.frequency}
+                          </Badge>
+                        )}
+                    </div>
                 </TableCell>
 
                 {/* Assigned To */}
@@ -211,13 +216,12 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
                         'rounded-md shadow-none transition-all',
                         isImportant
                           ? 'border border-orange-300 bg-orange-200 text-orange-600 hover:bg-orange-300'
-                          : 'border-4 border-black bg-white text-black hover:bg-slate-50'
+                          : 'border border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
                       )}
                       onClick={() => onMarkAsImportant(task._id)}
                     >
                       <Star
-                        className={cn('h-5 w-5', isImportant && 'fill-current')}
-                        strokeWidth={3}
+                        className={cn('h-4 w-4', isImportant && 'fill-current')}
                       />
                     </Button>
 

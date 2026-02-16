@@ -174,19 +174,28 @@ const CompleteTaskList = ({
                 >
                   {/* Task */}
                   <TableCell
-                    className="border border-gray-200 py-4"
+                    className="cursor-pointer border border-gray-200 py-4"
                     onClick={() =>
                       navigate(
                         `/company/${id}/user/${uid}/task-details/${task?._id}`
                       )
                     }
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Left Side - Task Name */}
                       <div className="flex flex-col gap-0.5">
-                        <span className={cn('text-sm transition-colors')}>
+                        <span className="text-sm transition-colors">
                           {task.taskName}
                         </span>
                       </div>
+
+                      {/* Right Side - Frequency Badge */}
+                      {task.frequency &&
+                        task.frequency.toLowerCase() !== 'once' && (
+                          <Badge variant="default" className="capitalize">
+                            {task.frequency}
+                          </Badge>
+                        )}
                     </div>
                   </TableCell>
 
@@ -230,19 +239,18 @@ const CompleteTaskList = ({
                       <Button
                         size="sm"
                         className={cn(
-                          'rounded-md shadow-none transition-all',
+                          'rounded-md shadow-sm transition-all',
                           isImportant
                             ? 'border border-orange-300 bg-orange-200 text-orange-600 hover:bg-orange-300'
-                            : 'border-4 border-black bg-white text-black hover:bg-slate-50'
+                            : 'border border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
                         )}
                         onClick={() => onMarkAsImportant(task._id)}
                       >
                         <Star
                           className={cn(
-                            'h-5 w-5',
+                            'h-4 w-4',
                             isImportant && 'fill-current'
                           )}
-                          strokeWidth={3}
                         />
                       </Button>
 

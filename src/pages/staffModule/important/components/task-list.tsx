@@ -159,35 +159,34 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reAssign })
               return (
                 <TableRow
                   key={task._id}
-                  className={cn(
+                   className={cn(
                     'group border-b border-gray-100 transition-colors',
                     isUnseen
                       ? 'bg-blue-50 hover:bg-blue-100/80'
                       : isImportant
                         ? 'bg-orange-50 hover:bg-orange-100'
-                        : 'hover:bg-slate-50/50'
+                        : 'hover:bg-slate-50/50',
                   )}
                 >
                   {/* Task */}
-                  <TableCell
-                    className="border border-gray-200 py-4"
-                    onClick={() =>
-                      navigate(
-                        `/company/${id}/user/${uid}/task-details/${task?._id}`
-                      )
-                    }
-                  >
-                    <div className="flex items-center gap-4">
+                  <TableCell className="py-4 border border-gray-200 cursor-pointer"   onClick={() =>
+                          navigate(`/company/${id}/user/${uid}/task-details/${task?._id}`)
+                        }>
+                   <div className="flex items-center justify-between gap-4">
+                      {/* Left Side - Task Name */}
                       <div className="flex flex-col gap-0.5">
-                        <span
-                          className={cn(
-                            'text-sm transition-colors',
-                            isCompleted && 'text-slate-400 line-through'
-                          )}
-                        >
+                        <span className="text-sm transition-colors">
                           {task.taskName}
                         </span>
                       </div>
+
+                      {/* Right Side - Frequency Badge */}
+                      {task.frequency &&
+                        task.frequency.toLowerCase() !== 'once' && (
+                          <Badge variant="default" className="capitalize">
+                            {task.frequency}
+                          </Badge>
+                        )}
                     </div>
                   </TableCell>
 
@@ -226,34 +225,31 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reAssign })
                   </TableCell>
 
                   {/* Action */}
-                  <TableCell className="border border-gray-200 pr-6 text-right">
+                  <TableCell className="pr-6 text-right border border-gray-200">
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         size="sm"
                         className={cn(
-                          'rounded-md shadow-none transition-all',
+                          'rounded-md shadow-sm transition-all',
                           isImportant
                             ? 'border border-orange-300 bg-orange-200 text-orange-600 hover:bg-orange-300'
-                            : 'border-4 border-black bg-white text-black hover:bg-slate-50'
+                            : 'border border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
                         )}
                         onClick={() => onMarkAsImportant(task._id)}
                       >
                         <Star
                           className={cn(
-                            'h-5 w-5',
+                            'h-4 w-4',
                             isImportant && 'fill-current'
                           )}
-                          strokeWidth={3}
                         />
                       </Button>
 
-                      <Button
+                     <Button
                         size="sm"
                         className="relative "
                         onClick={() =>
-                          navigate(
-                            `/company/${id}/user/${uid}/task-details/${task?._id}`
-                          )
+                          navigate(`/company/${id}/user/${uid}/task-details/${task?._id}`)
                         }
                       >
                         <MessageSquareText className="h-5 w-5 " />
@@ -275,18 +271,19 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reAssign })
 
                       <Button
                         size="sm"
-                        onClick={() =>
-                          navigate(
-                            `/company/${id}/user/${uid}/task-details/${task?._id}`
-                          )
+                         onClick={() =>
+                          navigate(`/company/${id}/user/${uid}/task-details/${task?._id}`)
                         }
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
 
-                      {isCompletedByAssignee && (
+                      {/* {isCompletedByAssignee && (
                         <>
-                          <Button size="sm" onClick={() => reassign(task)}>
+                          <Button
+                            size="sm"
+                            onClick={() => reassign(task)}
+                          >
                             Reassign
                           </Button>
 
@@ -297,7 +294,7 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reAssign })
                             Finish
                           </Button>
                         </>
-                      )}
+                      )} */}
                     </div>
                   </TableCell>
                 </TableRow>

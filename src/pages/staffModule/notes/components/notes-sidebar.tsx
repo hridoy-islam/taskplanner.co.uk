@@ -72,7 +72,7 @@ export default function NotesSidebar({
           <Input
             type="text"
             placeholder="Search notes..."
-            className="w-full rounded-full border-none bg-neutral-100 py-3 pl-12 pr-4 text-black placeholder-neutral-500 focus:ring-0"
+            className="w-full rounded-full border-taskplanner/60 bg-neutral-100 py-3 pl-12 pr-4 text-black placeholder-neutral-500 focus:ring-0"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -194,7 +194,6 @@ export default function NotesSidebar({
                   )}
                 </div>
 
-                {/* ADDED CONTENT PREVIEW HERE */}
                 <p className="mb-3 w-full  text-sm">
                   {getPreviewText(note.content)}
                 </p>
@@ -250,23 +249,22 @@ export default function NotesSidebar({
                   {getPreviewText(note.content)}
                 </p>
 
-                {/* Added tags logic just in case shared notes carry them */}
-                <div className="mb-3 flex flex-wrap gap-2">
-                  {note.tags?.map((tag: any) => (
-                    <span
-                      key={tag._id}
-                      className={`text-xs font-bold ${isSelected ? 'text-white' : ''}`}
-                    >
-                      #{tag.name}
-                    </span>
-                  ))}
-                </div>
+                
 
                 {/* Adapted the footer to show "Shared by" but with the active styling */}
                 <div
-                  className={`text-xs ${isSelected ? 'text-white' : 'text-neutral-400'}`}
+                  className={`flex items-center justify-between text-xs ${
+                    isSelected ? 'text-white' : 'text-black'
+                  }`}
                 >
-                  {moment(note.updatedAt).fromNow()}
+                  <span>
+                    Shared by{' '}
+                    <span className="font-semibold">
+                      {note.author?.name || 'Unknown'}
+                    </span>
+                  </span>
+
+                  <span>{moment(note.updatedAt).fromNow()}</span>
                 </div>
               </div>
             );

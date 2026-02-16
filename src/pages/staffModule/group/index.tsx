@@ -23,7 +23,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+  FormMessage
 } from '@/components/ui/form';
 import axiosInstance from '@/lib/axios';
 import { Label } from '@/components/ui/label';
@@ -87,7 +87,7 @@ const groupFormSchema = z.object({
     .string()
     .min(3, { message: 'Group name must be at least 3 characters.' })
     .max(50, { message: 'Group name must not exceed 50 characters.' }),
-  selectedMembers: z.array(z.union([z.string(), z.number()])).default([]),
+  selectedMembers: z.array(z.union([z.string(), z.number()])).default([])
 });
 
 type GroupFormValues = z.infer<typeof groupFormSchema>;
@@ -107,8 +107,8 @@ export default function StaffGroupPage() {
     resolver: zodResolver(groupFormSchema),
     defaultValues: {
       groupName: '',
-      selectedMembers: [],
-    },
+      selectedMembers: []
+    }
   });
 
   const fetchMembers = async () => {
@@ -224,12 +224,14 @@ export default function StaffGroupPage() {
   };
 
   const filteredMembers = initialMembers
-    .filter((member) =>
-      member.name?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      member.id !== user?._id
+    .filter(
+      (member) =>
+        member.name?.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        member.id !== user?._id
     )
-    .filter((member, index, self) => 
-      index === self.findIndex((m) => m.id === member.id)
+    .filter(
+      (member, index, self) =>
+        index === self.findIndex((m) => m.id === member.id)
     );
 
   const sortedGroups = groups.sort((a, b) => {
@@ -251,7 +253,7 @@ export default function StaffGroupPage() {
     <div className="mx-auto h-full space-y-3 p-2">
       {/* Header Section */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center ">
-        <div className="flex flex-row items-center gap-4 w-[40vw]">
+        <div className="flex w-[40vw] flex-row items-center gap-4">
           <div className="flex overflow-hidden rounded-lg bg-taskplanner p-1 text-white">
             <button
               onClick={() => setView('active')}
@@ -322,11 +324,12 @@ export default function StaffGroupPage() {
                       <span className="truncate font-semibold">
                         {group.name}
                       </span>
-                      {group.unreadMessageCount && group.unreadMessageCount > 0 ? (
+                      {group.unreadMessageCount &&
+                      group.unreadMessageCount > 0 ? (
                         <span className="text-xs font-medium text-red-600">
                           {group.unreadMessageCount} new messages
                         </span>
-                      ): null}
+                      ) : null}
                     </div>
                   </div>
                 </TableCell>
@@ -351,7 +354,10 @@ export default function StaffGroupPage() {
                         </Avatar>
                       ))}
                     </div>
-                    <Badge variant="secondary" className="text-xs font-normal bg-taskplanner hover:bg-taskplanner text-white">
+                    <Badge
+                      variant="secondary"
+                      className="bg-taskplanner text-xs font-normal text-white hover:bg-taskplanner"
+                    >
                       {group.members.length} members
                     </Badge>
                   </div>
@@ -465,10 +471,7 @@ export default function StaffGroupPage() {
 
             {displayGroups.length === 0 && (
               <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="h-24 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={5} className="h-24 text-center text-black">
                   No {view} groups found.
                 </TableCell>
               </TableRow>
@@ -478,19 +481,24 @@ export default function StaffGroupPage() {
       </div>
 
       {/* Modernized Create Group Dialog */}
+      {/* Modernized Create Group Dialog */}
       <Dialog open={isGroupModalOpen} onOpenChange={handleModalOpenChange}>
         {/* 1. Increased Dialog width to 800px */}
-        <DialogContent className="sm:max-w-[800px] w-[95vw]">
+        <DialogContent className="w-[95vw] sm:max-w-[800px]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold tracking-tight">Create New Group</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
+            <DialogTitle className="text-xl font-semibold tracking-tight">
+              Create New Group
+            </DialogTitle>
+            <DialogDescription className="text-black">
               Add a title and invite team members to collaborate together.
             </DialogDescription>
           </DialogHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
-              
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-6 pt-4"
+            >
               {/* Group Name Field */}
               <FormField
                 control={form.control}
@@ -524,11 +532,10 @@ export default function StaffGroupPage() {
                     <FormItem>
                       <FormLabel>Team Members</FormLabel>
                       {/* 3. Implemented a 2-column grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
-                        
+                      <div className="mt-2 grid grid-cols-1 gap-6 md:grid-cols-2">
                         {/* Left Side: Search and Available Members */}
                         <div className="flex flex-col gap-3">
-                          <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                          <Label className="text-xs uppercase tracking-wider text-black">
                             Available Members
                           </Label>
                           <Input
@@ -537,15 +544,17 @@ export default function StaffGroupPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="focus-visible:ring-taskplanner"
                           />
-                          
-                          <ScrollArea className="h-[250px] rounded-md border p-2 shadow-inner bg-muted/5">
+
+                          <ScrollArea className="h-[250px] rounded-md border bg-white p-2 shadow-inner">
                             {filteredMembers.map((member) => {
-                              const isSelected = field.value.includes(member.id);
+                              const isSelected = field.value.includes(
+                                member.id
+                              );
 
                               return (
                                 <div
                                   key={member.id}
-                                  className="flex items-center space-x-3 rounded-md px-3 py-2.5 hover:bg-muted/50 transition-colors"
+                                  className="flex items-center space-x-3 rounded-md px-3 py-2.5 transition-colors hover:bg-taskplanner hover:text-white"
                                 >
                                   <input
                                     type="checkbox"
@@ -555,7 +564,9 @@ export default function StaffGroupPage() {
                                     onChange={(e) => {
                                       const updated = e.target.checked
                                         ? [...field.value, member.id]
-                                        : field.value.filter((id) => id !== member.id);
+                                        : field.value.filter(
+                                            (id) => id !== member.id
+                                          );
                                       field.onChange(updated);
                                     }}
                                   />
@@ -563,20 +574,22 @@ export default function StaffGroupPage() {
                                     htmlFor={`member-${member.id}`}
                                     className="flex flex-1 cursor-pointer items-center space-x-3"
                                   >
-                                    <Avatar className="h-8 w-8 border bg-white">
-                                      <AvatarImage src={member.image} alt={member.name} />
-                                      <AvatarFallback className="text-xs font-semibold">
-                                        {member.name?.charAt(0)}
-                                      </AvatarFallback>
+                                    <Avatar className="h-8 w-8 border border-gray-300 bg-white">
+                                      <AvatarImage
+                                        src={member.image || '/placeholder.png'}
+                                        alt={member.name || 'User'}
+                                      />
                                     </Avatar>
-                                    <span className="text-sm font-medium leading-none">{member.name}</span>
+                                    <span className="text-sm font-medium leading-none">
+                                      {member.name}
+                                    </span>
                                   </Label>
                                 </div>
                               );
                             })}
 
                             {filteredMembers.length === 0 && (
-                              <div className="mt-8 text-center text-sm text-muted-foreground">
+                              <div className="mt-8 text-center text-sm text-black">
                                 No team members found.
                               </div>
                             )}
@@ -585,44 +598,45 @@ export default function StaffGroupPage() {
 
                         {/* Right Side: Selected Members View */}
                         <div className="flex flex-col gap-3">
-                          <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                          <Label className="text-xs uppercase tracking-wider text-black">
                             Selected ({field.value.length})
                           </Label>
-                          
-                          <div className="border rounded-md shadow-inner bg-muted/5 flex-1 p-2">
+
+                          <div className="flex-1 rounded-md border bg-white p-2 shadow-inner">
                             {/* Slightly taller scroll area to align nicely with the left side (Search + List) */}
-                            <ScrollArea className="h-[295px]">
+                            <ScrollArea className="h-[295px] bg-white">
                               {selectedMemberObjects.length === 0 ? (
-                                <div className="flex h-full items-center justify-center text-sm text-muted-foreground mt-24">
+                                <div className="mt-24 flex h-full items-center justify-center text-sm text-black">
                                   No members selected.
                                 </div>
                               ) : (
                                 <div className="space-y-2">
                                   {selectedMemberObjects.map((member: any) => (
-                                    <div 
-                                      key={`selected-${member.id}`} 
+                                    <div
+                                      key={`selected-${member.id}`}
                                       className="flex items-center justify-between rounded-md border bg-white px-3 py-2 shadow-sm"
                                     >
                                       <div className="flex items-center space-x-3">
-                                        <Avatar className="h-8 w-8 border bg-white">
-                                          <AvatarImage src={member.image} alt={member.name} />
-                                          <AvatarFallback className="text-xs font-semibold">
-                                            {member.name?.charAt(0)}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <span className="text-sm font-medium leading-none truncate max-w-[120px]">
+                                         <Avatar className="h-8 w-8 border border-gray-300 bg-white">
+                                      <AvatarImage
+                                        src={member.image || '/placeholder.png'}
+                                        alt={member.name || 'User'}
+                                      />
+                                    </Avatar>
+                                        <span className="max-w-[120px] truncate text-sm font-medium leading-none">
                                           {member.name}
                                         </span>
                                       </div>
-                                      
+
                                       {/* Easy remove button */}
                                       <Button
                                         type="button"
-                                        variant="ghost"
+                                        variant={'destructive'}
                                         size="icon"
-                                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                         onClick={() => {
-                                          const updated = field.value.filter((id: any) => id !== member.id);
+                                          const updated = field.value.filter(
+                                            (id: any) => id !== member.id
+                                          );
                                           field.onChange(updated);
                                         }}
                                       >
@@ -635,7 +649,6 @@ export default function StaffGroupPage() {
                             </ScrollArea>
                           </div>
                         </div>
-
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -643,18 +656,18 @@ export default function StaffGroupPage() {
                 }}
               />
 
-              <DialogFooter className="pt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 ">
-                <Button 
-                  type="button" 
+              <DialogFooter className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
                   variant="outline"
                   className="w-full sm:w-auto"
                   onClick={() => handleModalOpenChange(false)}
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
-                  className="w-full sm:w-auto bg-taskplanner hover:bg-taskplanner/90 text-white"
+                <Button
+                  type="submit"
+                  className="w-full bg-taskplanner text-white hover:bg-taskplanner/90 sm:w-auto"
                   disabled={form.formState.isSubmitting}
                 >
                   Create Group
@@ -662,7 +675,6 @@ export default function StaffGroupPage() {
               </DialogFooter>
             </form>
           </Form>
-
         </DialogContent>
       </Dialog>
     </div>

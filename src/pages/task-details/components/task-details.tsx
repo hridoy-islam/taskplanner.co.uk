@@ -38,7 +38,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import ReactSelect from 'react-select'; 
+import ReactSelect from 'react-select';
 
 interface User {
   id?: string;
@@ -91,7 +91,7 @@ interface TaskDetailsProps {
 export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   const [localTask, setLocalTask] = useState<TaskDetailsProps['task']>(null);
   const [isImportant, setIsImportant] = useState(false);
-  const [members, setMembers] = useState<User[]>([]); 
+  const [members, setMembers] = useState<User[]>([]);
 
   // Dialog State
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -100,7 +100,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   const [tempTaskName, setTempTaskName] = useState('');
   const [tempDesc, setTempDesc] = useState('');
   const [tempDueDate, setTempDueDate] = useState('');
-  const [tempAssigned, setTempAssigned] = useState<string>(''); 
+  const [tempAssigned, setTempAssigned] = useState<string>('');
   const [frequency, setFrequency] = useState<TaskFrequency | string>('once');
   const [monthlyDay, setMonthlyDay] = useState<number | null>(1);
 
@@ -184,8 +184,14 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   const handleComplete = async () => {
     if (!localTask || !user?._id) return;
 
-    const authorId = typeof localTask.author === 'string' ? localTask.author : localTask.author?._id;
-    const assignedId = typeof localTask.assigned === 'string' ? localTask.assigned : localTask.assigned?._id;
+    const authorId =
+      typeof localTask.author === 'string'
+        ? localTask.author
+        : localTask.author?._id;
+    const assignedId =
+      typeof localTask.assigned === 'string'
+        ? localTask.assigned
+        : localTask.assigned?._id;
 
     let updatedCompletedBy = [];
 
@@ -205,12 +211,12 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
 
     try {
       const updatePayload = {
-        completedBy: updatedCompletedBy,
+        completedBy: updatedCompletedBy
         // history: updatedHistory
       };
       setLocalTask({
         ...localTask,
-        completedBy: updatedCompletedBy as any,
+        completedBy: updatedCompletedBy as any
         // history: updatedHistory
       });
       await onUpdate(updatePayload);
@@ -222,8 +228,14 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   const handleFinishTask = async () => {
     if (!localTask || !user?._id) return;
 
-    const authorId = typeof localTask.author === 'string' ? localTask.author : localTask.author?._id;
-    const assignedId = typeof localTask.assigned === 'string' ? localTask.assigned : localTask.assigned?._id;
+    const authorId =
+      typeof localTask.author === 'string'
+        ? localTask.author
+        : localTask.author?._id;
+    const assignedId =
+      typeof localTask.assigned === 'string'
+        ? localTask.assigned
+        : localTask.assigned?._id;
 
     let updatedCompletedBy = [];
 
@@ -316,7 +328,11 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
       hasChanges = true;
     }
 
-    if (frequency === 'once' || frequency === 'daily' || frequency === 'weekly') {
+    if (
+      frequency === 'once' ||
+      frequency === 'daily' ||
+      frequency === 'weekly'
+    ) {
       if (localTask.frequency !== frequency) {
         updates.scheduledDays = null;
         updates.scheduledDate = null;
@@ -415,7 +431,21 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
             <div className="flex shrink-0 items-center gap-2">
               <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm" onClick={handleEditClick} className="gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleEditClick}
+                    className="gap-2"
+                    // Disable if the user is assigned AND not the author
+                    disabled={
+                      !isAuthor &&
+                      user?._id ===
+                        (typeof localTask.assigned === 'string'
+                          ? localTask.assigned
+                          : localTask.assigned?._id)
+                    }
+                    // Optional: Hide entirely if not author
+                    style={{ display: isAuthor ? 'flex' : 'none' }}
+                  >
                     <Pencil className="h-3.5 w-3.5" />
                     Edit
                   </Button>
@@ -467,7 +497,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 items-start">
+                    <div className="mt-2 grid grid-cols-1 items-start gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="dueDate">Due Date</Label>
                         <div className="relative">
@@ -482,7 +512,11 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                             placeholderText="Select due date"
                             className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 pl-10 text-base"
                             popperClassName="react-datepicker-popper"
+                            showYearDropdown
+                            showMonthDropdown
+                            dropdownMode='select'
                             wrapperClassName="w-full"
+                            minDate={new Date()}
                           />
                           <CalendarIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                         </div>
@@ -516,27 +550,41 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
 
                       {/* NEW: Clean 1-31 Grid Selector for Monthly Frequency */}
                       {frequency === TaskFrequency.MONTHLY && (
-                        <div className="space-y-3 col-span-1 md:col-span-2 mt-4 rounded-xl border border-gray-100 bg-slate-50 p-4">
-                          <Label className="text-sm font-semibold text-gray-700">Select Day of the Month</Label>
+                        <div className="col-span-1 mt-4 space-y-3 rounded-xl border border-gray-100 bg-slate-50 p-4 md:col-span-2">
+                          <Label className="text-sm font-semibold text-gray-700">
+                            Select Day of the Month
+                          </Label>
                           <div className="grid grid-cols-7 gap-2 sm:grid-cols-8 md:grid-cols-10">
-                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                              <Button
-                                key={day}
-                                type="button"
-                                variant={monthlyDay === day ? "default" : "outline"}
-                                className={`h-10 w-full p-0 font-medium transition-colors ${
-                                  monthlyDay === day 
-                                    ? "bg-taskplanner text-white border-transparent shadow-sm" 
-                                    : "bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200"
-                                }`}
-                                onClick={() => setMonthlyDay(day)}
-                              >
-                                {day}
-                              </Button>
-                            ))}
+                            {Array.from({ length: 31 }, (_, i) => i + 1).map(
+                              (day) => (
+                                <Button
+                                  key={day}
+                                  type="button"
+                                  variant={
+                                    monthlyDay === day ? 'default' : 'outline'
+                                  }
+                                  className={`h-10 w-full p-0 font-medium transition-colors ${
+                                    monthlyDay === day
+                                      ? 'border-transparent bg-taskplanner text-white shadow-sm'
+                                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                  }`}
+                                  onClick={() => setMonthlyDay(day)}
+                                >
+                                  {day}
+                                </Button>
+                              )
+                            )}
                           </div>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            This task will repeat on the {monthlyDay}{monthlyDay === 1 ? 'st' : monthlyDay === 2 ? 'nd' : monthlyDay === 3 ? 'rd' : 'th'} of every month.
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            This task will repeat on the {monthlyDay}
+                            {monthlyDay === 1
+                              ? 'st'
+                              : monthlyDay === 2
+                                ? 'nd'
+                                : monthlyDay === 3
+                                  ? 'rd'
+                                  : 'th'}{' '}
+                            of every month.
                           </p>
                         </div>
                       )}

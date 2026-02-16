@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Paperclip, Send, X, File as FileIcon } from "lucide-react"
+import { Paperclip, Send, X, File as FileIcon, Reply } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -28,7 +28,9 @@ export function MessageInput({
   handleSendDraggedFile,
   handleRemoveDraggedFile,
   toast,
-  user
+  user,
+  replyingTo, 
+  cancelReply 
 }) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [mentionedUsers, setMentionedUsers] = useState<any[]>([])
@@ -42,12 +44,9 @@ export function MessageInput({
   // Extract ref from register so we can track the cursor natively
   const { ref: rhfRef, ...rhfRest } = register("content", { required: true })
 
-  // FIX 1: Detect and populate existing mentions when editing starts
   useEffect(() => {
     if (editingMessage?.id) {
       setValue("content", editingMessage.content)
-      
-      // Auto-detect existing mentions from the content based on group members
       if (groupDetails?.members && editingMessage.content) {
         const detectedMentions = groupDetails.members.filter(member => 
           editingMessage.content.includes(`@${member.name}`)
@@ -57,10 +56,19 @@ export function MessageInput({
         setMentionedUsers([])
       }
     } else {
-      setValue("content", "")
-      setMentionedUsers([]) // Clear mentions for new message
+      if (!textareaRef.current?.value) {
+        setValue("content", "")
+        setMentionedUsers([]) 
+      }
     }
   }, [editingMessage?.id, editingMessage?.content, setValue, groupDetails?.members])
+
+  // Focus textarea when clicking reply
+  useEffect(() => {
+    if (replyingTo && textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }, [replyingTo])
 
   // Reset selected index when query changes
   useEffect(() => {
@@ -111,7 +119,7 @@ export function MessageInput({
     const cursorPosition = e.target.selectionStart
     const textBeforeCursor = value.slice(0, cursorPosition)
     
-    // FIX 2: Auto-remove the mention chip if the user manually backspaces the name in the textarea
+    // Auto-remove the mention chip if the user manually modifies the name in the textarea
     const remainingMentions = mentionedUsers.filter(u => value.includes(`@${u.name}`))
     if (remainingMentions.length !== mentionedUsers.length) {
       setMentionedUsers(remainingMentions)
@@ -163,24 +171,6 @@ export function MessageInput({
     return !isCurrentUser && !alreadyMentioned && matchesQuery
   }) || []
 
-  const handleRemoveMention = (memberToRemove: any) => {
-    // 1. Remove from the mentioned users array (chips)
-    setMentionedUsers(mentionedUsers.filter(u => u._id !== memberToRemove._id))
-    
-    // FIX 3: Actually remove the text from the message content visually
-    const currentContent = textareaRef.current?.value || ""
-    const newContent = currentContent
-      .replace(`@${memberToRemove.name}`, "")
-      .replace(/\s{2,}/g, " ") // Clean up double spaces left behind
-      .trimStart()
-      
-    setValue("content", newContent, { shouldValidate: true })
-    
-    if (textareaRef.current) {
-      textareaRef.current.focus()
-    }
-  }
-
   const removeFile = (indexToRemove: number) => {
     if (setFiles) {
       setFiles((prev: any[]) => prev.filter((_, index) => index !== indexToRemove))
@@ -188,7 +178,6 @@ export function MessageInput({
   }
 
   const handleFormSubmit = async (data: any) => {
-    // Add mentionBy field if there are mentioned users
     if (mentionedUsers.length > 0) {
       data.mentionBy = mentionedUsers.map(u => u._id)
     }
@@ -199,11 +188,11 @@ export function MessageInput({
       await handleCommentSubmit(data)
     }
     
-    // Reset mentions
     setMentionedUsers([])
   }
 
   const handleKeyDownWithMention = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // 1. Handle Navigation within the Mention Dropdown
     if (mentionQuery && availableMembers.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
@@ -212,31 +201,86 @@ export function MessageInput({
         )
         return
       }
-      
       if (e.key === 'ArrowUp') {
         e.preventDefault()
         setSelectedMemberIndex((prev) => prev > 0 ? prev - 1 : 0)
         return
       }
-      
       if (e.key === 'Enter') {
         e.preventDefault()
         handleMentionSelect(availableMembers[selectedMemberIndex])
         return
       }
-      
       if (e.key === 'Escape') {
         e.preventDefault()
         setMentionQuery(null)
         return
       }
     }
-    
-    // Don't call original handleKeyDown for Enter when mention list is open
+
+    // 2. Handle WhatsApp-style Mention Block Deletion
+    if (e.key === 'Backspace' && textareaRef.current) {
+      const textarea = textareaRef.current
+      // Only trigger if cursor is collapsed (no text is actively highlighted/selected)
+      if (textarea.selectionStart === textarea.selectionEnd) {
+        const cursorPosition = textarea.selectionStart
+        const content = textarea.value
+        const textBeforeCursor = content.slice(0, cursorPosition)
+
+        let matchedMention = null
+        let matchStringLength = 0
+
+        // Sort mentions by length descending so longer names match first 
+        // (prevents deleting "@John" if the user actually mentioned "@John Doe")
+        const sortedMentions = [...mentionedUsers].sort((a, b) => b.name.length - a.name.length)
+
+        for (const member of sortedMentions) {
+          const exactMention = `@${member.name}`
+          const exactMentionWithSpace = `@${member.name} `
+
+          if (textBeforeCursor.endsWith(exactMentionWithSpace)) {
+            matchedMention = member
+            matchStringLength = exactMentionWithSpace.length
+            break
+          } else if (textBeforeCursor.endsWith(exactMention)) {
+            matchedMention = member
+            matchStringLength = exactMention.length
+            break
+          }
+        }
+
+        // If cursor is right after a mention, delete the whole block
+        if (matchedMention) {
+          e.preventDefault() // Stop default single-character backspace
+
+          const newContent = 
+            content.slice(0, cursorPosition - matchStringLength) + 
+            content.slice(cursorPosition)
+          
+          setValue("content", newContent, { shouldValidate: true })
+          
+          // Remove member from the active mentions array
+          setMentionedUsers((prev) => prev.filter(u => u._id !== matchedMention._id))
+
+          // Put the cursor back in the correct position
+          const newCursorPos = cursorPosition - matchStringLength
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.focus()
+              textareaRef.current.setSelectionRange(newCursorPos, newCursorPos)
+            }
+          }, 0)
+          
+          return
+        }
+      }
+    }
+
     if (mentionQuery && e.key === 'Enter') {
       return
     }
     
+    // Normal submission handler
     handleKeyDown(e)
   }
 
@@ -256,6 +300,23 @@ export function MessageInput({
                 <Button type="button" variant="ghost" size="sm" onClick={cancelEdit} className="h-6 px-2 hover:bg-amber-200 hover:text-amber-800">
                   <X className="h-4 w-4 mr-1" />
                   Cancel
+                </Button>
+              </div>
+            )}
+
+            {replyingTo && !editingMessage?.id && (
+              <div className="flex items-center justify-between rounded-t-md border-l-4 border-[#38ada9] bg-gray-50 px-3 py-2 shadow-sm">
+                <div className="flex flex-col truncate">
+                  <span className="text-xs font-semibold text-[#38ada9] flex items-center">
+                    <Reply className="h-3 w-3 mr-1" />
+                    Replying to {replyingTo.authorId?.name}
+                  </span>
+                  <span className="truncate text-xs text-gray-600 mt-0.5 max-w-[80%]">
+                    {replyingTo.isFile ? "📎 Attached File" : replyingTo.content}
+                  </span>
+                </div>
+                <Button type="button" variant="ghost" size="sm" onClick={cancelReply} className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-200">
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             )}
@@ -325,24 +386,6 @@ export function MessageInput({
                 className="min-h-[60px] w-full resize-none border-0 bg-transparent p-3 shadow-none focus-visible:ring-0"
                 onKeyDown={handleKeyDownWithMention}
               />
-
-              {/* Display mentioned users */}
-              {mentionedUsers.length > 0 && (
-                <div className="flex flex-wrap gap-2 px-3 pb-2">
-                  {mentionedUsers.map((member) => (
-                    <div key={member._id} className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
-                      <span>@{member.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMention(member)}
-                        className="hover:text-blue-900"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
 
               {files?.length > 0 && (
                 <div className="flex flex-wrap gap-2 px-3 pb-2">

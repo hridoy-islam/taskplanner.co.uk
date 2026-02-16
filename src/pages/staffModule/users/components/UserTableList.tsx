@@ -209,11 +209,11 @@ export default function ManageUserTableList() {
       {/* --- Header --- */}
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex w-full flex-col items-start gap-4 xl:flex-row xl:items-center">
-          <div className="shrink-0">
+          {/* <div className="shrink-0">
             <h2 className="text-2xl font-semibold tracking-tight text-taskplanner">
               Manage Staff
             </h2>
-          </div>
+          </div> */}
 
           <div className="flex w-full flex-col gap-2 md:flex-row md:items-center">
             {/* 3. Search Input */}

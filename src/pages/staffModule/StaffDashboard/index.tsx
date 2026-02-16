@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Building2,
   Calendar,
@@ -44,12 +44,44 @@ const StaffDashboardPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { uid:id } = useParams();
-  const [activeTab, setActiveTab] = useState<string>('today');
 
   // --- State Management ---
   const [statsLoading, setStatsLoading] = useState(true);
   const [totalUsers, setTotalUsers] = useState(0);
+const getInitialTab = () => {
+    const saved = sessionStorage.getItem('staff_dashboard_tab');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Only restore if we are looking at the exact same dashboard/company
+        if (parsed.id === id && parsed.tab) {
+          return parsed.tab;
+        }
+      } catch (e) {}
+    }
+    return 'today'; // Default tab
+  };
 
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab);
+
+  // 2. Safely handle switching to a different ID and clearing old storage
+  useEffect(() => {
+    const saved = sessionStorage.getItem('staff_dashboard_tab');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.id === id && parsed.tab) {
+          return;
+        } else if (parsed.id !== id) {
+        
+          sessionStorage.removeItem('staff_dashboard_tab');
+        }
+      } catch (e) {}
+    }
+    
+    // If we reach here, there's no saved tab for this ID, so set the default
+    setActiveTab('today');
+  }, [id]);
   // Separate state for each tab to handle pagination independently
   const [todayState, setTodayState] =
     useState<TaskCategoryState>(INITIAL_STATE);
@@ -61,8 +93,29 @@ const StaffDashboardPage = () => {
     useState<TaskCategoryState>(INITIAL_STATE);
   const [finishState, setFinishState] =
     useState<TaskCategoryState>(INITIAL_STATE);
-    
-  const PAGE_LIMIT = 10; // Number of items to load per click
+
+  const PAGE_LIMIT = 20; // Number of items to load per click
+
+  // --- Filter Tasks Helper (Removes tasks already completed by the current user) ---
+  const filterOutCompletedByMe = useCallback((tasks: any[]) => {
+    if (!user?._id) return tasks;
+    return tasks.filter((task) => {
+      if (!task.completedBy || !Array.isArray(task.completedBy)) return true;
+      const isCompletedByMe = task.completedBy.some((c: any) => {
+        const cId = typeof c === 'string' ? c : c?.userId?._id || c?.userId || c?._id;
+        return cId === user._id;
+      });
+      return !isCompletedByMe;
+    });
+  }, [user?._id]);
+
+  // Derived filtered states for rendering pending task lists correctly
+  const activeTodayTasks = useMemo(() => filterOutCompletedByMe(todayState.data), [todayState.data, filterOutCompletedByMe]);
+  const activeOverdueTasks = useMemo(() => filterOutCompletedByMe(overdueState.data), [overdueState.data, filterOutCompletedByMe]);
+  const activeUpcomingTasks = useMemo(() => filterOutCompletedByMe(upcomingState.data), [upcomingState.data, filterOutCompletedByMe]);
+  const activeAssignedTasks = useMemo(() => filterOutCompletedByMe(assignedState.data), [assignedState.data, filterOutCompletedByMe]);
+  const activeFinishTasks = useMemo(() => filterOutCompletedByMe(finishState.data), [finishState.data, filterOutCompletedByMe]);
+
 
   // --- 2. Generic Task Fetcher ---
   const fetchTaskList = useCallback(
@@ -187,6 +240,34 @@ const StaffDashboardPage = () => {
     setFinishState(applyUpdate);
   };
 
+ const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    // Save the clicked tab and current ID to session storage
+    if (id) {
+      sessionStorage.setItem('staff_dashboard_tab', JSON.stringify({ id, tab: value }));
+    }
+
+    // Map the tab values to your fetchTaskList types and fetch fresh page 1 data
+    switch (value) {
+      case 'today':
+        fetchTaskList('today', 1, false);
+        break;
+      case 'overdue':
+        fetchTaskList('overdue', 1, false);
+        break;
+      case 'upcoming':
+        fetchTaskList('upcoming', 1, false);
+        break;
+      case 'assigntoother':
+        fetchTaskList('assigned', 1, false);
+        break;
+      case 'needtofinish':
+        fetchTaskList('finish', 1, false);
+        break;
+    }
+  };
+
   const handleMarkAsImportant = async (taskId: string) => {
     // Find task in any list to get current state
     const allTasks = [
@@ -196,7 +277,7 @@ const StaffDashboardPage = () => {
       ...assignedState.data,
       ...finishState.data
     ];
-    
+
     const task = allTasks.find((t) => t._id === taskId);
     if (!task) return;
 
@@ -225,105 +306,82 @@ const StaffDashboardPage = () => {
     }
   };
 
-    const handleTabChange = (value: string) => {
-      setActiveTab(value);
+ const handleToggleTaskCompletion = async (taskId: string) => {
+   // 1. Find the task in any of the current tabs
+   const allTasks = [
+     ...todayState.data,
+     ...overdueState.data,
+     ...upcomingState.data,
+     ...assignedState.data,
+     ...finishState.data
+   ];
 
-      // Map the tab values to your fetchTaskList types and fetch fresh page 1 data
-      switch (value) {
-        case 'today':
-          fetchTaskList('today', 1, false);
-          break;
-        case 'overdue':
-          fetchTaskList('overdue', 1, false);
-          break;
-        case 'upcoming':
-          fetchTaskList('upcoming', 1, false);
-          break;
-        case 'assigntoother':
-          fetchTaskList('assigned', 1, false);
-          break;
-        case 'needtofinish':
-          fetchTaskList('finish', 1, false);
-          break;
-      }
-    };
+   const task = allTasks.find((t) => t._id === taskId);
+   if (!task) return;
 
-  const handleToggleTaskCompletion = async (taskId: string) => {
-    // 1. Find the task in any of the current tabs
-    const allTasks = [
-      ...todayState.data,
-      ...overdueState.data,
-      ...upcomingState.data,
-      ...assignedState.data,
-      ...finishState.data
-    ];
+   // 2. Extract author and assigned IDs safely
+   const authorId =
+     typeof task.author === 'string' ? task.author : task.author?._id;
+   const assignedId =
+     typeof task.assigned === 'string' ? task.assigned : task.assigned?._id;
 
-    const task = allTasks.find((t) => t._id === taskId);
-    if (!task) return;
+   let updatedCompletedBy = [];
 
-    // 2. Extract author and assigned IDs safely
-    const authorId =
-      typeof task.author === 'string' ? task.author : task.author?._id;
-    const assignedId =
-      typeof task.assigned === 'string' ? task.assigned : task.assigned?._id;
+   // 3. Update completedBy logic
+   if (authorId === assignedId && user?._id === authorId) {
+     updatedCompletedBy = [{ userId: user?._id }, { userId: user?._id }];
+   } else {
+     const newCompletedByEntry = { userId: user?._id };
+     const filteredCompletedBy = (task.completedBy || []).filter((c: any) => {
+       const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
+       return cId !== user?._id;
+     });
+     updatedCompletedBy = [...filteredCompletedBy, newCompletedByEntry];
+   }
 
-    let updatedCompletedBy = [];
+   // 4. Optimistically REMOVE the task from all pending lists
+   const filterOutTask = (state: TaskCategoryState) => ({
+     ...state,
+     data: state.data.filter((t) => t._id !== taskId)
+   });
 
-    // 3. Update completedBy logic
-    if (authorId === assignedId && user?._id === authorId) {
-      updatedCompletedBy = [{ userId: user?._id }, { userId: user?._id }];
-    } else {
-      const newCompletedByEntry = { userId: user?._id };
-      const filteredCompletedBy = (task.completedBy || []).filter((c: any) => {
-        const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
-        return cId !== user?._id;
-      });
-      updatedCompletedBy = [...filteredCompletedBy, newCompletedByEntry];
-    }
+   setTodayState(filterOutTask);
+   setOverdueState(filterOutTask);
+   setUpcomingState(filterOutTask);
+   setAssignedState(filterOutTask);
+   setFinishState(filterOutTask);
 
-    // 4. Optimistically REMOVE the task from all pending lists
-    const filterOutTask = (state: TaskCategoryState) => ({
-      ...state,
-      data: state.data.filter((t) => t._id !== taskId)
-    });
+   try {
+     await axiosInstance.patch(`/task/${taskId}`, {
+       status: 'completed',
+       completedBy: updatedCompletedBy
+     });
+     toast({ title: 'Task finished successfully!' });
+   } catch (error) {
+     console.error('Failed to complete task', error);
+     toast({ variant: 'destructive', title: 'Failed to update status' });
 
-    setTodayState(filterOutTask);
-    setOverdueState(filterOutTask);
-    setUpcomingState(filterOutTask);
-    setAssignedState(filterOutTask);
-    setFinishState(filterOutTask);
+     // Optional Rollback: If it fails, refresh the current active tab to restore the task
+     fetchTaskList(activeTab as any, 1, false);
+   }
+ };
+  const handleReassignTask = async (taskId: string) => {
+    // Optimistically remove completions or reset status
+    updateTaskInAllLists(taskId, (t) => ({
+      ...t,
+      status: 'pending',
+      completedBy: []
+    }));
 
-    // 5. Send API Request
     try {
-      await axiosInstance.patch(`/task/${taskId}`, {
-        status: 'completed',
-        completedBy: updatedCompletedBy
-      });
-      toast({ title: 'Task finished successfully!' });
+      // Sends ID only via the URL as requested
+      await axiosInstance.patch(`/task/reassign/${taskId}`);
+      toast({ title: 'Task reassigned successfully' });
     } catch (error) {
-      console.error('Failed to complete task', error);
-      toast({ variant: 'destructive', title: 'Failed to update status' });
-
-      // Optional Rollback: If it fails, refresh the current active tab to restore the task
-      fetchTaskList(activeTab as any, 1, false);
+      console.error('Failed to reassign', error);
+      toast({ variant: 'destructive', title: 'Failed to reassign task' });
     }
   };
-
-  const handleReassignTask = async (taskId: string) => {
-       // Optimistically remove completions or reset status
-       updateTaskInAllLists(taskId, (t) => ({ ...t, status: 'pending', completedBy: [] }));
-       
-       try {
-         // Sends ID only via the URL as requested
-         await axiosInstance.patch(`/task/reassign/${taskId}`);
-         toast({ title: 'Task reassigned successfully' });
-       } catch (error) {
-         console.error("Failed to reassign", error);
-         toast({ variant: 'destructive', title: 'Failed to reassign task' });
-       }
-    };
-  
-
 
   // --- Helper for Load More Button UI ---
   const LoadMoreButton = ({
@@ -370,7 +428,7 @@ const StaffDashboardPage = () => {
           >
             Today{' '}
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
-              {todayState.data.length}
+              {activeTodayTasks.length}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -379,7 +437,7 @@ const StaffDashboardPage = () => {
           >
             Overdue{' '}
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
-              {overdueState.data.length}
+              {activeOverdueTasks.length}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -388,7 +446,7 @@ const StaffDashboardPage = () => {
           >
             Upcoming{' '}
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
-              {upcomingState.data.length}
+              {activeUpcomingTasks.length}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -397,7 +455,7 @@ const StaffDashboardPage = () => {
           >
             Assign To Others{' '}
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
-              {assignedState.data.length}
+              {activeAssignedTasks.length}
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -406,7 +464,7 @@ const StaffDashboardPage = () => {
           >
             Need To Finish{' '}
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
-              {finishState.data.length}
+              {activeFinishTasks.length}
             </span>
           </TabsTrigger>
         </TabsList>
@@ -427,7 +485,7 @@ const StaffDashboardPage = () => {
                 <div className="flex h-32 items-center justify-center">
                   <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
-              ) : todayState.data.length === 0 ? (
+              ) : activeTodayTasks.length === 0 ? (
                 <EmptyState
                   icon={<Calendar className="h-6 w-6 text-slate-400" />}
                   title="No tasks for today"
@@ -436,7 +494,7 @@ const StaffDashboardPage = () => {
               ) : (
                 <>
                   <TaskList
-                    tasks={todayState.data}
+                    tasks={activeTodayTasks}
                     onMarkAsImportant={handleMarkAsImportant}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                   />
@@ -450,7 +508,7 @@ const StaffDashboardPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        {/* Tab 2: Overdue */}
+
         <TabsContent value="overdue">
           <Card className=" rounded-none border-none p-0 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between p-0 pb-2 ">
@@ -464,7 +522,7 @@ const StaffDashboardPage = () => {
                 <div className="flex h-32 items-center justify-center">
                   <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
-              ) : overdueState.data.length === 0 ? (
+              ) : activeOverdueTasks.length === 0 ? (
                 <EmptyState
                   icon={<AlertCircle className="h-6 w-6 text-slate-400" />}
                   title="No overdue tasks"
@@ -473,7 +531,7 @@ const StaffDashboardPage = () => {
               ) : (
                 <>
                   <TaskList
-                    tasks={overdueState.data}
+                    tasks={activeOverdueTasks}
                     onMarkAsImportant={handleMarkAsImportant}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                   />
@@ -501,7 +559,7 @@ const StaffDashboardPage = () => {
                 <div className="flex h-32 items-center justify-center">
                   <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
-              ) : upcomingState.data.length === 0 ? (
+              ) : activeUpcomingTasks.length === 0 ? (
                 <EmptyState
                   icon={<Clock className="h-6 w-6 text-slate-400" />}
                   title="No upcoming tasks"
@@ -510,7 +568,7 @@ const StaffDashboardPage = () => {
               ) : (
                 <>
                   <TaskList
-                    tasks={upcomingState.data}
+                    tasks={activeUpcomingTasks}
                     onMarkAsImportant={handleMarkAsImportant}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                   />
@@ -538,7 +596,7 @@ const StaffDashboardPage = () => {
                 <div className="flex h-32 items-center justify-center">
                   <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
-              ) : assignedState.data.length === 0 ? (
+              ) : activeAssignedTasks.length === 0 ? (
                 <EmptyState
                   icon={<UserPlus className="h-6 w-6 text-slate-400" />}
                   title="No tasks assigned"
@@ -547,7 +605,7 @@ const StaffDashboardPage = () => {
               ) : (
                 <>
                   <AssignTaskList
-                    tasks={assignedState.data}
+                    tasks={activeAssignedTasks}
                     onMarkAsImportant={handleMarkAsImportant}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                   />
@@ -575,7 +633,7 @@ const StaffDashboardPage = () => {
                 <div className="flex h-32 items-center justify-center">
                   <BlinkingDots size="large" color="bg-taskplanner" />
                 </div>
-              ) : finishState.data.length === 0 ? (
+              ) : activeFinishTasks.length === 0 ? (
                 <EmptyState
                   icon={<CheckCircle2 className="h-6 w-6 text-slate-400" />}
                   title="Nothing to review"
@@ -584,7 +642,7 @@ const StaffDashboardPage = () => {
               ) : (
                 <>
                   <NeedToFinishList
-                    tasks={finishState.data}
+                    tasks={activeFinishTasks}
                     onMarkAsImportant={handleMarkAsImportant}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                     reAssign={handleReassignTask}
@@ -604,7 +662,6 @@ const StaffDashboardPage = () => {
   );
 };
 
-// Simple Helper Component for Empty States
 const EmptyState = ({
   icon,
   title,

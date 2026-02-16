@@ -12,12 +12,24 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, CheckCircle2, RotateCcw, Eye, MessageCircle, MessageSquareText } from 'lucide-react';
+import {
+  Star,
+  CheckCircle2,
+  RotateCcw,
+  Eye,
+  MessageCircle,
+  MessageSquareText
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import axiosInstance from '@/lib/axios';
 
-const NeedToFinishList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reAssign }) => {
+const NeedToFinishList = ({
+  tasks,
+  onMarkAsImportant,
+  onToggleTaskCompletion,
+  reAssign
+}) => {
   const { user } = useSelector((state: any) => state.auth);
   const { id } = useParams();
   const navigate = useNavigate();
@@ -37,9 +49,9 @@ const NeedToFinishList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reA
     setSelectedTask(null);
   };
 
-  const reassign=(task)=>{
-    reAssign(task._id)
-  }
+  const reassign = (task) => {
+    reAssign(task._id);
+  };
 
   const onUpdateConfirm = async (data) => {
     if (!selectedTask) return;
@@ -94,15 +106,11 @@ const NeedToFinishList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion,reA
   if (sortedTasks.length === 0) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <img
-          src="/notask.png"
-          alt="No tasks"
-          className="max-w-xs opacity-90"
-        />
+        <img src="/notask.png" alt="No tasks" className="max-w-xs opacity-90" />
       </div>
     );
   }
-const getUserName = (userObj: any) => {
+  const getUserName = (userObj: any) => {
     if (!userObj) return 'Unknown';
     if (typeof userObj === 'string') return 'User'; // Fallback if not populated
     return userObj.name || 'User';
@@ -132,7 +140,7 @@ const getUserName = (userObj: any) => {
                 Due Date
               </TableHead>
 
-              <TableHead className="pr-6 border border-gray-200 text-right text-xs font-bold capitalize tracking-wider">
+              <TableHead className="border border-gray-200 pr-6 text-right text-xs font-bold capitalize tracking-wider">
                 Action
               </TableHead>
             </TableRow>
@@ -161,7 +169,7 @@ const getUserName = (userObj: any) => {
 
               const isOverdue =
                 moment(task.dueDate).isBefore(moment()) && !isCompleted;
-            const isUnseen = user?._id === assigneeId && task.seen === false;
+              const isUnseen = user?._id === assigneeId && task.seen === false;
 
               return (
                 <TableRow
@@ -177,22 +185,26 @@ const getUserName = (userObj: any) => {
                 >
                   {/* Task */}
                   <TableCell
-                    className="border border-gray-200 py-4"
+                    className="border border-gray-200 py-4 cursor-pointer"
                     onClick={() =>
                       navigate(`/company/${id}/task-details/${task?._id}`)
                     }
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Left Side - Task Name */}
                       <div className="flex flex-col gap-0.5">
-                        <span
-                          className={cn(
-                            'text-sm transition-colors',
-                            isCompleted && 'text-slate-400 line-through'
-                          )}
-                        >
+                        <span className="text-sm transition-colors">
                           {task.taskName}
                         </span>
                       </div>
+
+                      {/* Right Side - Frequency Badge */}
+                      {task.frequency &&
+                        task.frequency.toLowerCase() !== 'once' && (
+                          <Badge variant="default" className="capitalize">
+                            {task.frequency}
+                          </Badge>
+                        )}
                     </div>
                   </TableCell>
                   <TableCell className="border border-gray-200">
@@ -242,19 +254,18 @@ const getUserName = (userObj: any) => {
                       <Button
                         size="sm"
                         className={cn(
-                          'rounded-md shadow-none transition-all',
+                          'rounded-md shadow-sm transition-all',
                           isImportant
                             ? 'border border-orange-300 bg-orange-200 text-orange-600 hover:bg-orange-300'
-                            : 'border-4 border-black bg-white text-black hover:bg-slate-50'
+                            : 'border border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
                         )}
                         onClick={() => onMarkAsImportant(task._id)}
                       >
                         <Star
                           className={cn(
-                            'h-5 w-5',
+                            'h-4 w-4',
                             isImportant && 'fill-current'
                           )}
-                          strokeWidth={3}
                         />
                       </Button>
 

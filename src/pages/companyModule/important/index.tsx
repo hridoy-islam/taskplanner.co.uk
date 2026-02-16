@@ -9,8 +9,6 @@ import PageHead from '@/components/shared/page-head';
 import { Breadcrumbs } from '@/components/shared/breadcrumbs';
 import TaskList from './components/task-list';
 import { BlinkingDots } from '@/components/shared/blinking-dots';
-// Tip: If you have a Spinner or Skeleton component in your UI library, import it here!
-// import { Skeleton } from '@/components/ui/skeleton'; 
 
 type PopulatedUserReference = {
   _id: string;
@@ -36,7 +34,6 @@ export default function CompanyImportantPage() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
-  // 1. Add loading state initialized to true
   const [isLoading, setIsLoading] = useState(true);
 
   // 2. Fetching Logic
@@ -49,9 +46,6 @@ export default function CompanyImportantPage() {
     } catch (error) {
       console.error('Failed to fetch important tasks:', error);
     } finally {
-      // 3. Set to false once the initial fetch finishes (success or fail)
-      // Since we don't set it to true at the top of this function, 
-      // the 1-minute polling won't trigger the loading screen again.
       setIsLoading(false);
     }
   }, [id]);
@@ -81,7 +75,15 @@ export default function CompanyImportantPage() {
         const isPending = task.status === 'pending';
         const isMarkedByUser = Array.isArray(task.importantBy) && task.importantBy.includes(id || '');
 
-        return matchesSearch && isPending && isMarkedByUser;
+        // NEW: Check if the current user (id) is in the completedBy array
+        const isCompletedByMe = Array.isArray(task.completedBy) && task.completedBy.some((c: any) => {
+          // Safely extract the ID whether 'c' is a string or an object
+          const cId = typeof c === 'string' ? c : c?.userId?._id || c?.userId || c?._id;
+          return cId === id;
+        });
+
+        // Filter out if isCompletedByMe is true
+        return matchesSearch && isPending && isMarkedByUser && !isCompletedByMe;
       })
       .sort((a, b) => {
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
@@ -169,10 +171,7 @@ export default function CompanyImportantPage() {
 
   return (
     <div className="p-4 space-y-3">
-      <h1 className='font-semibold text-2xl'>Important Task</h1>
-      
       <div className=" ">
-        {/* 4. Conditional Rendering based on isLoading state */}
         {isLoading ? (
           <div className="flex justify-center items-center py-10">
           <BlinkingDots size='large' color='bg-taskplanner' />
