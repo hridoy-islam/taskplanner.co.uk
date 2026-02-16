@@ -172,7 +172,7 @@ export default function UserAuthForm() {
           </Button>
         </form>
       </Form>
-      {error && <Badge className="mt-2 text-red-500">{error}</Badge>}
+      {error && <Badge className="mt-2 text-red-500 bg-white hover:bg-white">{error}</Badge>}
       <p className="text-sm">
         Don't have account? <Link to="/signup">Signup</Link>{' '}
       </p>
