@@ -51,6 +51,7 @@ import moment from 'moment';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { BlinkingDots } from '@/components/shared/blinking-dots'; // Ensure this is imported
 
 interface Member {
   id: number | string; // Adjusted to allow string incase of MongoDB ObjectId
@@ -101,6 +102,9 @@ export default function StaffGroupPage() {
   const navigate = useNavigate();
   const [view, setView] = useState<'active' | 'archived'>('active');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  
+  // 1. Added loading state
+  const [isLoading, setIsLoading] = useState(true);
 
   // Initialize React Hook Form
   const form = useForm<GroupFormValues>({
@@ -169,6 +173,9 @@ export default function StaffGroupPage() {
       }
     } catch (error) {
       console.error('Error fetching groups:', error);
+    } finally {
+      // 2. Turn off loading state once fetch completes
+      setIsLoading(false);
     }
   };
 
@@ -289,201 +296,206 @@ export default function StaffGroupPage() {
       </div>
 
       {/* Main Table Section */}
-      <div className="rounded-md border border-taskplanner  shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-taskplanner text-white">
-              <TableHead className="w-[300px]">Group Name</TableHead>
-              <TableHead>Members</TableHead>
-              <TableHead>Created By</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {displayGroups.map((group) => (
-              <TableRow
-                key={group.id}
-                className="cursor-pointer hover:bg-gray-50/50"
-                onClick={() => navigate(`${group?.id}`)}
-              >
-                {/* Group Name Column */}
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9 border border-gray-200">
-                      <AvatarImage src={group?.image} alt="Group" />
-                      <AvatarFallback className=" ">
-                        <img
-                          src="/group-placeholder.jpg"
-                          alt="Avatar"
-                          className="h-8 w-8 rounded-full object-cover"
-                        />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="truncate font-semibold">
-                        {group.name}
-                      </span>
-                      {group.unreadMessageCount &&
-                      group.unreadMessageCount > 0 ? (
-                        <span className="text-xs font-medium text-red-600">
-                          {group.unreadMessageCount} new messages
+      <div className="rounded-md border border-taskplanner shadow-sm overflow-hidden">
+        {isLoading ? (
+          // 3. Conditional rendering for loading state
+          <div className="flex h-64 items-center justify-center bg-white">
+            <BlinkingDots size="large" color="bg-taskplanner" />
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-taskplanner text-white">
+                <TableHead className="w-[300px]">Group Name</TableHead>
+                <TableHead>Members</TableHead>
+                <TableHead>Created By</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {displayGroups.map((group) => (
+                <TableRow
+                  key={group.id}
+                  className="cursor-pointer hover:bg-gray-50/50"
+                  onClick={() => navigate(`${group?.id}`)}
+                >
+                  {/* Group Name Column */}
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9 border border-gray-200">
+                        <AvatarImage src={group?.image} alt="Group" />
+                        <AvatarFallback className=" ">
+                          <img
+                            src="/group-placeholder.jpg"
+                            alt="Avatar"
+                            className="h-8 w-8 rounded-full object-cover"
+                          />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="truncate font-semibold">
+                          {group.name}
                         </span>
-                      ) : null}
+                        {group.unreadMessageCount &&
+                        group.unreadMessageCount > 0 ? (
+                          <span className="text-xs font-medium text-red-600">
+                            {group.unreadMessageCount} new messages
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                </TableCell>
+                  </TableCell>
 
-                {/* Members Column */}
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="flex -space-x-4 overflow-hidden">
-                      {group.members.slice(0, 4).map((member) => (
-                        <Avatar
-                          key={member.id}
-                          className="inline-block h-8 w-8 border-2 border-white ring-offset-2"
-                        >
-                          <AvatarImage src={member.image} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            <img
-                              src="/placeholder.png"
-                              alt="Avatar"
-                              className="h-8 w-8 rounded-full object-cover"
-                            />
-                          </AvatarFallback>
-                        </Avatar>
-                      ))}
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className="bg-taskplanner text-xs font-normal text-white hover:bg-taskplanner"
-                    >
-                      {group.members.length} members
-                    </Badge>
-                  </div>
-                </TableCell>
-
-                {/* Created At Column */}
-                <TableCell className="text-sm font-semibold">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9 border border-gray-200">
-                      <AvatarImage src={group?.creator?.image} alt="Group" />
-                      <AvatarFallback className=" text-primary">
-                        <img
-                          src="/placeholder.png"
-                          alt="Avatar"
-                          className="h-8 w-8 rounded-full object-cover"
-                        />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="truncate font-semibold">
-                        {group.creator?.name}
-                      </span>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm font-semibold">
-                  {moment(group.createdAt).format('MMM D, YYYY')}
-                </TableCell>
-
-                {/* Actions Column */}
-                <TableCell className="text-right">
-                  {user._id == group.creator?._id?.toString() && (
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={() =>
-                              setSelectedGroupId(group.id.toString())
-                            }
+                  {/* Members Column */}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="flex -space-x-4 overflow-hidden">
+                        {group.members.slice(0, 4).map((member) => (
+                          <Avatar
+                            key={member.id}
+                            className="inline-block h-8 w-8 border-2 border-white ring-offset-2"
                           >
-                            {view === 'active' ? (
-                              <Trash2 className="h-4 w-4" />
-                            ) : (
-                              <ArchiveRestore className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </AlertDialogTrigger>
+                            <AvatarImage src={member.image} />
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              <img
+                                src="/placeholder.png"
+                                alt="Avatar"
+                                className="h-8 w-8 rounded-full object-cover"
+                              />
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className="bg-taskplanner text-xs font-normal text-white hover:bg-taskplanner"
+                      >
+                        {group.members.length} members
+                      </Badge>
+                    </div>
+                  </TableCell>
 
-                        <AlertDialogContent className="bg-white text-black">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              {view === 'active'
-                                ? 'Archive Group?'
-                                : 'Restore Group?'}
-                            </AlertDialogTitle>
-                            <AlertDialogDesc>
-                              {view === 'active'
-                                ? 'This will archive the group. It will move to the archived tab.'
-                                : 'This will restore the group to the active list.'}
-                            </AlertDialogDesc>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel
-                              onClick={() => setSelectedGroupId(null)}
-                            >
-                              Cancel
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={async () => {
-                                try {
-                                  const newStatus =
-                                    view === 'active' ? 'archived' : 'active';
-                                  await axiosInstance.patch(
-                                    `/group/single/${selectedGroupId}`,
-                                    { status: newStatus }
-                                  );
-                                  toast({
-                                    title:
-                                      view === 'active'
-                                        ? 'Group archived'
-                                        : 'Group restored'
-                                  });
-                                  fetchGroups();
-                                } catch (error) {
-                                  console.error('Error updating group:', error);
-                                  toast({
-                                    title: 'Action failed',
-                                    variant: 'destructive'
-                                  });
-                                }
-                                setSelectedGroupId(null);
-                              }}
-                              className={
-                                view === 'active'
-                                  ? 'bg-destructive hover:bg-destructive/90'
-                                  : ''
+                  {/* Created At Column */}
+                  <TableCell className="text-sm font-semibold">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9 border border-gray-200">
+                        <AvatarImage src={group?.creator?.image} alt="Group" />
+                        <AvatarFallback className=" text-primary">
+                          <img
+                            src="/placeholder.png"
+                            alt="Avatar"
+                            className="h-8 w-8 rounded-full object-cover"
+                          />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="truncate font-semibold">
+                          {group.creator?.name}
+                        </span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm font-semibold">
+                    {moment(group.createdAt).format('MMM D, YYYY')}
+                  </TableCell>
+
+                  {/* Actions Column */}
+                  <TableCell className="text-right">
+                    {user._id == group.creator?._id?.toString() && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              onClick={() =>
+                                setSelectedGroupId(group.id.toString())
                               }
                             >
-                              {view === 'active' ? 'Archive' : 'Restore'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+                              {view === 'active' ? (
+                                <Trash2 className="h-4 w-4" />
+                              ) : (
+                                <ArchiveRestore className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
 
-            {displayGroups.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-black">
-                  No {view} groups found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                          <AlertDialogContent className="bg-white text-black">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {view === 'active'
+                                  ? 'Archive Group?'
+                                  : 'Restore Group?'}
+                              </AlertDialogTitle>
+                              <AlertDialogDesc>
+                                {view === 'active'
+                                  ? 'This will archive the group. It will move to the archived tab.'
+                                  : 'This will restore the group to the active list.'}
+                              </AlertDialogDesc>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel
+                                onClick={() => setSelectedGroupId(null)}
+                              >
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={async () => {
+                                  try {
+                                    const newStatus =
+                                      view === 'active' ? 'archived' : 'active';
+                                    await axiosInstance.patch(
+                                      `/group/single/${selectedGroupId}`,
+                                      { status: newStatus }
+                                    );
+                                    toast({
+                                      title:
+                                        view === 'active'
+                                          ? 'Group archived'
+                                          : 'Group restored'
+                                    });
+                                    fetchGroups();
+                                  } catch (error) {
+                                    console.error('Error updating group:', error);
+                                    toast({
+                                      title: 'Action failed',
+                                      variant: 'destructive'
+                                    });
+                                  }
+                                  setSelectedGroupId(null);
+                                }}
+                                className={
+                                  view === 'active'
+                                    ? 'bg-destructive hover:bg-destructive/90'
+                                    : ''
+                                }
+                              >
+                                {view === 'active' ? 'Archive' : 'Restore'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+
+              {displayGroups.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-black">
+                    No {view} groups found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
       {/* Modernized Create Group Dialog */}
-      {/* Modernized Create Group Dialog */}
       <Dialog open={isGroupModalOpen} onOpenChange={handleModalOpenChange}>
-        {/* 1. Increased Dialog width to 800px */}
         <DialogContent className="w-[95vw] sm:max-w-[800px]">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-tight">
@@ -523,7 +535,6 @@ export default function StaffGroupPage() {
                 control={form.control}
                 name="selectedMembers"
                 render={({ field }) => {
-                  // 2. Derive the selected member objects from the form's ID array
                   const selectedMemberObjects = field.value
                     .map((id) => initialMembers.find((m) => m.id === id))
                     .filter(Boolean);
@@ -531,7 +542,6 @@ export default function StaffGroupPage() {
                   return (
                     <FormItem>
                       <FormLabel>Team Members</FormLabel>
-                      {/* 3. Implemented a 2-column grid */}
                       <div className="mt-2 grid grid-cols-1 gap-6 md:grid-cols-2">
                         {/* Left Side: Search and Available Members */}
                         <div className="flex flex-col gap-3">
@@ -603,7 +613,6 @@ export default function StaffGroupPage() {
                           </Label>
 
                           <div className="flex-1 rounded-md border bg-white p-2 shadow-inner">
-                            {/* Slightly taller scroll area to align nicely with the left side (Search + List) */}
                             <ScrollArea className="h-[295px] bg-white">
                               {selectedMemberObjects.length === 0 ? (
                                 <div className="mt-24 flex h-full items-center justify-center text-sm text-black">

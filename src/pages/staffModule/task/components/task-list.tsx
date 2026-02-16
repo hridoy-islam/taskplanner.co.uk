@@ -170,6 +170,7 @@ const TaskList = ({
                   : task.author?._id;
 
                   const isAuthor = user?._id === authorId;
+                  const isAssigned = user?._id === assigneeId;
               return (
                 <TableRow
                   key={task._id}
@@ -311,6 +312,15 @@ const TaskList = ({
                             Finish
                           </Button>
                         </>
+                      )}
+
+                       {isAssigned && (
+                        <Button
+                          size="sm"
+                          onClick={() => onToggleTaskCompletion(task._id)}
+                        >
+                          Complete
+                        </Button>
                       )}
                     </div>
                   </TableCell>

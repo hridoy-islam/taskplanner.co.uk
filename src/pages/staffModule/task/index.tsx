@@ -561,10 +561,11 @@ export default function StaffTaskPage() {
 
     // Add to completed list
     setCompletedTasks((prev) => [updatedTask, ...prev]);
-
+    const isAuthor = user?._id === authorId;
     try {
       await axiosInstance.patch(`/task/${taskId}`, {
-        status: 'completed',
+        status: isAuthor ? 'completed' : 'pending',
+
         completedBy: updatedCompletedBy
       });
       toast({ title: 'Task finished successfully!' });

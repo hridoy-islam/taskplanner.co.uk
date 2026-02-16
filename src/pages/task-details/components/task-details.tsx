@@ -418,6 +418,23 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     label: member.name
   }));
 
+
+  const getOrdinal = (day: number) => {
+  if (day > 3 && day < 21) return `${day}th`;
+
+  switch (day % 10) {
+    case 1:
+      return `${day}st`;
+    case 2:
+      return `${day}nd`;
+    case 3:
+      return `${day}rd`;
+    default:
+      return `${day}th`;
+  }
+};
+
+
   return (
     <div className=" rounded-lg bg-white p-2">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -678,19 +695,19 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         </div>
 
         {localTask.frequency !== 'once' && (
-          <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
-            <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
-              Frequency
-            </div>
-            <div className="text-sm font-semibold capitalize text-gray-900">
-              {/* DISPLAY THE DAY OF THE MONTH HERE */}
-              {localTask.frequency}{' '}
-              {localTask.frequency === 'monthly' && localTask.scheduledDate
-                ? `(Day ${localTask.scheduledDate})`
-                : ''}
-            </div>
-          </div>
-        )}
+  <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+    <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+      Frequency
+    </div>
+
+    <div className="text-sm font-semibold capitalize text-gray-900">
+      {localTask.frequency === 'monthly' && localTask.scheduledDate
+        ? `${getOrdinal(localTask.scheduledDate)} of every month`
+        : localTask.frequency}
+    </div>
+  </div>
+)}
+
 
         <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
           <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">

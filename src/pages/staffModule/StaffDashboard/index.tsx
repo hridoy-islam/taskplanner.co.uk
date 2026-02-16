@@ -411,7 +411,7 @@ const getInitialTab = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-5">
+    <div className="flex flex-col gap-6 p-3">
       {/* --- Stats Section --- */}
 
       {/* --- Tasks Section with Tabs --- */}
@@ -421,49 +421,53 @@ const getInitialTab = () => {
         className="w-full"
       >
         {' '}
-        <TabsList className="mb-4 border border-gray-200 bg-white p-1">
+       <TabsList className="mb-4 p-2 inline-flex items-center justify-center rounded-lg bg-taskplanner  shadow-sm">
           <TabsTrigger
             value="today"
-            className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
+            className="group rounded-lg text-sm font-medium text-white transition-all data-[state=active]:bg-white data-[state=active]:text-taskplanner data-[state=active]:shadow-sm"
           >
             Today{' '}
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
+            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs text-white transition-colors group-data-[state=active]:bg-slate-100 group-data-[state=active]:text-black">
               {activeTodayTasks.length}
             </span>
           </TabsTrigger>
+
           <TabsTrigger
             value="overdue"
-            className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
+            className="group rounded-lg  text-sm font-medium text-white transition-all data-[state=active]:bg-white data-[state=active]:text-taskplanner data-[state=active]:shadow-sm"
           >
             Overdue{' '}
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
+            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs text-white transition-colors group-data-[state=active]:bg-slate-100 group-data-[state=active]:text-black">
               {activeOverdueTasks.length}
             </span>
           </TabsTrigger>
+
           <TabsTrigger
             value="upcoming"
-            className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
+            className="group rounded-lg  text-sm font-medium text-white transition-all data-[state=active]:bg-white data-[state=active]:text-taskplanner data-[state=active]:shadow-sm"
           >
             Upcoming{' '}
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
+            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs text-white transition-colors group-data-[state=active]:bg-slate-100 group-data-[state=active]:text-black">
               {activeUpcomingTasks.length}
             </span>
           </TabsTrigger>
+
           <TabsTrigger
             value="assigntoother"
-            className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
+            className="group rounded-lg  text-sm font-medium text-white transition-all data-[state=active]:bg-white data-[state=active]:text-taskplanner data-[state=active]:shadow-sm"
           >
             Assign To Others{' '}
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
+            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs text-white transition-colors group-data-[state=active]:bg-slate-100 group-data-[state=active]:text-black">
               {activeAssignedTasks.length}
             </span>
           </TabsTrigger>
+
           <TabsTrigger
             value="needtofinish"
-            className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
+            className="group rounded-lg  text-sm font-medium text-white transition-all data-[state=active]:bg-white data-[state=active]:text-taskplanner data-[state=active]:shadow-sm"
           >
             Need To Finish{' '}
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
+            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs text-white transition-colors group-data-[state=active]:bg-slate-100 group-data-[state=active]:text-black">
               {activeFinishTasks.length}
             </span>
           </TabsTrigger>
@@ -512,10 +516,10 @@ const getInitialTab = () => {
         <TabsContent value="overdue">
           <Card className=" rounded-none border-none p-0 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between p-0 pb-2 ">
-              <CardTitle className="flex items-center gap-2 text-lg font-bold text-red-700">
+              {/* <CardTitle className="flex items-center gap-2 text-lg font-bold text-red-700">
                 <AlertCircle className="h-5 w-5 text-red-600" />
                 Overdue Tasks
-              </CardTitle>
+              </CardTitle> */}
             </CardHeader>
             <CardContent className="p-0">
               {overdueState.loading ? (
@@ -549,10 +553,10 @@ const getInitialTab = () => {
         <TabsContent value="upcoming">
           <Card className="rounded-none border-none p-0 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between p-0 pb-2  ">
-              <CardTitle className="flex items-center gap-2 text-lg font-bold text-blue-700">
+              {/* <CardTitle className="flex items-center gap-2 text-lg font-bold text-blue-700">
                 <Clock className="h-5 w-5 text-blue-600" />
                 Upcoming Tasks
-              </CardTitle>
+              </CardTitle> */}
             </CardHeader>
             <CardContent className="p-0">
               {upcomingState.loading ? (
@@ -586,10 +590,10 @@ const getInitialTab = () => {
         <TabsContent value="assigntoother">
           <Card className="rounded-none border-none shadow-none">
             <CardHeader className="p-0 pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800">
+              {/* <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800">
                 <UserPlus className="h-5 w-5 text-taskplanner" />
                 Tasks Assigned to Others
-              </CardTitle>
+              </CardTitle> */}
             </CardHeader>
             <CardContent className="p-0">
               {assignedState.loading ? (
@@ -623,10 +627,10 @@ const getInitialTab = () => {
         <TabsContent value="needtofinish">
           <Card className="rounded-none border-none shadow-none">
             <CardHeader className="p-0 pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg font-bold text-green-700">
+              {/* <CardTitle className="flex items-center gap-2 text-lg font-bold text-green-700">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 Need to Finish (Review)
-              </CardTitle>
+              </CardTitle> */}
             </CardHeader>
             <CardContent className="p-0">
               {finishState.loading ? (

@@ -122,6 +122,7 @@ const WorkLoadTaskList = ({
             const isUnseen = user?._id === assigneeId && task.seen === false;
             const authorId =
               typeof task.author === 'string' ? task.author : task.author?._id;
+                  const isAssigned = user?._id === assigneeId;
 
             const isAuthor = user?._id === authorId;
             return (
@@ -270,6 +271,15 @@ const WorkLoadTaskList = ({
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+                    
+                     {isAssigned && (
+                        <Button
+                          size="sm"
+                          onClick={() => onToggleTaskCompletion(task._id)}
+                        >
+                          Complete
+                        </Button>
+                      )}
                   </div>
                 </TableCell>
               </TableRow>

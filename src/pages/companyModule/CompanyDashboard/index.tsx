@@ -48,7 +48,7 @@ const CompanyDashboardPage = () => {
   // --- State Management ---
   const [statsLoading, setStatsLoading] = useState(true);
   const [totalUsers, setTotalUsers] = useState(0);
-const getInitialTab = () => {
+  const getInitialTab = () => {
     const saved = sessionStorage.getItem('company_dashboard_tab');
     if (saved) {
       try {
@@ -73,12 +73,11 @@ const getInitialTab = () => {
         if (parsed.id === id && parsed.tab) {
           return;
         } else if (parsed.id !== id) {
-        
           sessionStorage.removeItem('company_dashboard_tab');
         }
       } catch (e) {}
     }
-    
+
     // If we reach here, there's no saved tab for this ID, so set the default
     setActiveTab('today');
   }, [id]);
@@ -97,25 +96,43 @@ const getInitialTab = () => {
   const PAGE_LIMIT = 20; // Number of items to load per click
 
   // --- Filter Tasks Helper (Removes tasks already completed by the current user) ---
-  const filterOutCompletedByMe = useCallback((tasks: any[]) => {
-    if (!user?._id) return tasks;
-    return tasks.filter((task) => {
-      if (!task.completedBy || !Array.isArray(task.completedBy)) return true;
-      const isCompletedByMe = task.completedBy.some((c: any) => {
-        const cId = typeof c === 'string' ? c : c?.userId?._id || c?.userId || c?._id;
-        return cId === user._id;
+  const filterOutCompletedByMe = useCallback(
+    (tasks: any[]) => {
+      if (!user?._id) return tasks;
+      return tasks.filter((task) => {
+        if (!task.completedBy || !Array.isArray(task.completedBy)) return true;
+        const isCompletedByMe = task.completedBy.some((c: any) => {
+          const cId =
+            typeof c === 'string' ? c : c?.userId?._id || c?.userId || c?._id;
+          return cId === user._id;
+        });
+        return !isCompletedByMe;
       });
-      return !isCompletedByMe;
-    });
-  }, [user?._id]);
+    },
+    [user?._id]
+  );
 
   // Derived filtered states for rendering pending task lists correctly
-  const activeTodayTasks = useMemo(() => filterOutCompletedByMe(todayState.data), [todayState.data, filterOutCompletedByMe]);
-  const activeOverdueTasks = useMemo(() => filterOutCompletedByMe(overdueState.data), [overdueState.data, filterOutCompletedByMe]);
-  const activeUpcomingTasks = useMemo(() => filterOutCompletedByMe(upcomingState.data), [upcomingState.data, filterOutCompletedByMe]);
-  const activeAssignedTasks = useMemo(() => filterOutCompletedByMe(assignedState.data), [assignedState.data, filterOutCompletedByMe]);
-  const activeFinishTasks = useMemo(() => filterOutCompletedByMe(finishState.data), [finishState.data, filterOutCompletedByMe]);
-
+  const activeTodayTasks = useMemo(
+    () => filterOutCompletedByMe(todayState.data),
+    [todayState.data, filterOutCompletedByMe]
+  );
+  const activeOverdueTasks = useMemo(
+    () => filterOutCompletedByMe(overdueState.data),
+    [overdueState.data, filterOutCompletedByMe]
+  );
+  const activeUpcomingTasks = useMemo(
+    () => filterOutCompletedByMe(upcomingState.data),
+    [upcomingState.data, filterOutCompletedByMe]
+  );
+  const activeAssignedTasks = useMemo(
+    () => filterOutCompletedByMe(assignedState.data),
+    [assignedState.data, filterOutCompletedByMe]
+  );
+  const activeFinishTasks = useMemo(
+    () => filterOutCompletedByMe(finishState.data),
+    [finishState.data, filterOutCompletedByMe]
+  );
 
   // --- 2. Generic Task Fetcher ---
   const fetchTaskList = useCallback(
@@ -240,12 +257,15 @@ const getInitialTab = () => {
     setFinishState(applyUpdate);
   };
 
- const handleTabChange = (value: string) => {
+  const handleTabChange = (value: string) => {
     setActiveTab(value);
-    
+
     // Save the clicked tab and current ID to session storage
     if (id) {
-      sessionStorage.setItem('company_dashboard_tab', JSON.stringify({ id, tab: value }));
+      sessionStorage.setItem(
+        'company_dashboard_tab',
+        JSON.stringify({ id, tab: value })
+      );
     }
 
     // Map the tab values to your fetchTaskList types and fetch fresh page 1 data
@@ -306,65 +326,67 @@ const getInitialTab = () => {
     }
   };
 
- const handleToggleTaskCompletion = async (taskId: string) => {
-   // 1. Find the task in any of the current tabs
-   const allTasks = [
-     ...todayState.data,
-     ...overdueState.data,
-     ...upcomingState.data,
-     ...assignedState.data,
-     ...finishState.data
-   ];
+  const handleToggleTaskCompletion = async (taskId: string) => {
+    // 1. Find the task in any of the current tabs
+    const allTasks = [
+      ...todayState.data,
+      ...overdueState.data,
+      ...upcomingState.data,
+      ...assignedState.data,
+      ...finishState.data
+    ];
 
-   const task = allTasks.find((t) => t._id === taskId);
-   if (!task) return;
+    const task = allTasks.find((t) => t._id === taskId);
+    if (!task) return;
 
-   // 2. Extract author and assigned IDs safely
-   const authorId =
-     typeof task.author === 'string' ? task.author : task.author?._id;
-   const assignedId =
-     typeof task.assigned === 'string' ? task.assigned : task.assigned?._id;
+    // 2. Extract author and assigned IDs safely
+    const authorId =
+      typeof task.author === 'string' ? task.author : task.author?._id;
+    const assignedId =
+      typeof task.assigned === 'string' ? task.assigned : task.assigned?._id;
 
-   let updatedCompletedBy = [];
+    let updatedCompletedBy = [];
 
-   // 3. Update completedBy logic
-   if (authorId === assignedId && user?._id === authorId) {
-     updatedCompletedBy = [{ userId: user?._id }, { userId: user?._id }];
-   } else {
-     const newCompletedByEntry = { userId: user?._id };
-     const filteredCompletedBy = (task.completedBy || []).filter((c: any) => {
-       const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
-       return cId !== user?._id;
-     });
-     updatedCompletedBy = [...filteredCompletedBy, newCompletedByEntry];
-   }
+    // 3. Update completedBy logic
+    if (authorId === assignedId && user?._id === authorId) {
+      updatedCompletedBy = [{ userId: user?._id }, { userId: user?._id }];
+    } else {
+      const newCompletedByEntry = { userId: user?._id };
+      const filteredCompletedBy = (task.completedBy || []).filter((c: any) => {
+        const cId = typeof c.userId === 'string' ? c.userId : c.userId._id;
+        return cId !== user?._id;
+      });
+      updatedCompletedBy = [...filteredCompletedBy, newCompletedByEntry];
+    }
 
-   // 4. Optimistically REMOVE the task from all pending lists
-   const filterOutTask = (state: TaskCategoryState) => ({
-     ...state,
-     data: state.data.filter((t) => t._id !== taskId)
-   });
+    // 4. Optimistically REMOVE the task from all pending lists
+    const filterOutTask = (state: TaskCategoryState) => ({
+      ...state,
+      data: state.data.filter((t) => t._id !== taskId)
+    });
 
-   setTodayState(filterOutTask);
-   setOverdueState(filterOutTask);
-   setUpcomingState(filterOutTask);
-   setAssignedState(filterOutTask);
-   setFinishState(filterOutTask);
+    setTodayState(filterOutTask);
+    setOverdueState(filterOutTask);
+    setUpcomingState(filterOutTask);
+    setAssignedState(filterOutTask);
+    setFinishState(filterOutTask);
 
-   try {
-     await axiosInstance.patch(`/task/${taskId}`, {
-       status: 'completed',
-       completedBy: updatedCompletedBy
-     });
-     toast({ title: 'Task finished successfully!' });
-   } catch (error) {
-     console.error('Failed to complete task', error);
-     toast({ variant: 'destructive', title: 'Failed to update status' });
+    const isAuthor = user?._id === authorId;
+    try {
+      await axiosInstance.patch(`/task/${taskId}`, {
+        status: isAuthor ? 'completed' : 'pending',
 
-     // Optional Rollback: If it fails, refresh the current active tab to restore the task
-     fetchTaskList(activeTab as any, 1, false);
-   }
- };
+        completedBy: updatedCompletedBy
+      });
+      toast({ title: 'Task finished successfully!' });
+    } catch (error) {
+      console.error('Failed to complete task', error);
+      toast({ variant: 'destructive', title: 'Failed to update status' });
+
+      // Optional Rollback: If it fails, refresh the current active tab to restore the task
+      fetchTaskList(activeTab as any, 1, false);
+    }
+  };
   const handleReassignTask = async (taskId: string) => {
     // Optimistically remove completions or reset status
     updateTaskInAllLists(taskId, (t) => ({
@@ -411,7 +433,7 @@ const getInitialTab = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-5">
+    <div className="flex flex-col gap-6 p-3">
       {/* --- Stats Section --- */}
 
       {/* --- Tasks Section with Tabs --- */}
@@ -421,49 +443,53 @@ const getInitialTab = () => {
         className="w-full"
       >
         {' '}
-        <TabsList className="mb-4 border border-gray-200 bg-white p-1">
+        <TabsList className="mb-4 inline-flex items-center justify-center rounded-lg bg-taskplanner p-2  shadow-sm">
           <TabsTrigger
             value="today"
-            className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
+            className="group rounded-lg text-sm font-medium text-white transition-all data-[state=active]:bg-white data-[state=active]:text-taskplanner data-[state=active]:shadow-sm"
           >
             Today{' '}
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
+            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs text-white transition-colors group-data-[state=active]:bg-slate-100 group-data-[state=active]:text-black">
               {activeTodayTasks.length}
             </span>
           </TabsTrigger>
+
           <TabsTrigger
             value="overdue"
-            className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
+            className="group rounded-lg  text-sm font-medium text-white transition-all data-[state=active]:bg-white data-[state=active]:text-taskplanner data-[state=active]:shadow-sm"
           >
             Overdue{' '}
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
+            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs text-white transition-colors group-data-[state=active]:bg-slate-100 group-data-[state=active]:text-black">
               {activeOverdueTasks.length}
             </span>
           </TabsTrigger>
+
           <TabsTrigger
             value="upcoming"
-            className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
+            className="group rounded-lg  text-sm font-medium text-white transition-all data-[state=active]:bg-white data-[state=active]:text-taskplanner data-[state=active]:shadow-sm"
           >
             Upcoming{' '}
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
+            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs text-white transition-colors group-data-[state=active]:bg-slate-100 group-data-[state=active]:text-black">
               {activeUpcomingTasks.length}
             </span>
           </TabsTrigger>
+
           <TabsTrigger
             value="assigntoother"
-            className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
+            className="group rounded-lg  text-sm font-medium text-white transition-all data-[state=active]:bg-white data-[state=active]:text-taskplanner data-[state=active]:shadow-sm"
           >
             Assign To Others{' '}
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
+            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs text-white transition-colors group-data-[state=active]:bg-slate-100 group-data-[state=active]:text-black">
               {activeAssignedTasks.length}
             </span>
           </TabsTrigger>
+
           <TabsTrigger
             value="needtofinish"
-            className="px-6 data-[state=active]:bg-taskplanner data-[state=active]:text-white"
+            className="group rounded-lg  text-sm font-medium text-white transition-all data-[state=active]:bg-white data-[state=active]:text-taskplanner data-[state=active]:shadow-sm"
           >
             Need To Finish{' '}
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-black">
+            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs text-white transition-colors group-data-[state=active]:bg-slate-100 group-data-[state=active]:text-black">
               {activeFinishTasks.length}
             </span>
           </TabsTrigger>
@@ -508,14 +534,13 @@ const getInitialTab = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
         <TabsContent value="overdue">
           <Card className=" rounded-none border-none p-0 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between p-0 pb-2 ">
-              <CardTitle className="flex items-center gap-2 text-lg font-bold text-red-700">
+              {/* <CardTitle className="flex items-center gap-2 text-lg font-bold text-red-700">
                 <AlertCircle className="h-5 w-5 text-red-600" />
                 Overdue Tasks
-              </CardTitle>
+              </CardTitle> */}
             </CardHeader>
             <CardContent className="p-0">
               {overdueState.loading ? (
@@ -549,10 +574,10 @@ const getInitialTab = () => {
         <TabsContent value="upcoming">
           <Card className="rounded-none border-none p-0 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between p-0 pb-2  ">
-              <CardTitle className="flex items-center gap-2 text-lg font-bold text-blue-700">
+              {/* <CardTitle className="flex items-center gap-2 text-lg font-bold text-blue-700">
                 <Clock className="h-5 w-5 text-blue-600" />
                 Upcoming Tasks
-              </CardTitle>
+              </CardTitle> */}
             </CardHeader>
             <CardContent className="p-0">
               {upcomingState.loading ? (
@@ -586,10 +611,10 @@ const getInitialTab = () => {
         <TabsContent value="assigntoother">
           <Card className="rounded-none border-none shadow-none">
             <CardHeader className="p-0 pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800">
+              {/* <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800">
                 <UserPlus className="h-5 w-5 text-taskplanner" />
                 Tasks Assigned to Others
-              </CardTitle>
+              </CardTitle> */}
             </CardHeader>
             <CardContent className="p-0">
               {assignedState.loading ? (
@@ -623,10 +648,10 @@ const getInitialTab = () => {
         <TabsContent value="needtofinish">
           <Card className="rounded-none border-none shadow-none">
             <CardHeader className="p-0 pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg font-bold text-green-700">
+              {/* <CardTitle className="flex items-center gap-2 text-lg font-bold text-green-700">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 Need to Finish (Review)
-              </CardTitle>
+              </CardTitle> */}
             </CardHeader>
             <CardContent className="p-0">
               {finishState.loading ? (

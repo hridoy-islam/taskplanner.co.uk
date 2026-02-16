@@ -169,6 +169,7 @@ const TaskList = ({
                   : task.author?._id;
 
               const isAuthor = user?._id === authorId;
+              const isAssigned = user?._id === assigneeId;
               return (
                 <TableRow
                   key={task._id}
@@ -183,7 +184,7 @@ const TaskList = ({
                 >
                   {/* Task */}
                   <TableCell
-                    className="border border-gray-200 py-4 cursor-pointer"
+                    className="cursor-pointer border border-gray-200 py-4"
                     onClick={() =>
                       navigate(`/company/${id}/task-details/${task?._id}`)
                     }
@@ -307,6 +308,15 @@ const TaskList = ({
                             Finish
                           </Button>
                         </>
+                      )}
+
+                      {isAssigned && (
+                        <Button
+                          size="sm"
+                          onClick={() => onToggleTaskCompletion(task._id)}
+                        >
+                          Complete
+                        </Button>
                       )}
                     </div>
                   </TableCell>

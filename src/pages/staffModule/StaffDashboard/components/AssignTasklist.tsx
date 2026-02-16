@@ -89,7 +89,7 @@ const AssignTaskList = ({
             </TableHead> */}
 
             <TableHead className="border border-gray-200 text-center text-xs font-bold uppercase tracking-wider text-white">
-              Assign By
+              Assign To
             </TableHead>
 
             <TableHead className="border border-gray-200 text-center text-xs font-bold uppercase tracking-wider text-white">

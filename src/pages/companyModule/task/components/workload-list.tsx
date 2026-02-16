@@ -84,12 +84,12 @@ const WorkLoadTaskList = ({
               Task
             </TableHead>
 
-            {/* <TableHead className="border border-gray-200 text-center text-xs font-bold capitalize tracking-wider text-white">
-              Assigned To
-            </TableHead> */}
 
             <TableHead className="border border-gray-200 text-center text-xs font-bold capitalize tracking-wider text-white">
               Created By
+            </TableHead>
+            <TableHead className="border border-gray-200 text-center text-xs font-bold capitalize tracking-wider text-white">
+              Assigned To
             </TableHead>
 
             <TableHead className="border border-gray-200 text-center text-xs font-bold capitalize tracking-wider text-white">
@@ -120,6 +120,7 @@ const WorkLoadTaskList = ({
                 ? task.assigned
                 : task.assigned?._id;
             const isUnseen = user?._id === assigneeId && task.seen === false;
+              const isAssigned = user?._id === assigneeId;
 
             return (
               <TableRow
@@ -158,21 +159,21 @@ const WorkLoadTaskList = ({
                     </div>
                 </TableCell>
 
-                {/* Assigned To */}
-                {/* <TableCell className="border border-gray-200">
-                   <div className="flex items-center justify-center gap-2">
-                    
-                    <span className="text-sm font-medium text-slate-700">
-                      {getUserName(task.assigned)}
-                    </span>
-                  </div>
-                </TableCell> */}
-
                 {/* Created By */}
                 <TableCell className="border border-gray-200">
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-sm font-medium text-slate-700">
                       {getUserName(task.author)}
+                    </span>
+                  </div>
+                </TableCell>
+
+                {/* Assigned To */}
+                <TableCell className="border border-gray-200">
+                   <div className="flex items-center justify-center gap-2">
+                    
+                    <span className="text-sm font-medium text-slate-700">
+                      {getUserName(task.assigned)}
                     </span>
                   </div>
                 </TableCell>
@@ -261,6 +262,15 @@ const WorkLoadTaskList = ({
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+
+                     {isAssigned && (
+                        <Button
+                          size="sm"
+                          onClick={() => onToggleTaskCompletion(task._id)}
+                        >
+                          Complete
+                        </Button>
+                      )}
                   </div>
                 </TableCell>
               </TableRow>

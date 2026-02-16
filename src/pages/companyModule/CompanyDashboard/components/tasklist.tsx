@@ -116,6 +116,7 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
                 ? task.assigned
                 : task.assigned?._id;
             const isUnseen = user?._id === assigneeId && task.seen === false;
+              const isAssigned = user?._id === assigneeId;
 
             return (
               <TableRow
@@ -257,6 +258,15 @@ const TaskList = ({ tasks, onMarkAsImportant, onToggleTaskCompletion }) => {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+
+                     {isAssigned && (
+                        <Button
+                          size="sm"
+                          onClick={() => onToggleTaskCompletion(task._id)}
+                        >
+                          Complete
+                        </Button>
+                      )}
                   </div>
                 </TableCell>
               </TableRow>
