@@ -84,9 +84,16 @@ interface TaskDetailsProps {
     scheduledDate?: number;
     completedBy?: CompletedBy[];
     history?: IHistory[];
+    priority?: string; // --- ADDED PRIORITY ---
   } | null;
   onUpdate: (updatedData: any) => Promise<any>;
 }
+
+const priorityOptions = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' }
+];
 
 export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   const [localTask, setLocalTask] = useState<TaskDetailsProps['task']>(null);
@@ -103,6 +110,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
   const [tempAssigned, setTempAssigned] = useState<string>('');
   const [frequency, setFrequency] = useState<TaskFrequency | string>('once');
   const [monthlyDay, setMonthlyDay] = useState<number | null>(1);
+  const [tempPriority, setTempPriority] = useState<string>('medium'); // --- ADDED PRIORITY STATE ---
 
   const user = useSelector((state: any) => state.auth.user);
   const navigate = useNavigate();
@@ -136,6 +144,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     setTempDueDate(taskData.dueDate || '');
     setFrequency(taskData.frequency ?? 'once');
     setMonthlyDay(taskData?.scheduledDate || 1);
+    setTempPriority(taskData.priority || 'medium'); // --- SYNC PRIORITY ---
 
     const assignedId =
       typeof taskData.assigned === 'object'
@@ -212,12 +221,10 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     try {
       const updatePayload = {
         completedBy: updatedCompletedBy
-        // history: updatedHistory
       };
       setLocalTask({
         ...localTask,
         completedBy: updatedCompletedBy as any
-        // history: updatedHistory
       });
       await onUpdate(updatePayload);
     } catch (error) {
@@ -328,6 +335,12 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
       hasChanges = true;
     }
 
+    // --- SAVE PRIORITY LOGIC ---
+    if (tempPriority !== (localTask.priority || 'medium')) {
+      updates.priority = tempPriority;
+      hasChanges = true;
+    }
+
     if (
       frequency === 'once' ||
       frequency === 'daily' ||
@@ -418,22 +431,29 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
     label: member.name
   }));
 
-
   const getOrdinal = (day: number) => {
-  if (day > 3 && day < 21) return `${day}th`;
+    if (day > 3 && day < 21) return `${day}th`;
 
-  switch (day % 10) {
-    case 1:
-      return `${day}st`;
-    case 2:
-      return `${day}nd`;
-    case 3:
-      return `${day}rd`;
-    default:
-      return `${day}th`;
+    switch (day % 10) {
+      case 1:
+        return `${day}st`;
+      case 2:
+        return `${day}nd`;
+      case 3:
+        return `${day}rd`;
+      default:
+        return `${day}th`;
+    }
+  };
+
+  // Helper to color code priority badge
+  const getPriorityColor = (priority?: string) => {
+    switch(priority?.toLowerCase()) {
+      case 'high': return 'text-red-600';
+      case 'low': return 'text-green-600';
+      default: return 'text-amber-600';
+    }
   }
-};
-
 
   return (
     <div className=" rounded-lg bg-white p-2">
@@ -485,23 +505,44 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                       />
                     </div>
 
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="assignedUser">Assigned User</Label>
-                      <ReactSelect
-                        id="assignedUser"
-                        options={memberOptions}
-                        value={
-                          memberOptions.find(
-                            (opt) => opt.value === tempAssigned
-                          ) || null
-                        }
-                        onChange={(selectedOption: any) =>
-                          setTempAssigned(selectedOption?.value || '')
-                        }
-                        placeholder="Select user..."
-                        className="text-sm"
-                        isClearable
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="assignedUser">Assigned User</Label>
+                        <ReactSelect
+                          id="assignedUser"
+                          options={memberOptions}
+                          value={
+                            memberOptions.find(
+                              (opt) => opt.value === tempAssigned
+                            ) || null
+                          }
+                          onChange={(selectedOption: any) =>
+                            setTempAssigned(selectedOption?.value || '')
+                          }
+                          placeholder="Select user..."
+                          className="text-sm"
+                          isClearable
+                        />
+                      </div>
+
+                      {/* --- ADDED PRIORITY DROPDOWN --- */}
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="priority">Priority</Label>
+                        <ReactSelect
+                          id="priority"
+                          options={priorityOptions}
+                          value={
+                            priorityOptions.find(
+                              (opt) => opt.value === tempPriority
+                            ) || priorityOptions[1] // Default to medium
+                          }
+                          onChange={(selectedOption: any) =>
+                            setTempPriority(selectedOption?.value || 'medium')
+                          }
+                          placeholder="Select priority..."
+                          className="text-sm"
+                        />
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -680,9 +721,10 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         </div>
       </div>
 
+      {/* --- INCREASED GRID COLUMNS TO ACCOMMODATE PRIORITY --- */}
       <div
         className={`mb-8 grid grid-cols-1 gap-4 ${
-          localTask.frequency !== 'once' ? 'sm:grid-cols-4' : 'sm:grid-cols-3'
+          localTask.frequency !== 'once' ? 'sm:grid-cols-5' : 'sm:grid-cols-4'
         }`}
       >
         <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
@@ -694,20 +736,29 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           </div>
         </div>
 
+        {/* --- NEW PRIORITY DISPLAY BLOCK --- */}
+        <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+            Priority
+          </div>
+          <div className={`text-sm font-semibold capitalize ${getPriorityColor(localTask.priority)}`}>
+            {localTask.priority || 'Once'}
+          </div>
+        </div>
+
         {localTask.frequency !== 'once' && (
-  <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
-    <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
-      Frequency
-    </div>
+          <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+            <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+              Frequency
+            </div>
 
-    <div className="text-sm font-semibold capitalize text-gray-900">
-      {localTask.frequency === 'monthly' && localTask.scheduledDate
-        ? `${getOrdinal(localTask.scheduledDate)} of every month`
-        : localTask.frequency}
-    </div>
-  </div>
-)}
-
+            <div className="text-sm font-semibold capitalize text-gray-900">
+              {localTask.frequency === 'monthly' && localTask.scheduledDate
+                ? `${getOrdinal(localTask.scheduledDate)} of every month`
+                : localTask.frequency}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
           <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
