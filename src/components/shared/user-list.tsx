@@ -11,10 +11,11 @@ import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
 
 // Icons & Utils
-import { Search, User as UserIcon, Loader2 } from 'lucide-react';
+import { Search, User as UserIcon, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RootState } from '@/redux/store';
 import { countUnseenTasks } from '@/helper/seenCounter';
+import { Button } from '../ui/button';
 
 interface User {
   _id: string;
@@ -27,12 +28,14 @@ interface UserListProps {
   user: string; // Current logged-in user ID
   filteredUsers: User[];
   isLoading?: boolean;
+  handleRefresh: any;
 }
 
 export default function UserList({
   user,
   filteredUsers,
-  isLoading = false
+  isLoading = false,
+  handleRefresh
 }: UserListProps) {
   const { tasks } = useSelector((state: RootState) => state.alltasks);
   const { userId: activeUserId } = useParams(); // Currently selected user in the URL
@@ -132,15 +135,32 @@ export default function UserList({
     <div className="flex h-full flex-col border-r border-gray-200 bg-white">
       {/* Header & Search */}
       <div className="px-4 py-2">
-        {/* <h2 className="mb-2 text-lg font-semibold tracking-tight">Your Contact</h2> */}
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search contact..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9 bg-gray-50/50 pl-8"
-          />
+        <div className="flex items-center gap-2">
+          {' '}
+          {/* Added flex container */}
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search contact..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-9 bg-gray-50/50 pl-8"
+            />
+          </div>
+          {/* Added Refresh Button */}
+          <Button
+            onClick={handleRefresh}
+            disabled={isLoading}
+            size={'icon'}
+            title="Refresh users"
+          >
+            <RefreshCw
+              className={cn(
+                'h-4 w-4',
+                ( isLoading) && 'animate-spin'
+              )}
+            />
+          </Button>
         </div>
       </div>
 

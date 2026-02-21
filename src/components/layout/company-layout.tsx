@@ -18,10 +18,13 @@ export default function CompanyLayout({
   const dispatch = useDispatch<AppDispatch>();
   const {id} = useParams()
   const { users } = useSelector((state: RootState) => state.users);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [team, setTeam] = useState([]);
-
+  const[counter,setCounter]=useState(0)
+  
+  const handleRefresh = () => {
+    setCounter((prev) => prev + 1);
+  }
   useEffect(() => {
     const fetchData = async () => {
       if (id) {
@@ -37,7 +40,7 @@ export default function CompanyLayout({
     const interval = setInterval(fetchData, 100000);
 
     return () => clearInterval(interval);
-  }, [id, dispatch]);
+  }, [id, dispatch,counter]);
 
   useEffect(() => {
     if (Array.isArray(users)) {
@@ -66,7 +69,11 @@ export default function CompanyLayout({
       {/* 2. Main Layout Area: Flex Row to put Sidebar next to Content */}
       <div className="flex flex-1 overflow-hidden">
         <aside className="hidden w-64 overflow-y-auto border-r border-taskplanner/60 bg-white sm:block">
-          <UserList user={id} filteredUsers={filteredUsers} />
+          <UserList
+            user={id}
+            filteredUsers={filteredUsers}
+            handleRefresh={handleRefresh}
+          />
         </aside>
 
         <main className="flex-1 overflow-y-auto bg-white">{children}</main>
