@@ -77,7 +77,7 @@ export function MessageList({
             <a
               href={decoratedHref}
               key={key}
-              className="text-blue-300 underline transition-colors hover:text-blue-200"
+              className="text-taskplanner underline transition-colors hover:text-taskplanner"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -161,7 +161,7 @@ export function MessageList({
                   <a
                     href={decoratedHref}
                     key={key}
-                    className="text-blue-300 underline transition-colors hover:text-blue-200"
+                    className="text-taskplanner underline transition-colors hover:text-taskplanner/90"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -185,7 +185,7 @@ export function MessageList({
           <Button
             onClick={loadMoreComments}
             variant={'link'}
-            className="flex flex-row justify-center gap-2 text-blue-600"
+            className="flex flex-row justify-center gap-2 text-taskplanner"
           >
             Load more
             <ArrowUp className="h-4 w-4" />

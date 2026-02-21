@@ -5,8 +5,14 @@ import { RootState } from '@/redux/store';
 import { AppNav } from './AppNav';
 import UserNav from '../shared/user-nav';
 import { NotificationDropdown } from '../shared/notification-dropdown';
-import { Menu } from 'lucide-react';
-
+import { Loader2, Mail, Menu, UserPlus } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import { useToast } from '../ui/use-toast';
+import { useState } from 'react';
+import axiosInstance from "@/lib/axios"
 interface HeaderProps {
   onMenuClick: () => void;
 }
@@ -14,6 +20,12 @@ interface HeaderProps {
 export default function Header({ onMenuClick }: HeaderProps) {
   const { user } = useSelector((state: RootState) => state.auth);
   const { id } = useParams(); // Removed uid since we use user._id directly
+
+  const {toast} = useToast()
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
 
   // 1. Create a dynamic base path so links never break on deep nested routes
   const getBasePath = () => {
@@ -124,6 +136,47 @@ export default function Header({ onMenuClick }: HeaderProps) {
     item.roles.includes(user?.role)
   );
 
+
+  const handleAddUserByEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !user?._id) return;
+
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get(`/users?email=${email}`);
+      const fetchedUser = response.data.data.result[0];
+
+      if (fetchedUser?._id) {
+        await axiosInstance.patch(`/users/addmember/${user._id}`, {
+          colleagueId: fetchedUser._id,
+          action: 'add'
+        });
+
+        toast({
+          title: `${fetchedUser.name} has been added`
+        
+        });
+
+     
+
+        setEmail('');
+        setIsDialogOpen(false); 
+      } else {
+        toast({ title: 'User not found', variant: 'destructive' });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error Adding User',
+        description: error.response?.data?.message || 'User not found',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-taskplanner/60 bg-white shadow-sm">
       <nav className="relative flex h-14 w-full items-center justify-between px-6">
@@ -151,6 +204,62 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
         {/* --- RIGHT SIDE --- */}
         <div className="z-20 flex items-center gap-2 sm:gap-4">
+          {user.role === 'company' && (
+            <>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative -mr-8 h-10 w-10 rounded-full bg-white transition-all"
+                    title="Add Colleague"
+                  >
+                    <UserPlus className="h-5 w-5" />
+                  </Button>
+                </DialogTrigger>
+
+                <DialogContent className="sm:max-w-xl">
+                  <DialogHeader>
+                    <DialogTitle>Add Colleague</DialogTitle>
+                  </DialogHeader>
+
+                  <div className="border-t border-slate-100 bg-white pt-4">
+                    <Label className="mb-2 block text-xs font-bold uppercase">
+                      Quick Add by Email
+                    </Label>
+                    <form
+                      onSubmit={handleAddUserByEmail}
+                      className="flex gap-2"
+                    >
+                      <div className="relative flex-1">
+                        <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                        <Input
+                          placeholder="email@company.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="h-10 pl-9"
+                          type="email"
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        size="sm"
+                        className="h-10 px-4"
+                        disabled={loading || !email}
+                      >
+                        {loading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          'Add'
+                        )}
+                      </Button>
+                    </form>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
+
           <NotificationDropdown />
           <UserNav />
         </div>

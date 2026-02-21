@@ -198,7 +198,7 @@ const markAsRead = async (id: string, notification: Notification) => {
             size="icon"
             className="relative h-10 w-10 rounded-full bg-white transition-all "
           >
-            <Bell className="0 h-5 w-5" />
+            <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
               <div className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-taskplanner p-1 text-[10px] font-bold text-white shadow-sm">
                 {unreadCount > 99 ? '99+' : unreadCount}
