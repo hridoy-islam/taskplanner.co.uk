@@ -95,7 +95,8 @@ export default function CompanyNotificationsPage() {
         navigate(`/company/${userId}/group/${notification?.docId}`);
       } else if (notification?.type === 'note') {
         navigate(`/company/${userId}/notes`);
-      }
+      }else if (notification.type === 'comment' && notification.docId) {
+        navigate(`/company/${userId}/task-details/${notification.docId}`);}
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }

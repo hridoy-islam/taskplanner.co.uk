@@ -233,7 +233,7 @@ export function MessageList({
                 >
                   <button
                     onClick={() => handleReplyClick(comment)}
-                    className="rounded-full bg-gray-100 p-1.5 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-800"
+                    className="rounded-full  p-1.5 text-gray-600 transition-colors  hover:text-gray-800"
                     aria-label="Reply to message"
                   >
                     <Reply className="h-3.5 w-3.5" />
@@ -241,7 +241,7 @@ export function MessageList({
                   {isUser && !isFile && (
                     <button
                       onClick={() => handleEditClick(comment)}
-                      className="rounded-full bg-gray-100 p-1.5 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-800"
+                      className="rounded-full  p-1.5 text-gray-600 transition-colors  hover:text-gray-800"
                       aria-label="Edit message"
                     >
                       <Edit className="h-3.5 w-3.5" />
@@ -250,10 +250,10 @@ export function MessageList({
                 </div>
 
                 <div
-                  className={`relative flex min-w-[120px] max-w-[320px] flex-col ${
+                  className={`relative flex min-w-[120px] max-w-[520px] text-xs flex-col ${
                     isUser
-                      ? 'rounded-tr-none bg-[#0a3d62] text-white'
-                      : 'rounded-tl-none bg-[#38ada9] text-white'
+                     ? 'rounded-tr-none bg-[#d8fcd2] text-black'
+                        : 'rounded-tl-none bg-[#fafafa] text-black'
                   } rounded-2xl p-3 transition-all duration-200 group-hover:shadow-md`}
                   style={{
                     wordWrap: 'break-word',
@@ -262,7 +262,7 @@ export function MessageList({
                   }}
                 >
                   <div className="mb-1 flex items-center space-x-2">
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-bold">
                       {comment?.authorId?.name}
                     </span>
                   </div>
@@ -271,7 +271,7 @@ export function MessageList({
                     {comment.replyTo && (
                       <div
                         onClick={() => scrollToMessage(comment.replyTo._id)}
-                        className="mb-2 flex cursor-pointer flex-col rounded border-l-4 border-white/60 bg-black/20 p-2 text-xs transition-colors hover:bg-black/30"
+                        className="mb-2 flex cursor-pointer flex-col rounded border-l-4 border-white/60 bg-taskplanner/80 p-2 text-xs transition-colors hover:bg-black/30"
                       >
                         <span className="pb-1 font-semibold text-white/90">
                           {comment.replyTo?.authorId?.name || 'Someone'}
@@ -306,7 +306,7 @@ export function MessageList({
                           </div>
                         ) : (
                           // If it's NOT an image, render a nice file document card
-                          <div className="mt-1 flex items-center space-x-3 rounded-lg bg-black/10 p-3 backdrop-blur-sm">
+                          <div className="mt-1 flex items-center space-x-3 rounded-lg bg-taskplanner p-3 backdrop-blur-sm">
                             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded bg-white/20">
                               <FileIcon className="h-6 w-6 text-white" />
                             </div>

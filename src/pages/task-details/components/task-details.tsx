@@ -580,7 +580,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      {/* <div className="space-y-2">
                         <Label>Frequency</Label>
                         <Select
                           value={frequency as string}
@@ -606,7 +606,6 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                         </Select>
                       </div>
 
-                      {/* NEW: Clean 1-31 Grid Selector for Monthly Frequency */}
                       {frequency === TaskFrequency.MONTHLY && (
                         <div className="col-span-1 mt-4 space-y-3 rounded-xl border border-gray-100 bg-slate-50 p-4 md:col-span-2">
                           <Label className="text-sm font-semibold text-gray-700">
@@ -645,7 +644,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                             of every month.
                           </p>
                         </div>
-                      )}
+                      )} */}
                     </div>
                   </div>
                   <DialogFooter>
@@ -728,7 +727,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         }`}
       >
         <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
-          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider ">
             Due Date
           </div>
           <div className="text-sm font-semibold text-gray-900">
@@ -738,7 +737,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
 
         {/* --- NEW PRIORITY DISPLAY BLOCK --- */}
         <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
-          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider ">
             Priority
           </div>
           <div className={`text-sm font-semibold capitalize ${getPriorityColor(localTask.priority)}`}>
@@ -748,20 +747,26 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
 
         {localTask.frequency !== 'once' && (
           <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
-            <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+            <div className="mb-1.5 text-xs font-bold uppercase tracking-wider ">
               Frequency
             </div>
 
             <div className="text-sm font-semibold capitalize text-gray-900">
-              {localTask.frequency === 'monthly' && localTask.scheduledDate
+              {localTask.frequency === 'monthly' && localTask.scheduledDate != null
                 ? `${getOrdinal(localTask.scheduledDate)} of every month`
+                : localTask.frequency === 'weekly' && localTask.scheduledDate != null
+                ? `Every ${
+                    ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][
+                      localTask.scheduledDate
+                    ]
+                  }`
                 : localTask.frequency}
             </div>
           </div>
         )}
 
         <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
-          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider ">
             Assigned To
           </div>
           <div className="flex items-center gap-2">
@@ -772,7 +777,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         </div>
 
         <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
-          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider ">
             Created By
           </div>
           <div className="flex items-center gap-2">
@@ -801,7 +806,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           </div>
         </div>
 
-        {localTask.frequency !== 'once' && (
+        {/* {localTask.frequency !== 'once' && (
           <div>
             <div className="mb-3 flex items-center gap-2">
               <Clock className="h-4 w-4 text-black" />
@@ -845,7 +850,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
               )}
             </div>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

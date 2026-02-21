@@ -12,7 +12,7 @@ import {
   Users2, 
   StickyNote, 
   Star, 
-  Calendar 
+  Calendar ,CalendarCheck2
 } from 'lucide-react';
 interface MainNavProps {
   items: NavItem[];
@@ -27,6 +27,7 @@ const IconMap: Record<string, any> = {
   notes: StickyNote,
   important: Star,
   planner: Calendar,
+  'schedule-task': CalendarCheck2,
 };
 export function AppNav({ items }: MainNavProps) {
   const path = usePathname();

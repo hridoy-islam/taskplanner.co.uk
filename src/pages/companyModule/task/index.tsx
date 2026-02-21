@@ -7,6 +7,7 @@ import Select from 'react-select';
 import { z } from 'zod';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import moment from 'moment';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,7 @@ type Task = {
   importantBy: string[];
   createdAt: string;
   updatedAt: string;
-  completedBy?: any[]; // Updated to any[] to handle both strings and objects safely
+  completedBy?: any[];
   unreadMessageCount?: number;
   seen?: boolean;
   priority?: string;
@@ -100,7 +101,6 @@ export default function CompanyTaskPage() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Only restore if we are looking at the exact same user profile
         if (parsed.uid === uid && parsed.tab) {
           return parsed.tab;
         }
@@ -123,12 +123,9 @@ export default function CompanyTaskPage() {
         }
       } catch (e) {}
     }
-
-    // If we reach here, there's no saved tab, so set the correct default
     setActiveTab(isPersonalView ? 'personal' : 'assignedTo');
   }, [uid, isPersonalView]);
 
-  // 3. Save tab ONLY when explicitly clicked by the user
   const handleTabChange = (val: string) => {
     setActiveTab(val);
     if (uid) {
@@ -177,12 +174,26 @@ export default function CompanyTaskPage() {
       dueDate: undefined,
       priority: 'low',
       frequency: 'once',
-      scheduledDate: 1
+      scheduledDate: null
     }
   });
 
   const selectedFrequency = watch('frequency');
   const selectedScheduledDate = watch('scheduledDate');
+
+  // Auto-set dueDate based on frequency
+  useEffect(() => {
+    if (selectedFrequency === 'daily') {
+      setValue('dueDate', moment().toDate(), { shouldValidate: true });
+    } else if (selectedFrequency === 'once') {
+      setValue('dueDate', undefined as any, { shouldValidate: false });
+      setValue('scheduledDate', null);
+    } else if (selectedFrequency === 'weekly' || selectedFrequency === 'monthly') {
+      // Clear until user picks a day
+      setValue('dueDate', undefined as any, { shouldValidate: false });
+      setValue('scheduledDate', null);
+    }
+  }, [selectedFrequency]);
 
   // --- Fetch User Details ---
   useEffect(() => {
@@ -213,9 +224,7 @@ export default function CompanyTaskPage() {
         if (fetchedTasks.length < LIMIT) setHasMoreTo(false);
 
         setAssignedToTasks((prev) => {
-          const newTasks = isLoadMore
-            ? [...prev, ...fetchedTasks]
-            : fetchedTasks;
+          const newTasks = isLoadMore ? [...prev, ...fetchedTasks] : fetchedTasks;
           return Array.from(
             new Map(newTasks.map((item) => [item._id, item])).values()
           );
@@ -243,9 +252,7 @@ export default function CompanyTaskPage() {
         if (fetchedTasks.length < LIMIT) setHasMoreBy(false);
 
         setAssignedByTasks((prev) => {
-          const newTasks = isLoadMore
-            ? [...prev, ...fetchedTasks]
-            : fetchedTasks;
+          const newTasks = isLoadMore ? [...prev, ...fetchedTasks] : fetchedTasks;
           return Array.from(
             new Map(newTasks.map((item) => [item._id, item])).values()
           );
@@ -276,9 +283,7 @@ export default function CompanyTaskPage() {
         if (fetchedTasks.length < LIMIT) setHasMoreNeedFinish(false);
 
         setNeedToFinishTasks((prev) => {
-          const newTasks = isLoadMore
-            ? [...prev, ...fetchedTasks]
-            : fetchedTasks;
+          const newTasks = isLoadMore ? [...prev, ...fetchedTasks] : fetchedTasks;
           return Array.from(
             new Map(newTasks.map((item) => [item._id, item])).values()
           );
@@ -306,9 +311,7 @@ export default function CompanyTaskPage() {
         if (fetchedTasks.length < LIMIT) setHasMoreCompleted(false);
 
         setCompletedTasks((prev) => {
-          const newTasks = isLoadMore
-            ? [...prev, ...fetchedTasks]
-            : fetchedTasks;
+          const newTasks = isLoadMore ? [...prev, ...fetchedTasks] : fetchedTasks;
           return Array.from(
             new Map(newTasks.map((item) => [item._id, item])).values()
           );
@@ -336,9 +339,7 @@ export default function CompanyTaskPage() {
         if (fetchedTasks.length < LIMIT) setHasMoreWorkLoad(false);
 
         setWorkLoadTasks((prev) => {
-          const newTasks = isLoadMore
-            ? [...prev, ...fetchedTasks]
-            : fetchedTasks;
+          const newTasks = isLoadMore ? [...prev, ...fetchedTasks] : fetchedTasks;
           return Array.from(
             new Map(newTasks.map((item) => [item._id, item])).values()
           );
@@ -353,7 +354,7 @@ export default function CompanyTaskPage() {
     [uid]
   );
 
-  // --- Filter Tasks Helper (Removes tasks already completed by the current user) ---
+  // --- Filter Tasks Helper ---
   const filterOutCompletedByMe = useCallback(
     (tasks: Task[]) => {
       if (!user?._id) return tasks;
@@ -370,7 +371,6 @@ export default function CompanyTaskPage() {
     [user?._id]
   );
 
-  // Derived filtered states for rendering pending task lists
   const activeAssignedToTasks = useMemo(
     () => filterOutCompletedByMe(assignedToTasks),
     [assignedToTasks, filterOutCompletedByMe]
@@ -449,7 +449,14 @@ export default function CompanyTaskPage() {
         author: user._id,
         assigned: uid,
         frequency: data.frequency,
-        scheduledDate: data.frequency === 'monthly' ? data.scheduledDate : null,
+        // weekly → scheduledDate is 0–6 (day index)
+        // monthly → scheduledDate is 1–31 (day of month)
+        // once/daily → null
+        scheduledDate:
+          data.frequency === 'weekly' || data.frequency === 'monthly'
+            ? data.scheduledDate
+            : null,
+        isRecurring: data.frequency !== 'once',
         status: 'pending',
         priority: data.priority
       };
@@ -553,20 +560,16 @@ export default function CompanyTaskPage() {
       updatedAt: new Date().toISOString()
     };
 
-    // Remove from pending lists
     setAssignedToTasks((prev) => prev.filter((t) => t._id !== taskId));
     setAssignedByTasks((prev) => prev.filter((t) => t._id !== taskId));
     setNeedToFinishTasks((prev) => prev.filter((t) => t._id !== taskId));
     setWorkLoadTasks((prev) => prev.filter((t) => t._id !== taskId));
-
-    // Add to completed list
     setCompletedTasks((prev) => [updatedTask, ...prev]);
 
     const isAuthor = user?._id === authorId;
     try {
       await axiosInstance.patch(`/task/${taskId}`, {
         status: isAuthor ? 'completed' : 'pending',
-
         completedBy: updatedCompletedBy
       });
       toast({ title: 'Task finished successfully!' });
@@ -595,10 +598,7 @@ export default function CompanyTaskPage() {
 
     updateTaskInLists(taskId, (t: any) => {
       const updatedHistory = [...(t.history || [])];
-      if (updatedHistory.length > 0) {
-        updatedHistory.pop();
-      }
-
+      if (updatedHistory.length > 0) updatedHistory.pop();
       return {
         ...t,
         status: 'pending',
@@ -618,7 +618,7 @@ export default function CompanyTaskPage() {
   };
 
   return (
-    <div className="flex  flex-col ">
+    <div className="flex flex-col">
       <div className="flex flex-1 flex-col overflow-hidden bg-white p-2">
         <Tabs
           value={activeTab}
@@ -671,6 +671,7 @@ export default function CompanyTaskPage() {
               </TabsTrigger>
             </TabsList>
 
+            {/* ── Dialog ── */}
             <Dialog
               open={isDialogOpen}
               onOpenChange={(open) => {
@@ -684,12 +685,14 @@ export default function CompanyTaskPage() {
                   New Task
                 </Button>
               </DialogTrigger>
+
               <DialogContent className="sm:max-w-[50vw]">
                 <DialogHeader>
                   <DialogTitle>Create New Task</DialogTitle>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
+                  {/* Task Title */}
                   <div className="grid gap-2">
                     <Input
                       placeholder="Task Title"
@@ -703,6 +706,7 @@ export default function CompanyTaskPage() {
                     )}
                   </div>
 
+                  {/* Description */}
                   <div className="grid gap-2">
                     <Textarea
                       placeholder="Description (Optional)"
@@ -711,7 +715,9 @@ export default function CompanyTaskPage() {
                     />
                   </div>
 
+                  {/* Due Date / Priority / Frequency */}
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    {/* Due Date */}
                     <div className="flex flex-col gap-2">
                       <span className="text-sm font-medium text-slate-700">
                         Due Date
@@ -724,23 +730,39 @@ export default function CompanyTaskPage() {
                             <DatePicker
                               selected={field.value}
                               onChange={(date) => field.onChange(date)}
-                              className="flex h-10 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                              className="flex h-10 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                               dateFormat="dd-MM-yyyy"
-                              placeholderText="Select date"
+                              placeholderText={
+                                selectedFrequency === 'daily'
+                                  ? 'Auto: Today'
+                                  : selectedFrequency === 'weekly'
+                                  ? 'Select a weekday below'
+                                  : selectedFrequency === 'monthly'
+                                  ? 'Select a day below'
+                                  : 'Select date'
+                              }
                               wrapperClassName="w-full"
                               minDate={new Date()}
+                              readOnly={['daily', 'weekly', 'monthly'].includes(
+                                selectedFrequency
+                              )}
+                              disabled={['daily', 'weekly', 'monthly'].includes(
+                                selectedFrequency
+                              )}
                             />
                           )}
                         />
-                        <CalendarIcon className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 " />
+                        <CalendarIcon className="pointer-events-none absolute right-3 top-2.5 h-4 w-4" />
                       </div>
                       {errors.dueDate && (
                         <span className="text-xs text-red-500">
                           {errors.dueDate.message}
                         </span>
                       )}
+                     
                     </div>
 
+                    {/* Priority */}
                     <div className="flex flex-col gap-2">
                       <span className="text-sm font-medium text-slate-700">
                         Priority
@@ -774,6 +796,7 @@ export default function CompanyTaskPage() {
                       )}
                     </div>
 
+                    {/* Frequency */}
                     <div className="flex flex-col gap-2">
                       <span className="text-sm font-medium text-slate-700">
                         Frequency
@@ -808,6 +831,66 @@ export default function CompanyTaskPage() {
                     </div>
                   </div>
 
+                  {/* ── WEEKLY: Weekday picker ── */}
+                  {selectedFrequency === 'weekly' && (
+                    <div className="mt-2 space-y-3 rounded-xl border border-gray-100 bg-slate-50 p-4">
+                      <span className="text-sm font-semibold text-gray-700">
+                        Select Day of the Week
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
+                          (dayLabel, dayIndex) => {
+                            const today = moment().startOf('day');
+                            const candidate = moment()
+                              .day(dayIndex)
+                              .startOf('day');
+                            if (candidate.isBefore(today))
+                              candidate.add(1, 'week');
+
+                            // scheduledDate = 0–6 for weekly
+                            const isSelected = selectedScheduledDate === dayIndex;
+
+                            return (
+                              <Button
+                                key={dayLabel}
+                                type="button"
+                                variant={isSelected ? 'default' : 'outline'}
+                                className={`h-10 min-w-[56px] px-3 font-medium transition-colors ${
+                                  isSelected
+                                    ? 'border-transparent bg-taskplanner text-white shadow-sm'
+                                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                }`}
+                                onClick={() => {
+                                  setValue('scheduledDate', dayIndex, {
+                                    shouldValidate: true
+                                  });
+                                  setValue('dueDate', candidate.toDate(), {
+                                    shouldValidate: true
+                                  });
+                                }}
+                              >
+                                {dayLabel}
+                              </Button>
+                            );
+                          }
+                        )}
+                      </div>
+                      {watch('dueDate') &&
+                        selectedScheduledDate !== null &&
+                        selectedScheduledDate !== undefined && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            This task will repeat every{' '}
+                            <strong>
+                              {moment(watch('dueDate')).format('dddd')}
+                            </strong>
+                            . Next due:{' '}
+                            {moment(watch('dueDate')).format('DD MMM YYYY')}
+                          </p>
+                        )}
+                    </div>
+                  )}
+
+                  {/* ── MONTHLY: Day-of-month picker ── */}
                   {selectedFrequency === 'monthly' && (
                     <div className="mt-2 space-y-3 rounded-xl border border-gray-100 bg-slate-50 p-4">
                       <span className="text-sm font-semibold text-gray-700">
@@ -815,42 +898,63 @@ export default function CompanyTaskPage() {
                       </span>
                       <div className="grid grid-cols-7 gap-2 sm:grid-cols-8 md:grid-cols-10">
                         {Array.from({ length: 31 }, (_, i) => i + 1).map(
-                          (day) => (
-                            <Button
-                              key={day}
-                              type="button"
-                              variant={
-                                selectedScheduledDate === day
-                                  ? 'default'
-                                  : 'outline'
-                              }
-                              className={`h-10 w-full p-0 font-medium transition-colors ${
-                                selectedScheduledDate === day
-                                  ? 'border-transparent bg-taskplanner text-white shadow-sm'
-                                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                              }`}
-                              onClick={() =>
-                                setValue('scheduledDate', day, {
-                                  shouldValidate: true
-                                })
-                              }
-                            >
-                              {day}
-                            </Button>
-                          )
+                          (day) => {
+                            const today = moment().startOf('day');
+                            const candidate = moment()
+                              .date(day)
+                              .startOf('day');
+                            if (candidate.isBefore(today))
+                              candidate.add(1, 'month');
+
+                            const isOverflow = candidate.date() !== day;
+                            // scheduledDate = 1–31 for monthly
+                            const isSelected =
+                              selectedScheduledDate === day &&
+                              watch('dueDate') &&
+                              moment(watch('dueDate')).isSame(candidate, 'day');
+
+                            return (
+                              <Button
+                                key={day}
+                                type="button"
+                                variant={isSelected ? 'default' : 'outline'}
+                                className={`h-10 w-full p-0 font-medium transition-colors ${
+                                  isSelected
+                                    ? 'border-transparent bg-taskplanner text-white shadow-sm'
+                                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                } ${isOverflow ? 'opacity-40' : ''}`}
+                                onClick={() => {
+                                  setValue('scheduledDate', day, {
+                                    shouldValidate: true
+                                  });
+                                  setValue('dueDate', candidate.toDate(), {
+                                    shouldValidate: true
+                                  });
+                                }}
+                              >
+                                {day}
+                              </Button>
+                            );
+                          }
                         )}
                       </div>
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        This task will repeat on the {selectedScheduledDate}
-                        {selectedScheduledDate === 1
-                          ? 'st'
-                          : selectedScheduledDate === 2
-                            ? 'nd'
-                            : selectedScheduledDate === 3
+                      {selectedScheduledDate && watch('dueDate') && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          This task will repeat on the{' '}
+                          <strong>
+                            {selectedScheduledDate}
+                            {selectedScheduledDate === 1
+                              ? 'st'
+                              : selectedScheduledDate === 2
+                              ? 'nd'
+                              : selectedScheduledDate === 3
                               ? 'rd'
-                              : 'th'}{' '}
-                        of every month.
-                      </p>
+                              : 'th'}
+                          </strong>{' '}
+                          of every month. Next due:{' '}
+                          {moment(watch('dueDate')).format('DD MMM YYYY')}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1030,7 +1134,6 @@ export default function CompanyTaskPage() {
   );
 }
 
-// Ensure EmptyState is safely at the bottom of the file
 const EmptyState = ({
   icon,
   title,
@@ -1073,7 +1176,7 @@ const LoadMoreButton = ({
         disabled={loading}
         className="flex items-center gap-2 rounded-md bg-taskplanner px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-taskplanner/90 disabled:opacity-50"
       >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : ''}
+        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         {loading ? 'Loading...' : 'Load More'}
       </button>
     </div>

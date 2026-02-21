@@ -86,6 +86,9 @@ import ManageUserPage from '@/pages/staffModule/users';
 import ManageUserTableList from '@/pages/staffModule/users/components/UserTableList';
 import CompanyTaskPage from '@/pages/companyModule/task';
 import ManageUserProfileDetail from '@/pages/staffModule/users/profile/user-profile-detail';
+import CompanyScheduleTaskPage from '@/pages/companyModule/scheduleTask';
+import ScheduleTaskDetailsPage from '@/pages/scheduletask-details';
+import StaffScheduleTaskPage from '@/pages/staffModule/scheduleTask';
 
 const DashboardLayout = lazy(
   () => import('@/components/layout/dashboard-layout')
@@ -234,6 +237,10 @@ export default function AppRouter() {
           element: <CompletedTaskPage />
         },
         {
+          path: 'schedule-task',
+          element: <CompanyScheduleTaskPage />
+        },
+        {
           path: 'director',
           element: (
             <ProtectedRoute allowedRoles={['admin', 'director']}>
@@ -310,6 +317,10 @@ export default function AppRouter() {
           element: <TaskDetailsPage />
         },
         {
+          path: 'scheduletask-details/:tid',
+          element: <ScheduleTaskDetailsPage />
+        },
+        {
           path: 'notifications',
           element: <CompanyNotificationsPage />
         }
@@ -349,6 +360,14 @@ export default function AppRouter() {
            path: 'users',
            element: <ManageUserPage />
          },
+          {
+          path: 'schedule-task',
+          element: <StaffScheduleTaskPage />
+        },
+         {
+          path: 'scheduletask-details/:tid',
+          element: <ScheduleTaskDetailsPage />
+        },
          {
            path: 'users/:sid',
            element: <ManageUserProfileDetail />

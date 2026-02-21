@@ -13,10 +13,32 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick }: HeaderProps) {
   const { user } = useSelector((state: RootState) => state.auth);
-  const { id, uid } = useParams();
+  const { id } = useParams(); // Removed uid since we use user._id directly
 
+  // 1. Create a dynamic base path so links never break on deep nested routes
+  const getBasePath = () => {
+    if (!user) return '/';
+
+    if (user.role === 'admin' || user.role === 'director') {
+      return '/dashboard/admin';
+    }
+    if (user.role === 'company') {
+      return `/company/${user._id}`;
+    }
+    if (user.role === 'creator' || user.role === 'user') {
+      const companyId = user.company || id;
+      // Using user._id fixes the "undefined" issue from useParams()
+      return `/company/${companyId}/user/${user._id}`;
+    }
+
+    return '/';
+  };
+
+  const basePath = getBasePath();
+
+  // 2. Use absolute paths for all nav items
   const navItems = [
-    // 1. Dashboard (Visible to everyone)
+    // --- Admin Routes ---
     {
       title: 'Dashboard',
       href: '/dashboard/admin',
@@ -42,81 +64,65 @@ export default function Header({ onMenuClick }: HeaderProps) {
       title: 'Subscription Plans',
       href: '/dashboard/admin/subscription-plans',
       icon: 'users',
-      label: 'Users',
+      label: 'Subscription Plans',
       roles: ['admin']
     },
+
+    // --- Dynamic Routes (Company / Creator / User) ---
     {
       title: 'Dashboard',
-      href: `/company/${user?._id}`,
+      href: basePath,
       icon: 'dashboard',
       label: 'Dashboard',
-      roles: ['company']
-    },
-    {
-      title: 'Dashboard',
-      href: `/company/${id}/user/${uid}`,
-      icon: 'dashboard',
-      label: 'Dashboard',
-      roles: ['user', 'creator']
+      roles: ['company', 'user', 'creator']
     },
     {
       title: 'Groups',
-      href: 'group',
+      href: `${basePath}/group`,
       icon: 'group',
       label: 'Groups',
       roles: ['user', 'company', 'creator']
     },
     {
       title: 'Notes',
-      href: 'notes',
+      href: `${basePath}/notes`,
       icon: 'notes',
       label: 'Notes',
       roles: ['user', 'company', 'creator']
     },
     {
       title: 'Important',
-      href: 'important',
+      href: `${basePath}/important`,
       icon: 'important',
       label: 'Important',
       roles: ['user', 'company', 'creator']
     },
     {
       title: 'Planner',
-      href: 'planner',
+      href: `${basePath}/planner`,
       icon: 'planner',
       label: 'Planner',
       roles: ['user', 'company', 'creator']
     },
     {
       title: 'Staff',
-      href: 'users',
+      href: `${basePath}/users`,
       icon: 'user',
-      label: 'Users',
+      label: 'Staff',
       roles: ['company', 'creator']
+    },
+    {
+      title: 'Schedule Task',
+      href: `${basePath}/schedule-task`,
+      icon: 'schedule-task',
+      label: 'Schedule Task',
+      roles: ['company', 'creator', 'user']
     },
   ];
 
   const filteredNavItems = navItems.filter((item) =>
     item.roles.includes(user?.role)
   );
-
-  // Helper function to dynamically set the logo URL
-  const getLogoLink = () => {
-    if (!user) return '/';
-
-    if (user.role === 'admin' || user.role === 'director') {
-      return '/dashboard/admin';
-    }
-    if (user.role === 'company') {
-      return `/company/${user._id}`;
-    }
-    if (user.role === 'creator' || user.role === 'user') {
-      const companyId = user.company || id;
-      return `/company/${companyId}/user/${user._id}`;
-    }
-
-    return null; 
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-taskplanner/60 bg-white shadow-sm">
@@ -131,8 +137,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
               <Menu className="h-6 w-6" />
             </button>
 
-            {/* Dynamic Link applied here */}
-            <Link to={getLogoLink()} className="flex items-center space-x-2">
+            {/* Logo Link now easily uses the dynamic base path */}
+            <Link to={basePath} className="flex items-center space-x-2">
               <img src="/favicon.png" alt="Taskplanner" className="h-10" />
             </Link>
           </div>

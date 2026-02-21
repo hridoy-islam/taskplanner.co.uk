@@ -383,7 +383,7 @@ export function MessageInput({
                     : "Type your comment here... (@ to mention)"
                 }
                 rows={1}
-                className="min-h-[60px] w-full resize-none border-0 bg-transparent p-3 shadow-none focus-visible:ring-0"
+                className="min-h-[60px] w-full resize-none border-0 bg-transparent p-3 shadow-none focus-visible:ring-0 text-xs"
                 onKeyDown={handleKeyDownWithMention}
               />
 

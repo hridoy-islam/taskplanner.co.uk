@@ -454,42 +454,35 @@ export default function TaskChat({ task }: TaskChatProps) {
       setIsSubmitting(false);
     }
   };
-  const isAuthor = user?._id === task?.author?._id;
-  const isAssigned = user?._id === task?.assigned?._id;
-
-  const displayUser = isAuthor
-    ? task?.assigned
-    : isAssigned
-      ? task?.author
-      : null;
 
   return (
     <Card className="flex h-full w-full flex-col justify-between rounded-xl scrollbar-hide">
       {/* Header Section (Fixed) */}
-      <div className="sticky top-0 z-10 flex w-full items-center justify-between rounded-t-xl bg-white p-4 shadow-md">
+      <div className="sticky top-0 z-10 flex w-full items-center justify-between rounded-t-xl bg-gray-200 p-4">
         {/* Left side content */}
         <div className="flex items-center gap-4">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={displayUser?.image||'/placeholder.png'} />
+            <AvatarImage src={task?.assigned?.image} />
             <AvatarFallback>
-              {(displayUser?.name || 'Unassigned')
+              {/* FIX: Safe check before splitting */}
+              {(task?.assigned?.name || 'Unassigned')
                 .split(' ')
                 .map((n) => n[0])
                 .join('')}
             </AvatarFallback>
           </Avatar>
-
           <h2 className="text-lg font-semibold">
-            {displayUser?.name || 'Unassigned'}
+            {task?.assigned?.name || 'Unassigned'}
           </h2>
         </div>
 
         {/* Right side content: 3-dot menu */}
-        {/* <div className="ml-auto flex items-center">
+        <div className="ml-auto flex items-center">
+          {/* ShadCN DropdownMenu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="rounded-full p-2 hover:bg-gray-300">
-                <AlignJustify size={20} />
+                <AlignJustify size={20} /> {/* Using Lucid 3-dot icon */}
               </button>
             </DropdownMenuTrigger>
 
@@ -504,114 +497,94 @@ export default function TaskChat({ task }: TaskChatProps) {
               </ul>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div> */}
-  <div className="ml-auto flex items-center">
-    <button
-      onClick={handleOpenDialog}
-      className="rounded-full p-2 hover:bg-gray-300"
-    >
-      <AlignJustify size={20} />
-    </button>
-  </div>
+        </div>
 
-  <Sheet open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-  <SheetContent side="right" className="w-[380px] sm:w-[440px]">
-    <SheetHeader>
-      <SheetTitle className="text-xl font-semibold">Files</SheetTitle>
-    </SheetHeader>
+        {/* ShadCN Dialog for 'Files' */}
+        <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
+          <DialogTrigger />
+          <DialogContent className="mx-auto max-w-2xl rounded-md bg-white p-4 shadow-lg">
+            <DialogTitle className="text-xl font-semibold">Files</DialogTitle>
+            <DialogDescription className="mt-2">
+              <ScrollArea className="h-[400px]">
+                <div className="grid grid-cols-1 gap-4">
+                  {comments
+                    .filter((comment) => comment.isFile)
+                    .map((comment) => {
+                      let fileContent;
+                      try {
+                        fileContent = JSON.parse(comment.content);
+                      } catch (error) {
+                        fileContent = comment.content;
+                      }
 
-    <ScrollArea className="mt-4 h-[calc(100vh-120px)]">
-      <div className="grid grid-cols-1 gap-4 pr-4">
-        {comments
-          .filter((comment) => comment.isFile)
-          .map((comment) => {
-            let fileContent;
-            try {
-              fileContent = JSON.parse(comment.content);
-            } catch (error) {
-              fileContent = comment.content;
-            }
+                      const fileUrl =
+                        typeof fileContent === 'object'
+                          ? fileContent.url
+                          : fileContent;
 
-            const fileUrl =
-              typeof fileContent === 'object' ? fileContent.url : fileContent;
-            
-            // Fallback for file name if it's missing in the object
-            const fileName =
-              typeof fileContent === 'object' && fileContent.originalFilename
-                ? fileContent.originalFilename
-                : 'File';
+                      return (
+                        <a
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block"
+                          key={comment._id} // move key here
+                        >
+                          <Card className="cursor-pointer border border-gray-200 p-4 shadow-md hover:bg-gray-100">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0">
+                                {typeof fileContent === 'object' &&
+                                fileContent.mimeType?.startsWith('image/') ? (
+                                  <img
+                                    src={fileContent.url}
+                                    alt={fileContent.originalFilename}
+                                    className="h-16 w-16 rounded object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-16 w-16 items-center justify-center rounded bg-gray-100">
+                                    <Paperclip className="h-8 w-8 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <h3 className="font-medium">
+                                    {typeof fileContent === 'object'
+                                      ? fileContent.originalFilename
+                                      : 'File'}
+                                  </h3>
+                                  <EyeIcon className="h-5 w-5 text-blue-500" />
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                  Uploaded by {comment.authorId?.name}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  {moment(comment.createdAt).format(
+                                    'MMM D, YYYY h:mm A'
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </Card>
+                        </a>
+                      );
+                    })}
+                </div>
 
-            // ROBUST IMAGE CHECK: Checks mimeType OR looks for image extensions in the URL
-            const isImage =
-              (typeof fileContent === 'object' && fileContent.mimeType?.startsWith('image/')) ||
-              (typeof fileUrl === 'string' && /\.(jpeg|jpg|gif|png|webp|svg|bmp)(\?.*)?$/i.test(fileUrl));
-
-            return (
-              <a
-                href={fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-                key={comment._id}
-              >
-                <Card className="cursor-pointer border border-gray-200 p-4 shadow-md hover:bg-gray-100">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
-                      
-                      {/* USE THE NEW isImage VARIABLE */}
-                      {isImage ? (
-                        <img
-                          src={fileUrl}
-                          alt={fileName}
-                          loading="lazy"
-                          className="h-16 w-16 rounded object-cover bg-gray-100"
-                        />
-                      ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded bg-gray-100">
-                          <Paperclip className="h-8 w-8 text-gray-400" />
-                        </div>
-                      )}
-
-                    </div>
-                    <div className="flex-1 overflow-hidden">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-medium text-sm truncate max-w-[180px]">
-                          {fileName}
-                        </h3>
-                        <EyeIcon className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                      </div>
-                      <p className="text-sm text-gray-500 truncate">
-                        Uploaded by {comment.authorId?.name || 'Unknown'}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {moment(comment.createdAt).format('MMM D, YYYY h:mm A')}
-                      </p>
-                    </div>
+                {comments.filter((comment) => comment.isFile).length === 0 && (
+                  <div className="flex h-full flex-col items-center justify-center py-8 text-gray-500">
+                    <Paperclip className="h-12 w-12" />
+                    <p className="mt-2">No files shared yet</p>
                   </div>
-                </Card>
-              </a>
-            );
-          })}
-
-        {comments.filter((comment) => comment.isFile).length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-            <Paperclip className="h-12 w-12 mb-3" />
-            <p className="text-sm font-medium">No files shared yet</p>
-          </div>
-        )}
+                )}
+              </ScrollArea>
+            </DialogDescription>
+          </DialogContent>
+        </Dialog>
       </div>
-    </ScrollArea>
-  </SheetContent>
-</Sheet>
-</div>
 
-      <ScrollArea className="flex-1 overflow-y-auto p-5 bg-[#efe8df] ">
-        <div
-        ref={scrollContainerRef}
-        className="flex flex-1 flex-col justify-end overflow-y-auto bg-[#efe8df] "
-        style={{ minHeight: 0 }}
-      >
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 overflow-y-auto p-6 ">
+        <div ref={scrollContainerRef} className="space-y-4">
           {comments.length > displayedComments.length && (
             <div className="text-center">
               <Loader />
@@ -619,7 +592,8 @@ export default function TaskChat({ task }: TaskChatProps) {
           )}
           {displayedComments?.map((comment: any) => {
             const isFile = comment.isFile;
-
+            
+            // 1. Determine if it's an image or document, and extract the URL/Name
             let isImage = false;
             let fileUrl = '';
             let fileName = 'Attached File';
@@ -637,17 +611,13 @@ export default function TaskChat({ task }: TaskChatProps) {
                 } else {
                   fileUrl = comment.content;
                   fileName = 'Attached File';
-                  isImage =
-                    !!fileUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) ||
-                    fileUrl.startsWith('data:image/');
+                  isImage = !!fileUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) || fileUrl.startsWith('data:image/');
                 }
               } catch (error) {
                 console.error('Failed to parse file content:', error);
                 fileUrl = comment.content;
                 fileName = 'Attached File';
-                isImage =
-                  !!fileUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) ||
-                  fileUrl.startsWith('data:image/');
+                isImage = !!fileUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) || fileUrl.startsWith('data:image/');
               }
             }
 
@@ -668,7 +638,7 @@ export default function TaskChat({ task }: TaskChatProps) {
                         onClick={() =>
                           handleEditComment(comment._id, comment.content)
                         }
-                        className="rounded-full  p-1 text-gray-600 transition-colors  hover:text-gray-800"
+                        className="rounded-full bg-gray-100 p-1 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-800"
                         aria-label="Edit message"
                       >
                         <Edit className="h-4 w-4" />
@@ -678,10 +648,10 @@ export default function TaskChat({ task }: TaskChatProps) {
 
                   {/* Message Bubble */}
                   <div
-                    className={`relative flex min-w-[120px] max-w-[520px] flex-col rounded-2xl p-3 text-xs transition-all duration-200 group-hover:shadow-md ${
+                    className={`relative flex min-w-[120px] max-w-[320px] flex-col rounded-2xl p-3 transition-all duration-200 group-hover:shadow-md ${
                       comment.authorId._id === user?._id
-                        ? 'rounded-tr-none bg-[#d8fcd2] text-black'
-                        : 'rounded-tl-none bg-[#fafafa] text-black'
+                        ? 'rounded-tr-none bg-[#002055] text-white'
+                        : 'rounded-tl-none bg-[#9333ea] text-white'
                     }`}
                     style={{
                       wordWrap: 'break-word',
@@ -689,10 +659,17 @@ export default function TaskChat({ task }: TaskChatProps) {
                       overflowWrap: 'break-word'
                     }}
                   >
+                    <div className="mb-1 flex items-center space-x-2">
+                      <span className="text-sm font-medium">
+                        {comment?.authorId?.name}
+                      </span>
+                    </div>
+
                     <div className="max-w-full">
                       {isFile ? (
                         isImage ? (
-                          <div className="group/img relative mt-1 inline-block overflow-hidden rounded-lg">
+                          // IMAGE RENDERING
+                          <div className="relative inline-block mt-1 overflow-hidden rounded-lg group/img">
                             <img
                               src={fileUrl}
                               alt={fileName}
@@ -703,22 +680,20 @@ export default function TaskChat({ task }: TaskChatProps) {
                               download={fileName}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:scale-105 hover:bg-black/60"
+                              className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-black/60 hover:scale-105"
                               title="Download Image"
                             >
                               <DownloadIcon className="h-4 w-4 drop-shadow-md" />
                             </a>
                           </div>
                         ) : (
-                          <div className="mt-1 flex items-center space-x-3 rounded-xl border border-white/10 bg-taskplanner p-3 shadow-sm">
+                          // FILE/DOCUMENT RENDERING
+                          <div className="mt-1 flex items-center space-x-3 rounded-xl bg-black/20 p-3 shadow-sm border border-white/10">
                             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/20">
                               <Paperclip className="h-5 w-5 text-white" />
                             </div>
                             <div className="flex min-w-0 flex-col overflow-hidden">
-                              <span
-                                className="truncate text-sm font-semibold text-white"
-                                title={fileName}
-                              >
+                              <span className="truncate text-sm font-semibold text-white" title={fileName}>
                                 {fileName}
                               </span>
                               <a
@@ -735,6 +710,7 @@ export default function TaskChat({ task }: TaskChatProps) {
                           </div>
                         )
                       ) : (
+                        // TEXT RENDERING
                         <Linkify
                           componentDecorator={(
                             decoratedHref,
@@ -790,199 +766,173 @@ export default function TaskChat({ task }: TaskChatProps) {
           })}
           <div ref={commentsEndRef} />
         </div>
-      </div>
       </ScrollArea>
 
       {/* Comment Input Section (Sticky) */}
-      <div className="basis-1/7 sticky bottom-0  bg-[#efe8df] p-4">
-        {/* Editing Message Indicator - Now integrated as a tab */}
-        {editingCommentId && (
-          <div className="mx-auto mb-[-1px] flex max-w-4xl items-center justify-between rounded-t-lg border border-b-0 border-amber-200 bg-amber-50 px-3 py-1.5 text-xs shadow-sm">
-            <span className="flex items-center gap-2 font-medium text-amber-700">
-              <Edit className="h-3 w-3" />
-              Editing message
-            </span>
-            <button
-              onClick={handleCancelEdit}
-              className="text-amber-500  transition-colors hover:text-amber-700"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
+      <div className="basis-1/7 sticky bottom-0 border-t border-gray-200 bg-gray-50 p-4">
+  {/* Editing Message Indicator - Now integrated as a tab */}
+  {editingCommentId && (
+    <div className="mx-auto mb-[-1px] flex max-w-4xl items-center justify-between rounded-t-lg border border-b-0 border-amber-200 bg-amber-50 px-3 py-1.5 text-xs shadow-sm">
+      <span className="flex items-center gap-2 font-medium text-amber-700">
+        <Edit className="h-3 w-3" />
+        Editing message
+      </span>
+      <button 
+        onClick={handleCancelEdit}
+        className="text-amber-500 hover:text-amber-700 transition-colors"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  )}
 
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (isSubmitting) return;
+  <form
+    onSubmit={async (e) => {
+      e.preventDefault();
+      if (isSubmitting) return;
 
-            if (pendingFile) {
-              setIsSubmitting(true);
-              try {
-                const formData = new FormData();
-                formData.append('entityId', task?._id);
-                formData.append('file_type', 'taskDoc');
-                formData.append('file', pendingFile);
+      if (pendingFile) {
+        setIsSubmitting(true);
+        try {
+          const formData = new FormData();
+          formData.append('entityId', task?._id);
+          formData.append('file_type', 'taskDoc');
+          formData.append('file', pendingFile);
 
-                const response = await axiosInstance.post(
-                  '/documents',
-                  formData
-                );
-                if (response.data) {
-                  await handleCommentSubmit({
-                    content: response.data.data.fileUrl,
-                    isFile: true
-                  });
-                  setPendingFile(null);
-                  toast({ title: 'File sent successfully' });
-                }
-              } catch (err) {
-                toast({ title: 'Upload failed', variant: 'destructive' });
-              } finally {
-                setIsSubmitting(false);
-              }
-              return;
-            }
+          const response = await axiosInstance.post('/documents', formData);
+          if (response.data) {
+            await handleCommentSubmit({
+              content: response.data.data.fileUrl,
+              isFile: true
+            });
+            setPendingFile(null);
+            toast({ title: 'File sent successfully' });
+          }
+        } catch (err) {
+          toast({ title: 'Upload failed', variant: 'destructive' });
+        } finally {
+          setIsSubmitting(false);
+        }
+        return;
+      }
 
-            const formData = new FormData(e.currentTarget);
-            const content = formData.get('content') as string;
-            if (content?.trim()) {
-              if (editingCommentId) {
-                handleSaveEdit(editingCommentId);
-              } else {
-                handleCommentSubmit({ content });
-                e.currentTarget.reset(); // Clear form after submit
-              }
-            }
-          }}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragActive(true);
-          }}
-          onDragLeave={() => setDragActive(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragActive(false);
-            const file = e.dataTransfer.files?.[0];
-            if (file) setPendingFile(file);
-          }}
-          className={`mx-auto max-w-4xl overflow-hidden rounded-xl border bg-white shadow-sm transition-all ${
-            dragActive
-              ? 'border-taskplanner bg-blue-50/50 ring-2 ring-taskplanner'
-              : 'border-gray-300 focus-within:border-taskplanner focus-within:ring-1 focus-within:ring-taskplanner'
-          }`}
-        >
-          {/* Uploading Loader Overlay */}
-          {/* {isSubmitting && (
+      const formData = new FormData(e.currentTarget);
+      const content = formData.get('content') as string;
+      if (content?.trim()) {
+        if (editingCommentId) {
+          handleSaveEdit(editingCommentId);
+        } else {
+          handleCommentSubmit({ content });
+          e.currentTarget.reset(); // Clear form after submit
+        }
+      }
+    }}
+    onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+    onDragLeave={() => setDragActive(false)}
+    onDrop={(e) => {
+      e.preventDefault();
+      setDragActive(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file) setPendingFile(file);
+    }}
+    className={`mx-auto max-w-4xl overflow-hidden rounded-xl border bg-white transition-all shadow-sm ${
+      dragActive ? 'ring-2 ring-taskplanner border-taskplanner bg-blue-50/50' : 'border-gray-300 focus-within:border-taskplanner focus-within:ring-1 focus-within:ring-taskplanner'
+    }`}
+  >
+    {/* Uploading Loader Overlay */}
+    {/* {isSubmitting && (
       <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
         <Loader className="h-5 w-5 animate-spin text-taskplanner" />
       </div>
     )} */}
 
-          {/* PENDING FILE ATTACHMENT */}
-          {pendingFile && (
-            <div className="flex items-center gap-3 border-b bg-gray-50/50 p-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg border bg-white shadow-sm">
-                <Paperclip className="h-5 w-5 text-taskplanner" />
-              </div>
-              <div className="flex-1 overflow-hidden text-left">
-                <p className="truncate text-sm font-medium text-gray-900">
-                  {pendingFile.name}
-                </p>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-                  {(pendingFile.size / 1024 / 1024).toFixed(2)} MB • Ready to
-                  send
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPendingFile(null)}
-                className="rounded-full p-1 text-gray-400 hover:bg-gray-200"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-
-          <div className="relative flex flex-col">
-            <Textarea
-              id="comment"
-              name="content"
-              {...(!editingCommentId
-                ? register('content', { required: !pendingFile })
-                : {})}
-              value={editingCommentId ? editedContent : undefined}
-              onChange={(e) =>
-                editingCommentId && setEditedContent(e.target.value)
-              }
-              placeholder={
-                dragActive ? 'Drop file to upload' : 'Write a message...'
-              }
-              className={`min-h-[44px] w-full resize-none border-0 bg-transparent px-4 py-3 text-xs focus-visible:ring-0 disabled:opacity-50 ${pendingFile ? 'hidden' : 'block'}`}
-              rows={1}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  e.currentTarget.form?.requestSubmit();
-                }
-              }}
-              disabled={isSubmitting}
-            />
-
-            {/* Action Toolbar */}
-            <div className="flex items-center justify-between border-t border-gray-100 bg-white px-2 py-2">
-              <div className="flex items-center">
-                {!editingCommentId && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className=" bg-taskplanner text-white hover:bg-taskplanner/90 hover:text-white"
-                    onClick={() => setIsImageUploaderOpen(true)}
-                    disabled={isSubmitting}
-                  >
-                    <Paperclip className="mr-2 h-4 w-4" /> Attachment
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                {pendingFile && (
-                  <span className="mr-2 text-[10px] font-bold uppercase text-taskplanner">
-                    File Attachment
-                  </span>
-                )}
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={isSubmitting}
-                  className="h-8 rounded-lg bg-taskplanner px-4 text-xs font-semibold text-white hover:bg-taskplanner/90"
-                >
-                  {editingCommentId
-                    ? 'Update'
-                    : pendingFile
-                      ? 'Send File'
-                      : 'Send'}
-                  <ArrowUp className="ml-2 h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </form>
-
-        <FileUploader
-          open={isImageUploaderOpen}
-          onOpenChange={setIsImageUploaderOpen}
-          onUploadComplete={(uploadedFiles) => {
-            handleCommentSubmit({
-              content: uploadedFiles.data.fileUrl,
-              isFile: true
-            });
-          }}
-        />
+    {/* PENDING FILE ATTACHMENT */}
+    {pendingFile && (
+      <div className="flex items-center gap-3 border-b bg-gray-50/50 p-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border shadow-sm">
+          <Paperclip className="h-5 w-5 text-taskplanner" /> 
+        </div>
+        <div className="flex-1 overflow-hidden text-left">
+          <p className="truncate text-sm font-medium text-gray-900">{pendingFile.name}</p>
+          <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">
+            {(pendingFile.size / 1024 / 1024).toFixed(2)} MB • Ready to send
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setPendingFile(null)}
+          className="rounded-full p-1 hover:bg-gray-200 text-gray-400"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
+    )}
 
-      
+    <div className="relative flex flex-col">
+      <Textarea
+        id="comment"
+        name="content"
+        {...(!editingCommentId ? register('content', { required: !pendingFile }) : {})}
+        value={editingCommentId ? editedContent : undefined}
+        onChange={(e) => editingCommentId && setEditedContent(e.target.value)}
+        placeholder={dragActive ? "Drop file to upload" : "Write a message..."}
+        className={`min-h-[44px] w-full resize-none border-0 bg-transparent px-4 py-3 text-sm focus-visible:ring-0 disabled:opacity-50 ${pendingFile ? 'hidden' : 'block'}`}
+        rows={1}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            e.currentTarget.form?.requestSubmit();
+          }
+        }}
+        disabled={isSubmitting}
+      />
+
+      {/* Action Toolbar */}
+      <div className="flex items-center justify-between border-t border-gray-100 bg-white px-2 py-2">
+        <div className="flex items-center">
+          {!editingCommentId && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className=" text-white bg-taskplanner hover:text-white hover:bg-taskplanner/90"
+              onClick={() => setIsImageUploaderOpen(true)}
+              disabled={isSubmitting}
+            >
+              <Paperclip className="h-4 w-4 mr-2" /> Attachment
+            </Button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {pendingFile && (
+             <span className="text-[10px] font-bold text-taskplanner uppercase mr-2">File Attachment</span>
+          )}
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isSubmitting}
+            className="h-8 rounded-lg bg-taskplanner px-4 text-xs font-semibold text-white hover:bg-taskplanner/90"
+          >
+            {editingCommentId ? 'Update' : pendingFile ? 'Send File' : 'Send'}
+            <ArrowUp className="ml-2 h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <FileUploader
+    open={isImageUploaderOpen}
+    onOpenChange={setIsImageUploaderOpen}
+    onUploadComplete={(uploadedFiles) => {
+      handleCommentSubmit({
+        content: uploadedFiles.data.fileUrl,
+        isFile: true
+      });
+    }}
+  />
+</div>
     </Card>
   );
 }

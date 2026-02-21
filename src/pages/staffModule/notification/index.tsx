@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import moment from 'moment';
 import { CircleUser, Loader2, BellRing, CheckCheck } from 'lucide-react';
@@ -36,7 +36,7 @@ export default function StaffNotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-
+  const{id:companyId} = useParams()
   useEffect(() => {
     const fetchNotifications = async (userId: string) => {
       if (loadNotification === 15) {
@@ -90,11 +90,13 @@ export default function StaffNotificationsPage() {
       }
 
       if (notification.type === 'task' && notification.docId) {
-        navigate(`/company/${id}/task-details/${notification.docId}`);
+        navigate(`/company/${companyId}/task-details/${notification.docId}`);
+      }else if (notification.type === 'comment' && notification.docId) {
+        navigate(`/company/${companyId}/task-details/${notification.docId}`);
       } else if (notification?.type === 'group' && notification?.docId) {
-        navigate(`/company/${id}/group/${notification?.docId}`);
+        navigate(`/company/${companyId}/group/${notification?.docId}`);
       } else if (notification?.type === 'note' || notification?.docId) {
-        navigate(`/company/${id}/notes`);
+        navigate(`/company/${companyId}/notes`);
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);

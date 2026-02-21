@@ -599,7 +599,7 @@ const handleFileSubmit = async () => {
   return (
     <div className="relative mx-auto flex h-full max-w-full">
       {/* 70% Main chat area */}
-      <div className="flex w-[70%] flex-col">
+      <div className="flex w-[70%] flex-col bg-[#efe8df]">
         <GroupBar
           groupDetails={groupDetails}
           loading={loading}
@@ -619,6 +619,10 @@ const handleFileSubmit = async () => {
           setEditingMessage={setEditingMessage}
           setReplyingTo={setReplyingTo}
         />
+
+
+        <div className='bg-[#efe8df]'>
+
 
         <MessageInput
           isAccessible={isAccessible}
@@ -645,7 +649,8 @@ const handleFileSubmit = async () => {
           user={user}
           replyingTo={replyingTo} 
           cancelReply={() => setReplyingTo(null)}
-        />
+          />
+          </div>
       </div>
 
       {/* 30% Right Sidebar */}
