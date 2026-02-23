@@ -20,7 +20,7 @@ import { convertToLowerCase } from '@/lib/utils';
 import { fetchUserProfile } from '@/redux/features/profileSlice';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-
+import axiosInstance from "@/lib/axios"
 // --- Zod Schema ---
 // Removed role validation as it will be hardcoded
 const createUserSchema = z.object({
@@ -83,22 +83,23 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
     setIsLoading(true);
 
     try {
-      await dispatch(registerUser(payload)).unwrap();
-      reset();
-      onUserCreated();
-      toast({
-        title: 'User created successfully!',
-      });
-      setIsCompanyDialogOpen(false);
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to create user. Email might exist.';
-      toast({
-        variant: 'destructive',
-        title: errorMessage,
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    
+         await axiosInstance.post(`/auth/signup`, payload);
+          reset();
+          onUserCreated();
+          toast({
+            title: 'User created successfully!',
+          });
+          setIsCompanyDialogOpen(false);
+        } catch (error: any) {
+          const errorMessage = error.response?.data.message || 'Failed to create user. Email might exist.';
+          toast({
+            variant: 'destructive',
+            title: errorMessage,
+          });
+        } finally {
+          setIsLoading(false);
+        }
   };
 
   return (

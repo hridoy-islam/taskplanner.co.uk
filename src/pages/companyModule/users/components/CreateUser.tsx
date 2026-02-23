@@ -22,7 +22,7 @@ import { fetchUserProfile } from '@/redux/features/profileSlice';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Select from 'react-select';
-
+import axiosInstance from "@/lib/axios"
 // --- Zod Schema ---
 const createUserSchema = z.object({
   name: z.string().min(1, { message: 'Name is required' }),
@@ -91,7 +91,8 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
     setIsLoading(true);
 
     try {
-      await dispatch(registerUser(payload)).unwrap();
+
+     await axiosInstance.post(`/auth/signup`, payload);
       reset();
       onUserCreated();
       toast({
@@ -99,7 +100,7 @@ export default function CreateUser({ onUserCreated }: { onUserCreated: () => voi
       });
       setIsCompanyDialogOpen(false);
     } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to create user. Email might exist.';
+      const errorMessage = error.response?.data.message || 'Failed to create user. Email might exist.';
       toast({
         variant: 'destructive',
         title: errorMessage,
