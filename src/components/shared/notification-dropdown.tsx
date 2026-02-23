@@ -140,7 +140,8 @@ const markAsRead = async (id: string, notification: Notification) => {
           navigate(`/company/${userId}/user/${uid}/group/${notification?.docId}`);
         } else if (notification?.type === 'note') {
           navigate(`/company/${userId}/user/${uid}/notes`);
-        }
+        }else if (notification.type === 'comment' && notification.docId) {
+        navigate(`/company/${userId}/user/${uid}/task-details/${notification.docId}`);}
       } 
       // ============================================
       // COMPANY / DEFAULT ROUTING
@@ -152,7 +153,8 @@ const markAsRead = async (id: string, notification: Notification) => {
           navigate(`/company/${userId}/group/${notification?.docId}`);
         } else if (notification?.type === 'note') {
           navigate(`/company/${userId}/notes`);
-        }
+        }else if (notification.type === 'comment' && notification.docId) {
+        navigate(`/company/${userId}/task-details/${notification.docId}`);}
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);

@@ -36,7 +36,7 @@ export default function StaffNotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const{id:companyId} = useParams()
+  const{id:companyId,uid} = useParams()
   useEffect(() => {
     const fetchNotifications = async (userId: string) => {
       if (loadNotification === 15) {
@@ -90,13 +90,13 @@ export default function StaffNotificationsPage() {
       }
 
       if (notification.type === 'task' && notification.docId) {
-        navigate(`/company/${companyId}/task-details/${notification.docId}`);
+        navigate(`/company/${companyId}/user/${uid}/task-details/${notification.docId}`);
       }else if (notification.type === 'comment' && notification.docId) {
-        navigate(`/company/${companyId}/task-details/${notification.docId}`);
+        navigate(`/company/${companyId}/user/${uid}/task-details/${notification.docId}`);
       } else if (notification?.type === 'group' && notification?.docId) {
-        navigate(`/company/${companyId}/group/${notification?.docId}`);
+        navigate(`/company/${companyId}/user/${uid}/group/${notification?.docId}`);
       } else if (notification?.type === 'note' || notification?.docId) {
-        navigate(`/company/${companyId}/notes`);
+        navigate(`/company/${companyId}/user/${uid}/notes`);
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);

@@ -39,6 +39,7 @@ import { Label } from '@/components/ui/label';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import ReactSelect from 'react-select';
+import { useToast } from '@/components/ui/use-toast';
 
 interface User {
   id?: string;
@@ -95,11 +96,11 @@ const priorityOptions = [
   { value: 'high', label: 'High' }
 ];
 
-export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
+export default function TaskDetails({ task, onUpdate,handleIncrement }: TaskDetailsProps) {
   const [localTask, setLocalTask] = useState<TaskDetailsProps['task']>(null);
   const [isImportant, setIsImportant] = useState(false);
   const [members, setMembers] = useState<User[]>([]);
-
+  const { toast } = useToast();
   // Dialog State
   const [isEditOpen, setIsEditOpen] = useState(false);
 
@@ -290,10 +291,14 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
         completedBy: filteredCompletedBy as any,
         history: updatedHistory
       });
-      const response = await axiosInstance.patch(
-        `/task/reassign/${localTask._id}`
-      );
-      await onUpdate(response.data);
+      try {
+        await axiosInstance.patch(`/task/reassign/${localTask?._id}`);
+        toast({ title: 'Task reassigned successfully' });
+        handleIncrement();
+      } catch (error) {
+        console.error('Failed to reassign', error);
+        toast({ variant: 'destructive', title: 'Failed to reassign task' });
+      }
     } catch (error) {
       console.error('Failed to reassign task:', error);
     }
@@ -448,12 +453,15 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
 
   // Helper to color code priority badge
   const getPriorityColor = (priority?: string) => {
-    switch(priority?.toLowerCase()) {
-      case 'high': return 'text-red-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-amber-600';
+    switch (priority?.toLowerCase()) {
+      case 'high':
+        return 'text-red-600';
+      case 'low':
+        return 'text-green-600';
+      default:
+        return 'text-amber-600';
     }
-  }
+  };
 
   return (
     <div className=" rounded-lg bg-white p-2">
@@ -505,7 +513,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="flex flex-col gap-2">
                         <Label htmlFor="assignedUser">Assigned User</Label>
                         <ReactSelect
@@ -572,7 +580,7 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
                             popperClassName="react-datepicker-popper"
                             showYearDropdown
                             showMonthDropdown
-                            dropdownMode='select'
+                            dropdownMode="select"
                             wrapperClassName="w-full"
                             minDate={new Date()}
                           />
@@ -740,7 +748,9 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
           <div className="mb-1.5 text-xs font-bold uppercase tracking-wider ">
             Priority
           </div>
-          <div className={`text-sm font-semibold capitalize ${getPriorityColor(localTask.priority)}`}>
+          <div
+            className={`text-sm font-semibold capitalize ${getPriorityColor(localTask.priority)}`}
+          >
             {localTask.priority || 'Once'}
           </div>
         </div>
@@ -752,15 +762,23 @@ export default function TaskDetails({ task, onUpdate }: TaskDetailsProps) {
             </div>
 
             <div className="text-sm font-semibold capitalize text-gray-900">
-              {localTask.frequency === 'monthly' && localTask.scheduledDate != null
+              {localTask.frequency === 'monthly' &&
+              localTask.scheduledDate != null
                 ? `${getOrdinal(localTask.scheduledDate)} of every month`
-                : localTask.frequency === 'weekly' && localTask.scheduledDate != null
-                ? `Every ${
-                    ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][
-                      localTask.scheduledDate
-                    ]
-                  }`
-                : localTask.frequency}
+                : localTask.frequency === 'weekly' &&
+                    localTask.scheduledDate != null
+                  ? `Every ${
+                      [
+                        'Sunday',
+                        'Monday',
+                        'Tuesday',
+                        'Wednesday',
+                        'Thursday',
+                        'Friday',
+                        'Saturday'
+                      ][localTask.scheduledDate]
+                    }`
+                  : localTask.frequency}
             </div>
           </div>
         )}

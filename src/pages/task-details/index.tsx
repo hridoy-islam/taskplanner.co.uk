@@ -37,7 +37,11 @@ export default function TaskDetailsPage() {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
     const { user } = useSelector((state: RootState) => state.auth);
+const [counter,setCounter] = useState(0)
 
+const handleIncrement=()=>{
+  setCounter(prev=> prev+1)
+}
   // 1. Fetch the specific task directly from API on mount
   const fetchTask = async () => {
     if (!id) return;
@@ -59,7 +63,7 @@ export default function TaskDetailsPage() {
   useEffect(() => {
 
     fetchTask();
-  }, [id]);
+  }, [id,counter]);
 
 
   useEffect(() => {
@@ -136,7 +140,7 @@ const onUpdate = async (updatedData: Partial<Task>) => {
       <Card className="flex-1 overflow-hidden rounded-xl border border-gray-200">
         <div className="h-full overflow-y-auto">
           {/* Pass the new onUpdate function */}
-          <TaskDetails task={task} onUpdate={onUpdate} />
+          <TaskDetails task={task} onUpdate={onUpdate} handleIncrement={handleIncrement} />
         </div>
       </Card>
 

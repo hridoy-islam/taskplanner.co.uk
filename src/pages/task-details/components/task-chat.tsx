@@ -109,18 +109,24 @@ export default function TaskChat({ task }: TaskChatProps) {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
   };
-
-  useEffect(() => {
+useEffect(() => {
     if (!ENDPOINT) return;
     socket = io(ENDPOINT);
     socket.emit('setup', user);
-    socket.on('connected', () => setSocketConnected(true));
+    
+    socket.on('connected', () => {
+      setSocketConnected(true);
+      // Ensure we join the chat room as soon as we connect
+      if (task?._id) {
+        socket.emit('join chat', task._id);
+      }
+    });
 
     // Cleanup socket on unmount
     return () => {
       socket.disconnect();
     };
-  }, [user]);
+  }, [user, task?._id]);
 
   const handleEditComment = (commentId: string, currentContent: string) => {
     setEditingCommentId(commentId);
@@ -219,58 +225,57 @@ export default function TaskChat({ task }: TaskChatProps) {
     }
   }, [files]);
 
-  useEffect(() => {
-    if (!socket) return;
-    const messageReceivedHandler = async (newMessageReceived) => {
-      const response = newMessageReceived?.data?.data;
-      const newComment = {
-        authorId: {
-          _id: response?.authorId,
-          name: response?.authorName
-        },
-        content: response?.content,
-        isFile: response?.isFile,
-        taskId: response?.taskId,
-        _id: response?._id || Math.random().toString(36).substring(7)
-      };
+useEffect(() => {
+  if (!socket) return;
 
-      if (task?._id !== newComment?.taskId) {
-        toast({
-          title: `Task: ${response?.taskName || 'New message arrived'}`,
-          description: `Message: ${response?.content}`,
-          variant: 'success'
-        });
-      } else {
-        setComments((prevComments) => {
-          if (
-            !prevComments.some((comment) => comment?._id === newComment._id)
-          ) {
-            return [...prevComments, newComment];
-          }
-          return prevComments;
-        });
-        setDisplayedComments((prevComments) => {
-          if (
-            !prevComments.some((comment) => comment?._id === newComment._id)
-          ) {
-            return [...prevComments, newComment];
-          }
-          return prevComments;
-        });
-        await updateLastReadMessage(
-          newComment?.taskId,
-          user?._id,
-          newComment?._id
-        );
-      }
+  const messageReceivedHandler = async (newMessageReceived) => {
+    // Guard: if payload is garbage, bail out safely
+    if (!newMessageReceived || typeof newMessageReceived !== 'object') return;
+const response = newMessageReceived?.data;
+    // Normalize: handle both {authorId: {_id, name}} and {authorId: string, authorName: string}
+    const authorId =
+      typeof response.authorId === 'object'
+        ? response.authorId?._id
+        : response.authorId;
+
+    const authorName =
+      typeof response.authorId === 'object'
+        ? response.authorId?.name
+        : response.authorName;
+
+    const newComment = {
+      authorId: { _id: authorId, name: authorName },
+      content: response.content,
+      isFile: response.isFile ?? false,
+      taskId: response.taskId,
+      _id: response._id || Math.random().toString(36).substring(7),
+      createdAt: response.createdAt || new Date().toISOString()
     };
 
-    socket.on('message received', messageReceivedHandler);
+    if (!newComment.taskId) return; // ← bail if still malformed
 
-    return () => {
-      socket.off('message received', messageReceivedHandler);
-    };
-  }, [task?._id, user?._id]);
+    if (task?._id !== newComment.taskId) {
+      toast({
+        title: `Task: ${response?.taskName || 'New message'}`,
+        description: `Message: ${newComment.content}`,
+        variant: 'success'
+      });
+    } else {
+      setComments((prev) => {
+        if (prev.some((c) => c._id === newComment._id)) return prev;
+        return [...prev, newComment];
+      });
+      setDisplayedComments((prev) => {
+        if (prev.some((c) => c._id === newComment._id)) return prev;
+        return [...prev, newComment];
+      });
+      await updateLastReadMessage(newComment.taskId, user?._id, newComment._id);
+    }
+  };
+
+  socket.on('message received', messageReceivedHandler);
+  return () => socket.off('message received', messageReceivedHandler);
+}, [task?._id, user?._id]);
 
   useEffect(() => {
     const ctxProvider = ctxProviderRef.current;
@@ -291,52 +296,48 @@ export default function TaskChat({ task }: TaskChatProps) {
     };
   }, [files, ctxProviderRef.current]);
 
-  const handleCommentSubmit = async (data) => {
-    if (!data.content) {
-      console.error(data, 'Content is required to submit a comment.');
-      return;
-    }
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+const handleCommentSubmit = async (data) => {
+  if (!data.content) return;
+  if (isSubmitting) return;
+  setIsSubmitting(true);
 
-    try {
-      if (socket) socket.emit('stop typing', task._id);
-      data.taskId = task?._id;
-      data.authorId = user?._id;
-      const response = await axiosInstance.post('/comment', data);
-      if (response.data.success) {
-        const newComment = {
-          authorId: {
-            _id: user?._id,
-            name: user?.name
-          },
-          content: data?.content,
-          isFile: data?.isFile,
-          taskId: task?._id,
-          _id:
-            response?.data?.data?._id || Math.random().toString(36).substring(7)
-        };
-        setComments([...comments, newComment]);
-        setDisplayedComments((prevComments) => [...prevComments, newComment]);
-        await updateLastReadMessage(
-          newComment?.taskId,
-          user?._id,
-          newComment._id
-        );
-        if (socket) socket.emit('new message', response);
-        reset();
-      } else {
-        console.error('Failed to add comment:', response.data.message);
-      }
-    } catch (error) {
-      console.error('Error posting comment:', error);
-      if (socket) socket.emit('stop typing', task._id);
-    } finally {
-      setIsLoading(false);
-      setIsSubmitting(false);
-    }
-  };
+  try {
+    if (socket) socket.emit('stop typing', task._id);
+    data.taskId = task?._id;
+    data.authorId = user?._id;
+    const response = await axiosInstance.post('/comment', data);
 
+    if (response.data.success) {
+      const newComment = {
+        authorId: {
+          _id: user?._id,
+          name: user?.name
+        },
+        content: data?.content,
+        isFile: data?.isFile ?? false,
+        taskId: task?._id,
+        taskName: task?.taskName,          // ← add this so toast works on other tabs
+        createdAt: response?.data?.data?.createdAt || new Date().toISOString(),
+        _id: response?.data?.data?._id || Math.random().toString(36).substring(7)
+      };
+
+      setComments((prev) => [...prev, newComment]);
+      setDisplayedComments((prev) => [...prev, newComment]);
+      await updateLastReadMessage(newComment.taskId, user?._id, newComment._id);
+
+      // ✅ Emit the safe newComment object, NOT response.data.data
+      if (socket) socket.emit('new message', {data:newComment});
+
+      reset();
+    }
+  } catch (error) {
+    console.error('Error posting comment:', error);
+    if (socket) socket.emit('stop typing', task._id);
+  } finally {
+    setIsLoading(false);
+    setIsSubmitting(false);
+  }
+};
   const typingHandler = () => {
     if (!socketConnected || !socket) return;
     if (!typing) {
@@ -726,7 +727,7 @@ export default function TaskChat({ task }: TaskChatProps) {
                                 download={fileName}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="mt-1 flex items-center text-xs font-medium text-blue-100 transition-colors hover:text-white hover:underline"
+                                className="mt-1 flex items-center text-xs font-medium text-white transition-colors hover:text-white hover:underline"
                               >
                                 <DownloadIcon className="mr-1 h-3 w-3" />
                                 Download File
@@ -744,7 +745,7 @@ export default function TaskChat({ task }: TaskChatProps) {
                             <a
                               href={decoratedHref}
                               key={key}
-                              className="text-blue-300 underline transition-colors hover:text-blue-200"
+                              className="text-taskplanner underline transition-colors hover:text-taskplanner/90"
                               target="_blank"
                               rel="noopener noreferrer"
                             >

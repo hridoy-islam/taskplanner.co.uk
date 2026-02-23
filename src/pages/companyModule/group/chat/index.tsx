@@ -29,7 +29,7 @@ export default function CompanyGroupChat() {
   const router = useRouter();
   const [socketConnected, setSocketConnected] = useState(false);
   const currentPath = router?.location?.pathname?.split('/')[3] || 'null';
-  const { id, gid: groupId } = useParams();
+  const {  gid: groupId } = useParams();
   const [groupDetails, setGroupDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const { register, handleSubmit, reset, setValue } = useForm();
@@ -141,14 +141,14 @@ const [replyingTo, setReplyingTo] = useState<any | null>(null);
       socket.on('stop typing', (typer) => {
         const room = typer?.room;
         const roomuser = typer?.user;
-        if (id === room && roomuser !== user?._id) {
+        if (groupId === room && roomuser !== user?._id) {
           setTyping(false);
         }
       });
       socket.on('typing', (typer) => {
         const room = typer?.room;
         const roomuser = typer?.user;
-        if (id === room && roomuser !== user?._id) {
+        if (groupId === room && roomuser !== user?._id) {
           setTyping(true);
         }
         const lastTypingTime = new Date().getTime();
@@ -158,7 +158,7 @@ const [replyingTo, setReplyingTo] = useState<any | null>(null);
           const timeDiff = timeNow - lastTypingTime;
           if (timeDiff >= timerLength && typing) {
             const typer = {
-              room: id,
+              room: groupId,
               user: user?._id
             };
             socket.emit('stop typing', typer);
@@ -168,16 +168,16 @@ const [replyingTo, setReplyingTo] = useState<any | null>(null);
       });
     }
 
-    if (id) {
-      socket.emit('join chat', id);
+    if (groupId) {
+      socket.emit('join chat', groupId);
     }
 
     return () => {
-      if (id) {
-        socket.emit('leave chat', id);
+      if (groupId) {
+        socket.emit('leave chat', groupId);
       }
     };
-  }, [user, id]);
+  }, [user, groupId]);
 
   const updateLastReadMessage = async (groupId, userId, messageId) => {
     try {
@@ -283,7 +283,7 @@ const [replyingTo, setReplyingTo] = useState<any | null>(null);
 
   useEffect(() => {
     const messageReceivedHandler = (newMessageReceived) => {
-      const response = newMessageReceived?.data?.data;
+      const response = newMessageReceived?.data;
 
       const newComment = {
         authorId: {
@@ -298,7 +298,7 @@ const [replyingTo, setReplyingTo] = useState<any | null>(null);
         _id: response?._id || Math.random().toString(36).substring(7)
       };
 
-      if (id !== newComment?.taskId) {
+      if (groupId !== newComment?.taskId) {
         toast({
           title: `Group: ${response?.taskName || 'New message arrived'}`,
           description: `Message: ${response?.content}`
@@ -313,7 +313,7 @@ const [replyingTo, setReplyingTo] = useState<any | null>(null);
     return () => {
       socket.off('message received', messageReceivedHandler);
     };
-  }, [id, router]);
+  }, [groupId, router]);
 
 const handleCommentSubmit = async (data) => {
     if (isSubmitting) return;
@@ -333,7 +333,7 @@ const handleCommentSubmit = async (data) => {
     data.mentionBy = mentionedIds;
 
     try {
-      const typer = { room: id, user: user?._id };
+      const typer = { room: groupId, user: user?._id };
       socket.emit('stop typing', typer);
 
       if (editingMessage) {
@@ -376,13 +376,13 @@ const handleCommentSubmit = async (data) => {
             },
             content: data?.content,
             isFile: data?.isFile,
-            taskId: id,
+            taskId: groupId,
             mentionBy: mentionedIds,
             replyTo: replyingTo, // Add to local state immediately
             createdAt: response?.data?.data?.createdAt,
             _id: response?.data?.data?._id || Math.random().toString(36).substring(7)
           };
-          socket.emit('new message', response);
+          socket.emit('new message', response.data);
           appendComment(newComment);
         }
       }
