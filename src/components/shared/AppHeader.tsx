@@ -204,7 +204,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
         {/* --- RIGHT SIDE --- */}
         <div className="z-20 flex items-center gap-2 sm:gap-4">
-          {user.role === 'company' && (
+          {user?.role === 'company' && (
             <>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
